@@ -1,13 +1,12 @@
-{% # import schema from '../schemas/blocks/_product-details' %}
-
+{%- assign block_settings = block.settings -%}
 <div
   id="ProductInformation-{{ section.id }}"
   class="
     product-details
-    {% if block.settings.sticky_details_desktop %} sticky-content--desktop{% endif %}
-    {% if block.settings.height == 'fill' -%} full-height--desktop{% endif -%}
+    {% if block_settings.sticky_details_desktop %} sticky-content--desktop{% endif %}
+    {% if block_settings.height == 'fill' -%} full-height--desktop{% endif -%}
   "
-  style="--details-position: {{ block.settings.details_position }};"
+  style="--details-position: {{ block_settings.details_position }};"
   data-testid="product-information-details"
   {% if settings.transition_to_main_product %}
     data-view-transition-type="product-details"
@@ -16,16 +15,16 @@
   {% capture children %}
     <div class="view-product-title">
       <a
-        href="{{ product.selected_or_first_available_variant.url }}"
+        href="{{ closest.product.selected_or_first_available_variant.url }}"
         class="link"
       >
-        {{- product.title }}
+        {{- closest.product.title }}
       </a>
     </div>
     {% content_for 'blocks' %}
   {% endcapture %}
 
-  {% render 'group', children: children, settings: block.settings, shopify_attributes: block.shopify_attributes %}
+  {% render 'group', children: children, settings: block_settings, shopify_attributes: block.shopify_attributes %}
 </div>
 
 {% stylesheet %}
@@ -126,7 +125,7 @@
       "type": "product-inventory"
     },
     {
-      "type": "product-metafields-accordion"
+      "type": "product-custom-property"
     }
   ],
   "tag": null,
@@ -453,7 +452,7 @@
         "text_TMtYp8": {
           "type": "text",
           "settings": {
-            "text": "<p>Home → Shirts</p>",
+            "text": "t:html_defaults.home_to_shirts",
             "alignment": "left",
             "padding-block-start": 16,
             "padding-inline-end": 0,
@@ -472,7 +471,7 @@
         "text_GMQR8L": {
           "type": "text",
           "settings": {
-            "text": "<p>★★★★★ 368 Reviews</p>",
+            "text": "t:html_defaults.reviews",
             "alignment": "left"
           }
         },
@@ -575,7 +574,7 @@
                 "text_83R7CQ": {
                   "type": "text",
                   "settings": {
-                    "text": "<p>Free shipping over $50</p>",
+                    "text": "t:html_defaults.free_shipping_over",
                     "alignment": "left",
                     "padding-block-start": 0,
                     "padding-block-end": 0,
@@ -620,7 +619,7 @@
                 "text_EmGGUV": {
                   "type": "text",
                   "settings": {
-                    "text": "<p>Free 30-day returns</p>",
+                    "text": "t:html_defaults.free_returns",
                     "alignment": "left",
                     "padding-block-start": 0,
                     "padding-block-end": 0,
@@ -641,7 +640,7 @@
             "accordion-row-1": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "Materials"
+                "heading": "t:text_defaults.materials"
               },
               "blocks": {
                 "text": {
@@ -653,7 +652,7 @@
             "accordion-row-2": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "Care instructions"
+                "heading": "t:text_defaults.care_instructions"
               },
               "blocks": {
                 "text": {
@@ -665,7 +664,7 @@
             "accordion-row-3": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "Fit"
+                "heading": "t:text_defaults.fit"
               },
               "blocks": {
                 "text": {
@@ -686,7 +685,7 @@
             "recommendations-header": {
               "type": "text",
               "settings": {
-                "text": "<h3>Styled with</h3>",
+                "text": "t:html_defaults.styled_with",
                 "type_preset": "h5"
               }
             }

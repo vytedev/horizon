@@ -7,11 +7,12 @@
   @param {string} [form_component] - the form component to use for the clear all button
   @param {boolean} [should_show_clear_all] - whether to show the clear all button
   @param {number} [shadow_opacity] - the opacity of the shadow for the sticky action bar
+  @param {string} [clear_all_button_style] - button class for clear all button ('button-unstyled' for filter bar, 'button-secondary' for drawer)
 {%- enddoc -%}
 
 <div
   class="facets__actions{% if is_active %} facets__actions--active{% endif %}"
-  style="--color-shadow: rgb(from var(--color-foreground) r g b / {{ shadow_opacity | default: 1.0 }});"
+  style="--color-shadow: rgb(var(--color-foreground-rgb) / {{ shadow_opacity | default: 1.0 }});"
 >
   {% if should_show_clear_all %}
     <facet-remove-component
@@ -19,7 +20,7 @@
     >
       <button
         type="button"
-        class="button button-secondary facets__clear-all{% if is_active %} active{% endif %}"
+        class="button {{ clear_all_button_style | default: 'button-secondary' }} facets__clear-all{% if is_active %} active{% endif %}"
         ref="clearButton"
         {% if form_component != blank %}
           on:click="/removeFilter?form={{ form_component }}"
@@ -50,9 +51,9 @@
   .facets__actions {
     --to-top-gradient-background: linear-gradient(
       to top,
-      rgb(from var(--color-background) r g b / 90%),
-      rgb(from var(--color-background) r g b / 80%),
-      rgb(from var(--color-background) r g b / 40%),
+      rgb(var(--color-background-rgb) / var(--opacity-90)),
+      rgb(var(--color-background-rgb) / var(--opacity-80)),
+      rgb(var(--color-background-rgb) / var(--opacity-40)),
       transparent
     );
 
@@ -149,12 +150,10 @@
   .facets--horizontal .facets__clear-all {
     @media screen and (min-width: 750px) {
       --facets-clear-all-min-width: var(--minimum-touch-target);
-      --button-color: var(--color-primary);
       text-decoration: underline transparent 0.075em;
       text-underline-offset: 0.125em;
       width: auto;
       transform: none;
-      transition: none;
       opacity: 1;
       height: var(--minimum-touch-target);
       align-items: center;
@@ -162,6 +161,7 @@
       transition: text-decoration-color var(--animation-speed) var(--animation-easing);
     }
   }
+
   .facets--horizontal .facets__clear-all:hover {
     @media screen and (min-width: 750px) {
       --button-color: var(--color-primary-hover);
@@ -185,7 +185,6 @@
     @media screen and (min-width: 750px) {
       padding-block: 0;
       padding-inline: var(--facets-form-horizontal-gap);
-      background-color: transparent;
       position: static;
       transform: none;
     }

@@ -41,7 +41,7 @@
 >
   <div
     class="
-      color-{{ section.settings.color_scheme }}
+      {% if block_settings.inherit_color_scheme == false %}color-{{ block_settings.color_scheme }}{% endif %}
       block-resource-list
       spacing-style
       gap-style
@@ -52,6 +52,7 @@
       --resource-list-column-gap-desktop: {{ block.settings.columns_gap }}px;
       --resource-list-row-gap-desktop: {{ block.settings.rows_gap }}px;
       --resource-list-columns-mobile: repeat(auto-fill, minmax(9.25rem, 1fr));
+      --border-radius: {{ block_settings.border_radius }}px;
     "
   >
     <div class="section-resource-list__content">
@@ -181,6 +182,10 @@
 
   .product-recommendations {
     display: block;
+  }
+
+  .block-resource-list {
+    border-radius: var(--border-radius, 0);
   }
 
   .product-recommendations__skeleton-item {
@@ -356,10 +361,27 @@
       "default": 12
     },
     {
+      "type": "range",
+      "id": "border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "checkbox",
+      "id": "inherit_color_scheme",
+      "label": "t:settings.inherit_color_scheme",
+      "default": true
+    },
+    {
       "type": "color_scheme",
       "id": "color_scheme",
       "label": "t:settings.color_scheme",
-      "default": "scheme-1"
+      "default": "scheme-1",
+      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
     },
     {
       "type": "header",
@@ -384,6 +406,26 @@
       "step": 1,
       "unit": "px",
       "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
     }
   ],
   "presets": [
@@ -391,7 +433,10 @@
       "name": "t:names.product_recommendations",
       "category": "t:categories.product",
       "settings": {
-        "recommendation_type": "related"
+        "recommendation_type": "related",
+        "border_radius": 0,
+        "padding-inline-start": 0,
+        "padding-inline-end": 0
       },
       "blocks": {
         "heading": {

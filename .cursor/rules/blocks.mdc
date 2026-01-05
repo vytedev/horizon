@@ -3,6 +3,7 @@ description: Development standards and best practices for creating/configuring/s
 globs: blocks/*.liquid
 alwaysApply: false
 ---
+
 # Theme Blocks Development Standards
 
 Follow [Shopify's theme blocks documentation](mdc:https:/shopify.dev/docs/storefronts/themes/architecture/blocks/theme-blocks/quick-start?framework=liquid.txt).
@@ -10,6 +11,7 @@ Follow [Shopify's theme blocks documentation](mdc:https:/shopify.dev/docs/storef
 ## Theme Block Fundamentals
 
 Theme blocks are reusable components defined at the theme level that can be:
+
 - Nested under sections and blocks
 - Configured using settings in the theme editor
 - Given presets and added by merchants
@@ -18,6 +20,7 @@ Theme blocks are reusable components defined at the theme level that can be:
 Blocks render in the editor and storefront when they are referenced in [template files](mdc:.cursor/rules/templates.mdc).
 
 ### Basic Block Structure
+
 ```liquid
 {% doc %}
   Block description and usage examples
@@ -26,7 +29,10 @@ Blocks render in the editor and storefront when they are referenced in [template
   {% content_for 'block', type: 'block-name', id: 'unique-id' %}
 {% enddoc %}
 
-<div {{ block.shopify_attributes }} class="block-name">
+<div
+  {{ block.shopify_attributes }}
+  class='block-name'
+>
   <!-- Block content using block.settings -->
 </div>
 
@@ -53,48 +59,55 @@ Blocks render in the editor and storefront when they are referenced in [template
 Static blocks are theme blocks that are rendered directly in Liquid templates by developers, rather than being dynamically added through the theme editor. This allows for predetermined block placement with optional default settings.
 
 **Basic Static Block Syntax:**
+
 ```liquid
 {% content_for 'block', type: 'text', id: 'header-announcement' %}
 ```
 
 **Example: Product Template with Mixed Static and Dynamic Blocks**
+
 ```liquid
 <!-- templates/product.liquid -->
-<div class="product-page">
+<div class='product-page'>
   {% comment %} Static breadcrumb block {% endcomment %}
   {% content_for 'block', type: 'breadcrumb', id: 'product-breadcrumb' %}
 
-  <div class="product-main">
-    <div class="product-media">
+  <div class='product-main'>
+    <div class='product-media'>
       {% comment %} Static product gallery block {% endcomment %}
-      {% content_for 'block', type: 'product-gallery', id: 'main-gallery', settings: {
+      {%
+        content_for 'block', type: 'product-gallery', id: 'main-gallery', settings: {
         enable_zoom: true,
         thumbnails_position: "bottom"
-      } %}
+        }
+      %}
     </div>
 
-    <div class="product-info">
+    <div class='product-info'>
       {% comment %} Static product info blocks {% endcomment %}
       {% content_for 'block', type: 'product-title', id: 'product-title' %}
       {% content_for 'block', type: 'product-price', id: 'product-price' %}
       {% content_for 'block', type: 'product-form', id: 'product-form' %}
 
       {% comment %} Dynamic blocks area for additional content {% endcomment %}
-      <div class="product-extra-content">
+      <div class='product-extra-content'>
         {% content_for 'blocks' %}
       </div>
     </div>
   </div>
 
   {% comment %} Static related products block {% endcomment %}
-  {% content_for 'block', type: 'related-products', id: 'related-products', settings: {
+  {%
+    content_for 'block', type: 'related-products', id: 'related-products', settings: {
     heading: "You might also like",
     limit: 4
-  } %}
+    }
+  %}
 </div>
 ```
 
 **Key Points about Static Blocks:**
+
 - They have a fixed `id` that makes them identifiable in the theme editor
 - Settings can be overridden in the theme editor despite having defaults
 - They appear in the theme editor as locked blocks that can't be removed or reordered
@@ -111,7 +124,7 @@ See [schemas.mdc](mdc:.cursor/rules/schemas.mdc) for rules on schemas
 
 ```json
 {
-  "tag": null  // No wrapper - must include {{ block.shopify_attributes }} for proper editor function
+  "tag": null // No wrapper - must include {{ block.shopify_attributes }} for proper editor function
 }
 ```
 
@@ -120,6 +133,7 @@ See [schemas.mdc](mdc:.cursor/rules/schemas.mdc) for rules on schemas
 ### Accessing Block Data
 
 **Block Settings:**
+
 ```liquid
 {{ block.settings.text }}
 {{ block.settings.heading | escape }}
@@ -127,37 +141,85 @@ See [schemas.mdc](mdc:.cursor/rules/schemas.mdc) for rules on schemas
 ```
 
 **Block Properties:**
+
 ```liquid
-{{ block.id }}           // Unique block identifier
-{{ block.type }}         // Block type name
-{{ block.shopify_attributes }}  // Required for theme editor
+{{ block.id }} // Unique block identifier {{ block.type }} // Block type name {{ block.shopify_attributes }} // Required
+for theme editor
 ```
 
 **Section Context:**
+
 ```liquid
-{{ section.id }}         // Parent section ID
+{{ section.id }} // Parent section ID
 {{ section.settings.heading | escape }}
 {{ section.settings.image | image_url: width: 800 }}
 ```
 
 ## Nested Blocks Implementation
 
-### Rendering Nested Blocks
+### Critical Constraint: Single `content_for 'blocks'` Per File
+
+**IMPORTANT:** There can only be **ONE** `{% content_for 'blocks' %}` call per Liquid file. If you need to use the blocks content in multiple places (e.g., in conditional branches), you must capture it first:
+
 ```liquid
-<div class="block-container" {{ block.shopify_attributes }}>
+{% comment %} ✅ CORRECT - Capture once, use multiple times {% endcomment %}
+{% capture blocks_content %}
+  {% content_for 'blocks' %}
+{% endcapture %}
+
+{% if condition %}
+  <div class='layout-a'>
+    {{ blocks_content }}
+  </div>
+{% else %}
+  <div class='layout-b'>
+    {{ blocks_content }}
+  </div>
+{% endif %}
+```
+
+```liquid
+{% comment %} ❌ INCORRECT - Multiple content_for calls will cause errors {% endcomment %}
+{% if condition %}
+  <div class='layout-a'>
+    {% content_for 'blocks' %}
+    <!-- First call -->
+  </div>
+{% else %}
+  <div class='layout-b'>
+    {% content_for 'blocks' %}
+    <!-- ERROR: Duplicate entry -->
+  </div>
+{% endif %}
+```
+
+**Common Error Message:**
+
+```
+Liquid syntax error: Duplicate entries for 'content_for "blocks"'
+```
+
+### Rendering Nested Blocks
+
+```liquid
+<div
+  class='block-container'
+  {{ block.shopify_attributes }}
+>
   <h2>{{ block.settings.heading | escape }}</h2>
 
-  <div class="nested-blocks">
+  <div class='nested-blocks'>
     {% content_for 'blocks' %}
   </div>
 </div>
 ```
 
 ### Nesting with Layout Control
+
 ```liquid
 <div
-  class="group {{ block.settings.layout_direction }}"
-  style="--gap: {{ block.settings.gap }}px;"
+  class='group {{ block.settings.layout_direction }}'
+  style='--gap: {{ block.settings.gap }}px;'
   {{ block.shopify_attributes }}
 >
   {% content_for 'blocks' %}
@@ -165,6 +227,7 @@ See [schemas.mdc](mdc:.cursor/rules/schemas.mdc) for rules on schemas
 ```
 
 ### Presets with Nested Blocks
+
 ```json
 {
   "presets": [
@@ -193,34 +256,51 @@ See [schemas.mdc](mdc:.cursor/rules/schemas.mdc) for rules on schemas
 }
 ```
 
+When blocks are declared as an object instead of an array, include `block_order`:
+
+```javascript
+blocks: {
+  header: {
+    type: 'group',
+    blocks: {
+      title: { type: 'product-title' },
+      price: { type: 'price' },
+    },
+    block_order: ['title', 'price'],
+  },
+}
+```
+
 ## CSS and Styling
 
 See [css-standards.mdc](mdc:.cursor/rules/css-standards.mdc) for rules on writing CSS
 
 ### Scoped Styles
+
 ```liquid
 {% stylesheet %}
-.block-name {
-  padding: var(--block-padding, 1rem);
-  background: var(--block-background, transparent);
-}
+  .block-name {
+    padding: var(--block-padding, 1rem);
+    background: var(--block-background, transparent);
+  }
 
-.block-name__title {
-  font-size: var(--title-size, 1.5rem);
-  color: var(--title-color, inherit);
-}
+  .block-name__title {
+    font-size: var(--title-size, 1.5rem);
+    color: var(--title-color, inherit);
+  }
 
-.block-name--primary {
-  background-color: var(--color-primary);
-}
+  .block-name--primary {
+    background-color: var(--color-primary);
+  }
 
-.block-name--secondary {
-  background-color: var(--color-secondary);
-}
+  .block-name--secondary {
+    background-color: var(--color-secondary);
+  }
 {% endstylesheet %}
 ```
 
 ### Dynamic CSS Variables
+
 ```liquid
 <div
   class="custom-block"
@@ -236,16 +316,18 @@ See [css-standards.mdc](mdc:.cursor/rules/css-standards.mdc) for rules on writin
 ## Block Targeting
 
 ### Section Schema for Theme Blocks
+
 ```json
 {
   "blocks": [
-    { "type": "@theme" },  // Accept all theme blocks
-    { "type": "@app" }     // Accept app blocks
+    { "type": "@theme" }, // Accept all theme blocks
+    { "type": "@app" } // Accept app blocks
   ]
 }
 ```
 
 ### Restricted Block Targeting
+
 ```json
 {
   "blocks": [
@@ -264,18 +346,25 @@ See [css-standards.mdc](mdc:.cursor/rules/css-standards.mdc) for rules on writin
 ## Common Block Patterns
 
 ### Content Block
+
 ```liquid
-<div class="content-block {{ block.settings.style }}" {{ block.shopify_attributes }}>
+<div
+  class='content-block {{ block.settings.style }}'
+  {{ block.shopify_attributes }}
+>
   {% if block.settings.heading != blank %}
-    <h3 class="content-block__heading">{{ block.settings.heading | escape }}</h3>
+    <h3 class='content-block__heading'>{{ block.settings.heading | escape }}</h3>
   {% endif %}
 
   {% if block.settings.text != blank %}
-    <div class="content-block__text">{{ block.settings.text }}</div>
+    <div class='content-block__text'>{{ block.settings.text }}</div>
   {% endif %}
 
   {% if block.settings.button_text != blank %}
-    <a href="{{ block.settings.button_url }}" class="content-block__button">
+    <a
+      href='{{ block.settings.button_url }}'
+      class='content-block__button'
+    >
       {{ block.settings.button_text | escape }}
     </a>
   {% endif %}
@@ -283,18 +372,25 @@ See [css-standards.mdc](mdc:.cursor/rules/css-standards.mdc) for rules on writin
 ```
 
 ### Media Block
+
 ```liquid
-<div class="media-block" {{ block.shopify_attributes }}>
+<div
+  class='media-block'
+  {{ block.shopify_attributes }}
+>
   {% if block.settings.image %}
-    <div class="media-block__image">
-      {{ block.settings.image | image_url: width: 800 | image_tag:
-         alt: block.settings.image.alt | default: block.settings.alt_text
+    <div class='media-block__image'>
+      {{
+        block.settings.image
+        | image_url: width: 800
+        | image_tag: alt: block.settings.image.alt
+        | default: block.settings.alt_text
       }}
     </div>
   {% endif %}
 
   {% if block.settings.video %}
-    <div class="media-block__video">
+    <div class='media-block__video'>
       {{ block.settings.video | video_tag: controls: true }}
     </div>
   {% endif %}
@@ -302,13 +398,14 @@ See [css-standards.mdc](mdc:.cursor/rules/css-standards.mdc) for rules on writin
 ```
 
 ### Layout Block (Container)
+
 ```liquid
 <div
-  class="layout-block layout-block--{{ block.settings.layout_type }}"
-  style="
+  class='layout-block layout-block--{{ block.settings.layout_type }}'
+  style='
     --columns: {{ block.settings.columns }};
     --gap: {{ block.settings.gap }}px;
-  "
+  '
   {{ block.shopify_attributes }}
 >
   {% content_for 'blocks' %}
@@ -317,8 +414,8 @@ See [css-standards.mdc](mdc:.cursor/rules/css-standards.mdc) for rules on writin
 
 ## Performance Best Practices
 
-
 ### Conditional Rendering
+
 ```liquid
 {% liquid
   assign has_content = false
@@ -328,12 +425,14 @@ See [css-standards.mdc](mdc:.cursor/rules/css-standards.mdc) for rules on writin
 %}
 
 {% if has_content %}
-  <div class="block-content" {{ block.shopify_attributes }}>
+  <div
+    class='block-content'
+    {{ block.shopify_attributes }}
+  >
     <!-- Content here -->
   </div>
 {% endif %}
 ```
-
 
 ## Examples Referenced
 

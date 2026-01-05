@@ -4,33 +4,42 @@
   @param {object} product - The product object
   @param {string} section_id - The section ID
   @param {object} [block] - The block object
+  @param {string} [color_scheme] - The color scheme to use
 {%- enddoc -%}
 
 {% liquid
   assign product_form_id = 'QuickAdd-ProductForm-' | append: product.id | append: '-' | append: block.id
   assign add_to_cart_text = 'actions.add' | t
+  assign choose_options_text = 'actions.choose' | t
+  assign color_scheme = color_scheme | default: settings.quick_add_color_scheme
 
-  if closest.product.selected_or_first_available_variant.available
+  # Logic to determine which variant to use (matching swatch selection logic from product-card)
+  assign variant = product.selected_or_first_available_variant
+
+  if variant.available
     assign can_add_to_cart = true
   else
     assign can_add_to_cart = false
   endif
+
+  assign quick_add_button = 'choose'
+  if product.variants_count == 1 or product.options.size == 1 and product.selected_variant
+    assign quick_add_button = 'add'
+  endif
 %}
 
 <quick-add-component
-  class="quick-add color-{{ settings.quick_add_color_scheme }} "
+  class="quick-add color-{{ color_scheme }} "
   ref="quickAdd"
   data-product-title="{{ product.title }}"
+  data-quick-add-button="{{ quick_add_button }}"
+  data-product-options-count="{{ product.options.size }}"
 >
   <product-form-component
     data-section-id="{{ section_id }}"
     data-product-id="{{ product.id }}"
     on:submit="/handleSubmit"
-    class="
-      quick-add__product-form-component
-      {% if product.options.size == 1 %} quick-add__product-form-component--single-option {% else %} quick-add__product-form-component--multi-option {% endif %}
-      {% if product.variants.size == 1 %} quick-add__product-form-component--single-variant {% else %} quick-add__product-form-component--multi-variant {% endif %}
-    "
+    class="quick-add__product-form-component"
   >
     <div
       class="visually-hidden"
@@ -44,48 +53,62 @@
         type="hidden"
         name="id"
         ref="variantId"
-        value="{{ product.selected_or_first_available_variant.id }}"
-        {% if product.selected_or_first_available_variant.available == false %}
+        value="{{ variant.id }}"
+        {% if variant.available == false %}
           disabled
         {% endif %}
       >
       <input
         type="hidden"
         name="quantity"
-        value="{% if product.selected_or_first_available_variant.quantity_rule.min %}{{ product.selected_or_first_available_variant.quantity_rule.min }}{% else %}1{% endif %}"
+        value="{% if variant.quantity_rule.min %}{{ variant.quantity_rule.min }}{% else %}1{% endif %}"
       >
-      {% comment %} If there is one variant option but it's swatches or if it's a single variant product, then use add to cart button {% endcomment %}
-      {%- if product.variants.size == 1 or product.options.size == 1 -%}
-        {% render 'add-to-cart-button',
-          add_to_cart_text: add_to_cart_text,
-          class: 'button quick-add__button quick-add__button--add',
-          can_add_to_cart: can_add_to_cart,
-          icon_only_on_mobile: true,
-          product: product
-        %}
-      {%- endif -%}
-      {%- if product.variants.size > 1 -%}
-        <button
-          class="button quick-add__button quick-add__button--choose"
-          {% comment %} type="submit" is the default, so we explicitly set it to "button" to prevent the ProductFormComponent.handleSubmit from being triggered {% endcomment %}
-          type="button"
-          name="add"
-          on:click="quick-add-component/handleClick"
+      {% comment %}
+        Both Add and Choose buttons are rendered in the DOM, but only one is shown based on the data-quick-add-button attribute.
+
+        Logic for Add vs. Choose buttons:
+          Display "Add" button and add directly to cart if:
+            - There is only one variant on the product
+            - There is only one product option, and it is displayed as swatches on the product card, and a swatch is selected
+          Display "Choose" button and show the quick-add modal if:
+            - There is only one product option, and it is displayed as swatches on the product card, and no swatch is selected
+            - There is more than one product option
+      {% endcomment %}
+      {% render 'add-to-cart-button',
+        add_to_cart_text: add_to_cart_text,
+        class: 'button quick-add__button quick-add__button--add add-to-cart-button',
+        can_add_to_cart: can_add_to_cart,
+        icon_only_on_mobile: true,
+        product: product
+      %}
+
+      <button
+        class="button quick-add__button quick-add__button--choose add-to-cart-button"
+        {% comment %} type="submit" is the default, so we explicitly set it to "button" to prevent the ProductFormComponent.handleSubmit from being triggered {% endcomment %}
+        type="button"
+        name="add"
+        on:click="quick-add-component/handleClick"
+      >
+        <span
+          class="add-to-cart-text quick-add__button-content"
         >
+          {% comment %} split the icon and the text with a grid transition {% endcomment %}
           <span
-            class="add-to-cart-text"
+            aria-hidden="true"
+            class="svg-wrapper add-to-cart-icon quick-add__button-icon"
           >
-            <span
-              class="svg-wrapper add-to-cart-icon"
-            >
-              {{- 'icon-plus.svg' | inline_asset_content -}}
-            </span>
-            <span class="add-to-cart-text__content is-visually-hidden-mobile">
-              {{ add_to_cart_text }}
+            {{- 'icon-add-to-cart.svg' | inline_asset_content -}}
+          </span>
+          <span class="add-to-cart-text__content is-visually-hidden-mobile quick-add__button-text">
+            <span>
+              {% comment %} use a double-nested span to bake the padding into the text {% endcomment %}
+              <span>
+                {{ choose_options_text }}
+              </span>
             </span>
           </span>
-        </button>
-      {%- endif -%}
+        </span>
+      </button>
     {%- endform -%}
   </product-form-component>
 </quick-add-component>
@@ -94,29 +117,16 @@
   /* Quick Add */
   .quick-add {
     --quick-add-offset: var(--padding-sm);
-    --quick-add-top: calc(var(--quick-add-offset) + var(--padding-block-start));
     --quick-add-right: calc(var(--quick-add-offset) + var(--padding-inline-end));
     --quick-add-bottom: calc(var(--quick-add-offset) + var(--padding-block-end));
-    --quick-add-left: calc(var(--quick-add-offset) + var(--padding-inline-end));
 
     position: absolute;
-    display: var(--quick-add-mobile-display, none);
-    flex-direction: column;
-    justify-content: flex-end;
-    inset: max(var(--quick-add-top), calc((var(--border-radius) + var(--quick-add-top)) * (1 - cos(45deg))))
-      max(var(--quick-add-right), calc((var(--border-radius) + var(--quick-add-right)) * (1 - cos(45deg))))
-      max(var(--quick-add-bottom), calc((var(--border-radius) + var(--quick-add-bottom)) * (1 - cos(45deg))))
-      max(var(--quick-add-left), calc((var(--border-radius) + var(--quick-add-left)) * (1 - cos(45deg))));
-    width: auto;
-    height: auto;
+    inset: 0;
     z-index: var(--layer-raised);
-    cursor: default;
     pointer-events: none;
 
     @media screen and (min-width: 750px) {
       --quick-add-offset: var(--padding-md);
-
-      display: var(--quick-add-display, flex);
     }
   }
 
@@ -125,131 +135,100 @@
   }
 
   .quick-add[class*='color-scheme-'] {
-    background-color: transparent;
+    background-color: #0000;
+  }
+
+  product-card:is(:hover, :focus-within) .quick-add__button {
+    opacity: 1;
   }
 
   .quick-add__button {
-    display: grid;
-    padding: calc(var(--padding-xs) * 0.85);
+    display: var(--quick-add-mobile-display, none);
     align-items: center;
-    justify-items: center;
-    background-color: rgba(255, 255, 255, 0.7);
-    color: var(--color-foreground);
-    border-color: transparent;
-    box-shadow: none;
-    pointer-events: all;
-    position: relative;
+    background: linear-gradient(var(--color-background) 0 100%) padding-box;
+    padding: 0;
+    border-radius: 50px;
+    border: 2px solid hsl(0 0% 0% / 0.15);
+    height: var(--button-size-md);
+    cursor: pointer;
+    opacity: var(--quick-add-mobile-opacity, 0);
     overflow: hidden;
-    border-radius: 50%;
-    aspect-ratio: 1;
-    width: fit-content;
-    height: fit-content;
+    color: var(--color-foreground);
+    pointer-events: all;
+    position: absolute;
+    right: max(var(--quick-add-right), calc((var(--border-radius) + var(--quick-add-right)) * (1 - cos(45deg))));
+    bottom: max(var(--quick-add-bottom), calc((var(--border-radius) + var(--quick-add-bottom)) * (1 - cos(45deg))));
+    backdrop-filter: blur(20px) saturate(180%);
 
-    @media screen and (min-width: 750px) {
-      display: none;
-      padding: calc(var(--padding-xs) * 0.85) calc(var(--padding-sm) * 0.85);
+    &:active {
+      scale: 0.99;
+      translate: 0 1px;
     }
 
     .quick-add[stay-visible] & {
       display: grid;
     }
-  }
 
-  .quick-add__button .add-to-cart-icon {
-    width: 1em;
-    height: 1em;
-    color: #333333;
-  }
+    &:is(:hover, :focus-visible) {
+      .add-to-cart-text__content {
+        grid-template-columns: 1fr;
 
-  .quick-add__button .add-to-cart-icon svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .quick-add__button .add-to-cart-icon svg path,
-  .quick-add__button .add-to-cart-icon svg line,
-  .quick-add__button .add-to-cart-icon svg circle,
-  .quick-add__button .add-to-cart-icon svg rect {
-    stroke-width: 1.5;
-  }
-
-  .quick-add__button .add-to-cart-text {
-    gap: 0;
-    line-height: 1;
-    grid-row: 1 / span 1;
-    grid-column: 1 / span 1;
-    animation: none;
-
-    @media screen and (min-width: 750px) {
-      /* offset button padding to show a round button in a collapsed state */
-      margin-inline: calc(var(--padding-sm) * -1);
-      padding-inline: var(--padding-xs);
-    }
-  }
-
-  .quick-add__button .add-to-cart-text--added {
-    position: relative;
-    grid-row: 1 / span 1;
-    grid-column: 1 / span 1;
-    justify-self: end;
-    line-height: 1;
-
-    @media screen and (min-width: 750px) {
-      width: 0;
-    }
-  }
-
-  .quick-add__button .add-to-cart-text__content {
-    width: 0;
-    opacity: 0;
-    transform: translateX(1em);
-    transition: width var(--animation-speed) ease-in-out, opacity var(--animation-speed) ease-in-out,
-      transform var(--animation-speed) ease-in-out;
-    interpolate-size: allow-keywords;
-    will-change: width, opacity, transform;
-  }
-
-  @container (min-width: 99px) {
-    .quick-add[stay-visible] .add-to-cart-text {
-      gap: var(--gap-2xs);
-
-      @media screen and (min-width: 750px) {
-        /* offset button padding to show a round button in a collapsed state */
-        margin-inline: 0;
-        padding-inline: 0;
+        span span {
+          opacity: 1;
+          translate: 0 0;
+          filter: blur(0);
+        }
       }
     }
 
-    .quick-add[stay-visible] .add-to-cart-text__content {
-      width: fit-content;
-      opacity: 1;
-      transform: translateX(0);
+    @media screen and (min-width: 750px) {
+      display: var(--quick-add-display, flex);
+      opacity: 0;
     }
   }
 
-  .quick-add__button.atc-added .add-to-cart-text {
-    opacity: 1;
+  .quick-add__button .add-to-cart-text {
+    background: var(--color-background);
+    overflow: hidden;
+    border-radius: 50px;
+    height: 100%;
+    gap: 0;
   }
 
-  .quick-add__button.atc-added .add-to-cart-icon {
-    opacity: 1;
-    display: block;
+  .quick-add__button .svg-wrapper .checkmark-burst {
+    width: 22px;
+    height: 22px;
   }
 
-  .quick-add__button.atc-added .add-to-cart-text--added {
-    opacity: 1;
-    width: auto;
+  .quick-add__button .add-to-cart-icon {
+    /* account for border width */
+    height: 100%;
+    width: calc(var(--button-size-md) - 4px);
+  }
 
-    @supports (width: calc-size(auto, size)) {
-      width: calc-size(auto, size);
+  .quick-add__button .add-to-cart-text__content {
+    display: grid;
+    grid-template-columns: 0fr;
+
+    & > span {
+      min-width: 0;
+
+      span {
+        padding-right: var(--padding-sm);
+        opacity: 0;
+        display: inline-block;
+        filter: blur(2px);
+        translate: 0.5ch 0;
+      }
     }
   }
 
-  .quick-add__button.atc-added .add-to-cart-text {
+  .quick-add__button[data-added='true'] .add-to-cart-text {
     animation-name: atc-fade-out;
   }
 
-  .quick-add__button.atc-added .add-to-cart-text--added {
+  .quick-add__button[data-added='true'] .add-to-cart-text--added {
+    translate: 0 0;
     animation-name: atc-fade-in;
   }
 
@@ -277,32 +256,41 @@
   .quick-add-modal .media-gallery--carousel slideshow-component {
     --cursor: default;
   }
+  @media (prefers-reduced-motion: reduce) {
+    .quick-add__button .add-to-cart-text__content {
+      grid-template-columns: 1fr;
 
-  @keyframes atc-fade-in {
-    from {
-      opacity: 0;
-      transform: translateX(1em);
-      position: absolute;
-    }
-
-    to {
-      opacity: 1;
-      transform: translateX(0);
-      position: inherit;
+      span span {
+        opacity: 1;
+        translate: 0 0;
+        filter: blur(0);
+      }
     }
   }
+  @media (prefers-reduced-motion: no-preference) {
+    .quick-add__button {
+      transition-property: scale, translate, opacity;
+      transition-duration: var(--animation-speed);
+      transition-timing-function: var(--ease-out-cubic);
 
-  @keyframes atc-fade-out {
-    from {
-      opacity: 1;
-      transform: translateX(0);
-      position: inherit;
+      &:is(:hover, :focus-visible) {
+        .add-to-cart-text__content,
+        .add-to-cart-text__content span span {
+          transition-delay: var(--animation-speed);
+        }
+      }
     }
 
-    to {
-      opacity: 0;
-      transform: translateX(-1em);
-      position: absolute;
+    .quick-add__button .add-to-cart-text__content {
+      transition-property: grid-template-columns;
+      transition-duration: var(--animation-speed);
+      transition-timing-function: var(--ease-out-cubic);
+
+      span span {
+        transition-property: opacity, filter, translate;
+        transition-duration: var(--animation-speed-slow);
+        transition-timing-function: var(--ease-out-quad);
+      }
     }
   }
 {% endstylesheet %}

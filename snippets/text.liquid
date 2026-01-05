@@ -3,54 +3,43 @@
 
   @param {string} [class] - custom class to define in addition to text-block classes
   @param {string} [fallback_text] - fallback text if settings.text does not exist
+  @param {object} [block] - The block object
   @param {string} [width] - width of the text block
 {%- enddoc -%}
 
 {% liquid
-  assign plain_text = block.settings.text | strip_newlines | strip_html | strip
-  assign text_width = width | default: block.settings.width
+  assign block_settings = block.settings
+  assign plain_text = block_settings.text | strip_newlines | strip_html | strip
+  assign text_width = width | default: block_settings.width
 
-  if block.settings.font_size contains 'heading-lg' or block.settings.font_size contains 'heading-xl'
+  if block_settings.font_size contains 'heading-lg' or block_settings.font_size contains 'heading-xl'
     assign type = 'display'
-  elsif block.settings.font_size contains 'heading'
+  elsif block_settings.font_size contains 'heading'
     assign type = 'heading'
   else
     assign type = 'body'
   endif
-  if block.settings.type_preset == 'rte' or block.settings.type_preset == 'paragraph'
+  if block_settings.type_preset == 'rte' or block_settings.type_preset == 'paragraph'
     assign is_rte = true
-  endif
-
-  # Check if this is product description by checking block name in shopify_attributes or block ID
-  assign is_product_description = false
-  if block.shopify_attributes contains 'data-shopify-block-name="Product description"' 
-    assign is_product_description = true
-  elsif block.shopify_attributes contains 'Product description'
-    assign is_product_description = true
-  elsif block.id contains 'text_aEtTtq'
-    assign is_product_description = true
   endif
 
   capture text_block_classes
     if text_width == '100%'
-      echo 'text-block--align-' | append: block.settings.alignment
-      if block.settings.max_width == 'none'
+      echo 'text-block--align-' | append: block_settings.alignment
+      if block_settings.max_width == 'none'
         echo ' text-block--full-width '
       endif
     endif
-    if block.settings.type_preset == 'custom'
+    if block_settings.type_preset == 'custom'
       echo ' custom-typography '
-      if block.settings.font_size != ''
+      if block_settings.font_size != ''
         echo ' custom-font-size '
       endif
-      if block.settings.color != ''
+      if block_settings.color != ''
         echo ' custom-color '
       endif
     endif
-    if block.settings.type_preset == 'h1' or block.settings.type_preset == 'h2' or block.settings.type_preset == 'h3' or block.settings.type_preset == 'h4' or block.settings.type_preset == 'h5' or block.settings.type_preset == 'h6'
-      echo ' sacramento-font '
-    endif
-    if block.settings.background
+    if block_settings.background
       echo ' text-block--background '
     endif
     if is_rte
@@ -60,27 +49,28 @@
 %}
 
 {% capture attributes %}
-  class="{{ class }} spacing-style text-block text-block--{{ block.id }} {{ block.settings.type_preset }}
-    {{ text_block_classes }}{% if is_product_description %} product-description-text{% endif %}{% if block.id contains 'text_aEtTtq' %} product-description-text{% endif %}
+  class="{{ class }} spacing-style text-block text-block--{{ block.id }} {{ block_settings.type_preset }}
+    {{ text_block_classes }}
   "
 
   style="
-    {% render 'spacing-padding', settings: block.settings %}
-    {% render 'typography-style', settings: block.settings %}
+    {% render 'spacing-padding', settings: block_settings %}
+    {% render 'typography-style', settings: block_settings %}
     --width: {{ text_width }};
-    --max-width: var(--max-width--{{ type }}-{{ block.settings.max_width }});
+    --max-width: var(--max-width--{{ type }}-{{ block_settings.max_width }});
     {% if text_width == "100%" %}
-      --text-align: {{ block.settings.alignment }};
+      --text-align: {{ block_settings.alignment }};
     {% endif %}
-    {% if block.settings.background %}
-      --text-background-color: {{ block.settings.background_color | default: 'rgb(255 255 255 / 1.0)' }};
-      --text-corner-radius: {{ block.settings.corner_radius }}px;
+    {% if block_settings.background %}
+      --text-background-color: {{ block_settings.background_color | default: 'rgb(255 255 255 / 1.0)' }};
+      --text-corner-radius: {{ block_settings.corner_radius }}px;
       --text-padding: max(var(--padding-2xs), calc((var(--text-corner-radius) + var(--padding-xs)) * (1 - cos(45deg))));
     {% endif %}
   "
 
   {{ block.shopify_attributes }}
 {% endcapture %}
+
 {% liquid
   # {{ attributes }} must be on the immediate HTML parent of the text to preserve
   # the click-to-edit connection in the theme editor. Any break between the text,
@@ -92,48 +82,14 @@
   endif
 %}
 
-{% comment %} Check if this is the collection title on the all collection page {% endcomment %}
-{% liquid
-  assign is_collection_title_on_all = false
-  # Check if we're on the all collection page and this text block contains the collection title template
-  if collection.handle == 'all'
-    # Check if it contains the template variable (before rendering) or the rendered collection title
-    if block.settings.text contains 'closest.collection.title'
-      assign is_collection_title_on_all = true
-    elsif block.settings.text contains '<h2>'
-      if plain_text == collection.title or plain_text == 'Products' or plain_text == 'All Products'
-        assign is_collection_title_on_all = true
-      endif
-    endif
-  endif
-%}
-
 {% if fallback_text != blank and plain_text == blank %}
-  <div {{ attributes }}>
-    {% if is_collection_title_on_all %}
-      <h2>Our Selections</h2>
-    {% else %}
-      {{ fallback_text }}
-    {% endif %}
+  <div {{ attributes | strip_newlines | strip }}>
+    {{ fallback_text }}
   </div>
 {% elsif plain_text != blank %}
-  <div class="product-description-wrapper{% if is_product_description %} product-description-wrapper--clamped{% endif %}">
-  <{{ element }} {{ attributes }}>
-    {% if is_collection_title_on_all %}
-      <h2>Our Selections</h2>
-    {% else %}
-      {{ block.settings.text }}
-    {% endif %}
+  <{{ element }} {{ attributes | strip_newlines | strip }}>
+    {{ block.settings.text }}
   </{{ element }}>
-    {% if is_product_description %}
-      <button type="button" class="product-description-read-more" aria-label="Read more">
-        Read more
-      </button>
-      <button type="button" class="product-description-read-less" aria-label="Read less" hidden>
-        Read less
-      </button>
-    {% endif %}
-  </div>
 {% endif %}
 
 {% stylesheet %}
@@ -171,7 +127,7 @@
 
   .text-block > * {
     width: var(--width);
-    max-width: var(--max-width, 100%);
+    max-inline-size: min(100%, var(--max-width, 100%));
     text-align: var(--text-align, var(--text-align-default));
     text-wrap: var(--text-wrap);
   }
@@ -260,210 +216,4 @@
   .custom-color > :is(h1, h2, h3, h4, h5, h6, p, *) {
     color: var(--color);
   }
-  
-  /* Product title with vendor - single line clamp */
-  .product-title-with-vendor,
-  .text-block .product-title-with-vendor,
-  .text-block > .product-title-with-vendor,
-  .text-block > rte-formatter .product-title-with-vendor,
-  .text-block > rte-formatter > .product-title-with-vendor,
-  rte-formatter .product-title-with-vendor,
-  rte-formatter > .product-title-with-vendor {
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    display: block !important;
-    text-wrap: nowrap !important;
-    line-height: 1.5 !important;
-    word-break: normal !important;
-    word-wrap: normal !important;
-    hyphens: none !important;
-  }
-  
-  .product-title-with-vendor *,
-  .text-block .product-title-with-vendor *,
-  .text-block > .product-title-with-vendor *,
-  rte-formatter .product-title-with-vendor *,
-  rte-formatter > .product-title-with-vendor *,
-  .product-title-with-vendor span {
-    display: inline !important;
-    white-space: nowrap !important;
-    vertical-align: baseline !important;
-    line-height: inherit !important;
-  }
-  
-  /* Prevent vendor from wrapping separately */
-  .product-title-with-vendor span {
-    display: inline !important;
-    white-space: nowrap !important;
-    vertical-align: baseline !important;
-    word-wrap: normal !important;
-    word-break: keep-all !important;
-    overflow: visible !important;
-    position: static !important;
-    float: none !important;
-    clear: none !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    width: auto !important;
-    flex-shrink: 0 !important;
-    flex-grow: 0 !important;
-    text-wrap: nowrap !important;
-    line-break: auto !important;
-    overflow-wrap: normal !important;
-    break-inside: avoid !important;
-    break-after: avoid !important;
-    break-before: avoid !important;
-  }
-  
-  /* Ensure vendor text content inside span also doesn't wrap */
-  .product-title-with-vendor span *,
-  .product-title-with-vendor span::before,
-  .product-title-with-vendor span::after {
-    white-space: nowrap !important;
-    text-wrap: nowrap !important;
-  }
-  
-  /* Ensure the paragraph itself doesn't break the span */
-  .product-title-with-vendor {
-    word-spacing: normal !important;
-    letter-spacing: normal !important;
-  }
-  
-  /* Override text-wrap from parent */
-  .text-block:has(.product-title-with-vendor) > *,
-  .text-block:has(.product-title-with-vendor) > rte-formatter {
-    text-wrap: nowrap !important;
-    white-space: nowrap !important;
-  }
-  
-  .text-block:has(.product-title-with-vendor) .product-title-with-vendor {
-    text-wrap: nowrap !important;
-    white-space: nowrap !important;
-  }
-  
-  /* Prevent any line breaks */
-  .product-title-with-vendor br {
-    display: none !important;
-  }
-
-  /* Product description wrapper */
-  .product-description-wrapper {
-    position: relative;
-  }
-  
-  /* Product description line clamping - target by block ID and class */
-  .product-description-wrapper--clamped .text-block--text_aEtTtq,
-  .product-description-wrapper--clamped .product-description-text {
-    max-height: 4.5rem !important;
-    overflow: hidden !important;
-    transition: max-height 0.4s ease-in-out, overflow 0.4s ease-in-out;
-  }
-  
-  .product-description-wrapper--clamped .text-block--text_aEtTtq rte-formatter,
-  .product-description-wrapper--clamped .text-block--text_aEtTtq.product-description-text rte-formatter,
-  .product-description-wrapper--clamped rte-formatter.product-description-text {
-    display: -webkit-box !important;
-    -webkit-line-clamp: 3 !important;
-    line-clamp: 3 !important;
-    -webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-height: 4.5rem !important;
-    line-height: 1.5 !important;
-    height: auto !important;
-    transition: max-height 0.4s ease-in-out, overflow 0.4s ease-in-out, -webkit-line-clamp 0.4s ease-in-out;
-  }
-  
-  /* Expanded state */
-  .product-description-wrapper--expanded .text-block--text_aEtTtq,
-  .product-description-wrapper--expanded .product-description-text {
-    max-height: 2000px !important;
-    overflow: visible !important;
-    transition: max-height 0.4s ease-in-out, overflow 0.4s ease-in-out;
-  }
-  
-  .product-description-wrapper--expanded .text-block--text_aEtTtq rte-formatter,
-  .product-description-wrapper--expanded .text-block--text_aEtTtq.product-description-text rte-formatter,
-  .product-description-wrapper--expanded rte-formatter.product-description-text {
-    display: block !important;
-    -webkit-line-clamp: none !important;
-    line-clamp: none !important;
-    -webkit-box-orient: initial !important;
-    overflow: visible !important;
-    max-height: 2000px !important;
-    transition: max-height 0.4s ease-in-out, overflow 0.4s ease-in-out, -webkit-line-clamp 0.4s ease-in-out;
-  }
-  
-  /* Read more/less buttons */
-  .product-description-read-more,
-  .product-description-read-less {
-    margin-block-start: 0.5rem;
-    padding: 0;
-    background: none;
-    border: none;
-    color: var(--color-primary);
-    cursor: pointer;
-    font-family: var(--font-body--family);
-    font-size: var(--font-body--size);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
-  }
-  
-  .product-description-read-more:hover,
-  .product-description-read-less:hover {
-    color: var(--color-primary-hover);
-  }
-  
-  .product-description-wrapper--expanded .product-description-read-more {
-    display: none;
-  }
-  
-  .product-description-wrapper--expanded .product-description-read-less {
-    display: block;
-  }
 {% endstylesheet %}
-
-{% if is_product_description %}
-<script>
-  (function() {
-    // Prevent duplicate listeners
-    if (window.productDescriptionReadMoreInitialized) return;
-    window.productDescriptionReadMoreInitialized = true;
-    
-    // Use event delegation to handle all instances
-    document.addEventListener('click', function(event) {
-      if (event.target.classList.contains('product-description-read-more')) {
-        const wrapper = event.target.closest('.product-description-wrapper');
-        if (!wrapper) return;
-        
-        const readLessBtn = wrapper.querySelector('.product-description-read-less');
-        
-        // Start the expansion animation - expand downward naturally
-        wrapper.classList.remove('product-description-wrapper--clamped');
-        wrapper.classList.add('product-description-wrapper--expanded');
-        event.target.hidden = true;
-        if (readLessBtn) readLessBtn.hidden = false;
-        
-        // Don't scroll - let it expand naturally downward
-        // The content will expand in place, looking smooth from visitor's perspective
-      } else if (event.target.classList.contains('product-description-read-less')) {
-        const wrapper = event.target.closest('.product-description-wrapper');
-        if (!wrapper) return;
-        
-        const readMoreBtn = wrapper.querySelector('.product-description-read-more');
-        
-        // Start the collapse animation - collapse in place, no scrolling
-        wrapper.classList.remove('product-description-wrapper--expanded');
-        wrapper.classList.add('product-description-wrapper--clamped');
-        event.target.hidden = true;
-        if (readMoreBtn) readMoreBtn.hidden = false;
-        
-        // No scrolling - let it collapse naturally in place
-      }
-    });
-  })();
-</script>
-{% endif %}

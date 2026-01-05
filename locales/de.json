@@ -1,12 +1,3 @@
-/*
- * ------------------------------------------------------------
- * IMPORTANT: The contents of this file are auto-generated.
- *
- * This file may be updated by the Shopify admin language editor
- * or related systems. Please exercise caution as any changes
- * made to this file may be overwritten.
- * ------------------------------------------------------------
- */
 {
   "blocks": {
     "load_video": "Video laden: {{ description }}",
@@ -25,7 +16,8 @@
       "comment": "Kommentar",
       "post_success": "Danke, dass du uns kontaktiert hast. Wir werden uns so schnell wie möglich bei dir melden.",
       "error_heading": "Bitte passe Folgendes an:"
-    }
+    },
+    "slider_label": "Slider"
   },
   "accessibility": {
     "play_model": "3D-Modell abspielen",
@@ -46,7 +38,7 @@
     "search_results_count": "{{ count }} Suchergebnisse für „{{ query }}“ gefunden",
     "search_results_no_results": "Keine Ergebnisse für „{{ query }}“ gefunden",
     "filters": "Filter",
-    "account": "Kontomenü öffnen",
+    "account": "Konto",
     "cart": "Warenkorb",
     "cart_count": "Artikel im Warenkorb insgesamt",
     "filter_count": {
@@ -58,18 +50,22 @@
     "slide_status": "Folie {{ index }} von {{ length }}",
     "scroll_to": "Zu {{ title }} scrollen",
     "discount": "Rabattcode anwenden",
+    "discount_menu": "Rabattcodes",
     "loading_product_recommendations": "Produktempfehlungen werden geladen",
     "discount_applied": "Angewendeter Rabattcode: {{ code }}",
-    "open_cart_drawer": "Warenkorb öffnen",
     "inventory_status": "Inventarstatus",
     "pause_video": "Video pausieren",
     "find_country": "Land finden",
-    "localization_region_and_language": "Region- und Sprachauswahl öffnen",
-    "open_search_modal": "Suche öffnen",
+    "localization_region_and_language": "Region- und Sprachwahl",
     "decrease_quantity": "Menge verringern",
     "increase_quantity": "Menge erhöhen",
     "quantity": "Anzahl",
-    "rating": "Die Bewertung für dieses Produkts lautet {{ rating }} von 5 Sternen"
+    "rating": "Die Bewertung für dieses Produkts lautet {{ rating }} von 5 Sternen",
+    "nested_product": "{{ product_title }} für {{ parent_title }}",
+    "remove": "Entfernen",
+    "view_pricing_info": "Preisinformationen anzeigen",
+    "open_hotspot": "Hotspot öffnen",
+    "slideshow": "Slideshow"
   },
   "actions": {
     "add_to_cart": "In den Warenkorb legen",
@@ -108,7 +104,8 @@
     "sign_up": "Registrieren",
     "open_image_in_full_screen": "Bild im Vollbildmodus öffnen",
     "sort": "Sortieren",
-    "show_all_options": "Alle Optionen anzeigen"
+    "show_all_options": "Alle Optionen anzeigen",
+    "open": "Öffnen"
   },
   "content": {
     "reviews": "Reviews",
@@ -221,7 +218,50 @@
     "powered_by": "Dieser Shop wird unterstützt werden von",
     "store_owner_link_html": "Bist du der Shop-Inhaber? <a href=\"{{ link }}\">Hier einloggen</a>",
     "shipping_discount_error": "Versandrabatte werden beim Checkout angezeigt, nachdem die Adresse hinzugefügt wurde",
-    "discount_code_error": "Rabattcode kann nicht auf den Warenkorb angewendet werden"
+    "discount_code_error": "Rabattcode kann nicht auf den Warenkorb angewendet werden",
+    "recipient_form_send_to": "Senden an",
+    "recipient_form_email_label": "E-Mail-Adresse des Empfängers",
+    "recipient_form_email_label_my_email": "Meine E-Mail-Adresse",
+    "recipient_form_email_address": "Empfänger-E-Mail-Adresse",
+    "recipient_form_name_label": "Name des Empfängers (optional)",
+    "recipient_form_message": "Nachricht (optional)",
+    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} Zeichen verwendet",
+    "recipient_form_send_on": "JJJJ-MM-TT",
+    "recipient_form_send_on_label": "Senden am (optional)",
+    "recipient_form_fields_visible": "Empfängerformularfelder sind jetzt sichtbar.",
+    "recipient_form_fields_hidden": "Empfängerformularfelder sind jetzt ausgeblendet.",
+    "recipient_form_error": "Beim Absenden des Formulars ist ein Fehler aufgetreten.",
+    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} Zeichen verwendet",
+    "terms_and_policies": "Geschäftsbedingungen und Richtlinien",
+    "pagination": {
+      "nav_label": "Seitennavigation",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "page": "Seite {{ page }}"
+    },
+    "volume_pricing_available": "Volumenabhängige Preisgestaltung verfügbar",
+    "volume_pricing": "Mengenrabatte",
+    "at_price_each": "bei {{ price }}/Stück",
+    "each": "({{ price }}/Stück)",
+    "each_abbreviation": "Stück",
+    "price_at": "bei",
+    "price_range": "Preisspanne",
+    "item_count_cutoff": "Mehr als {{ count }} Artikel",
+    "cancel": "Abbrechen",
+    "product_subtotal": "Produktzwischensumme",
+    "quantity_per_item": "/Stk.",
+    "remove_all": "Alle entfernen",
+    "remove_all_items_confirmation": "Alle {{ count }} Artikel aus deinem Warenkorb entfernen?",
+    "remove_one_item_confirmation": "1 Artikel aus dem Warenkorb entfernen?",
+    "total_items": "Artikel gesamt",
+    "variant": "Variante",
+    "variant_total": "Varianten insgesamt",
+    "view_cart": "Warenkorb ansehen",
+    "your_cart": "Dein Warenkorb",
+    "items_added_to_cart": {
+      "one": "1 Artikel zum Warenkorb hinzugefügt",
+      "other": "{{ count }} Artikel zum Warenkorb hinzugefügt"
+    }
   },
   "gift_cards": {
     "issued": {
@@ -241,7 +281,12 @@
     "password": "Passwort",
     "search": "Suchen",
     "product_title": "Produkttitel",
-    "collection_title": "Kollektionstitel"
+    "collection_title": "Kollektionstitel",
+    "blog_posts": "Blog-Beiträge",
+    "blog_post_title": "Titel",
+    "blog_post_author": "Autor",
+    "blog_post_date": "Datum",
+    "blog_post_description": "Ein Auszug aus dem Inhalt deines Blog-Beitrags"
   },
   "products": {
     "product": {
@@ -250,7 +295,15 @@
       "adding_to_cart": "Wird hinzugefügt...",
       "add_to_cart_error": "Fehler beim Hinzufügen zum Warenkorb",
       "sold_out": "Ausverkauft",
-      "unavailable": "Nicht verfügbar"
+      "unavailable": "Nicht verfügbar",
+      "quantity_error_max": "Dieser Artikel hat ein Maximum von {{ maximum }}",
+      "quantity": "Menge",
+      "quantity_increments": "In {{ increment }}er Schritten",
+      "quantity_minimum": "Mindestens {{ minimum }}",
+      "quantity_maximum": "Maximal {{ maximum }}",
+      "in_cart": "im Warenkorb",
+      "default_title": "Standardtitel",
+      "sticky_add_to_cart": "Leiste „Schnell in den Warenkorb“"
     }
   },
   "fields": {

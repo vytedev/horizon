@@ -34,6 +34,9 @@
         --spacing--size: {{ block.settings.menu_spacing }}px;
         {% render 'spacing-style', settings: block.settings %}
       "
+      {% if show_as_accordion == false %}
+        open
+      {% endif %}
       {{ block.shopify_attributes }}
     >
       <summary class="menu__heading{% if heading == blank %} menu__heading--empty{% endif %} {{ block.settings.heading_preset }}">

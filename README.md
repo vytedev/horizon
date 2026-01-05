@@ -15,11 +15,21 @@ Horizon is the flagship of a new generation of first party Shopify themes. It in
 
 ## Getting started
 
-We recommend using the Skeleton Theme as a starting point for theme development. [Learn more on Shopify.dev](https://shopify.dev/themes/getting-started/create).
+We recommend using the Skeleton Theme as a starting point for a theme development project. [Learn more on Shopify.dev](https://shopify.dev/themes/getting-started/create).
 
-> If you're building a theme for the Shopify Theme Store, then do not use Horizon as a starting point. Themes based on, derived from, or incorporating Horizon are not eligible for submission to to the Shopify Theme Store. Use the [Skeleton Theme](https://github.com/Shopify/skeleton-theme) instead. Learn about the [theme developer tools](https://shopify.dev/docs/storefronts/themes/tools).
+To create a new theme project based on Horizon:
 
-Please note that the develop branch may include code for features not yet released. The "stable" version of Horizon is available in the theme store and the [public repository](https://github.com/Shopify/horizon).
+```sh
+git clone https://github.com/Shopify/horizon.git
+```
+
+Install the [Shopify CLI](https://shopify.dev/docs/storefronts/themes/tools/cli) to connect your local project to a Shopify store. Learn about the [theme developer tools](https://shopify.dev/docs/storefronts/themes/tools) available, and the suggested [developer tools](#developer-tools) below.
+
+Please note that the `main` branch may include code for features not yet released. You may encounter Liquid API properties that are not publicly documented, but will be when the feature is officially rolled out.
+
+### Shopify Theme Store development
+
+If you're building a theme for the Shopify Theme Store, then do not use Horizon as a starting point. Themes based on, derived from, or incorporating Horizon are not eligible for submission to to the Shopify Theme Store. Use the [Skeleton Theme](https://github.com/Shopify/skeleton-theme) instead.
 
 ## Staying up to date with Horizon changes
 
@@ -35,14 +45,14 @@ git remote -v
 3. If you don't see an `upstream`, you can add one that points to Shopify's Horizon repository:
 
 ```sh
-git remote add upstream https://github.com/Shopify/horizon-private.git
+git remote add upstream https://github.com/Shopify/horizon.git
 ```
 
 4. Pull in the latest Horizon changes into your repository:
 
 ```sh
 git fetch upstream
-git pull upstream develop
+git pull upstream main
 ```
 
 ## Developer tools
@@ -68,10 +78,6 @@ shopify theme check
 ```
 
 You can follow the [theme check documentation](https://shopify.dev/docs/storefronts/themes/tools/theme-check) for more details.
-
-### Continuous Integration
-
-Horizon uses [GitHub Actions](https://github.com/features/actions) to maintain the quality of the theme. [This is a starting point](https://github.com/Shopify/horizon-private/blob/main/.github/workflows/ci.yml) and what we suggest to use in order to ensure you're building better themes. Feel free to build off of it!
 
 #### Shopify/theme-check-action
 

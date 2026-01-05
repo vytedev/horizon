@@ -13,7 +13,7 @@ import { Component } from '@theme/component';
  * The options for the morph
  * @type {Options}
  */
-const MORPH_OPTIONS = {
+export const MORPH_OPTIONS = {
   childrenOnly: true,
   reject(oldNode, newNode) {
     if (newNode.nodeType === Node.TEXT_NODE && newNode.nodeValue?.trim() === '') {
@@ -41,7 +41,7 @@ const MORPH_OPTIONS = {
   },
   onBeforeUpdate(oldNode, newNode) {
     if (oldNode instanceof Element && newNode instanceof Element) {
-      const attributes = ['product-grid-view'];
+      const attributes = ['product-grid-view', 'data-current-checked', 'data-previous-checked', 'cart-summary-sticky'];
 
       for (const attribute of attributes) {
         const oldValue = oldNode.getAttribute(attribute);
@@ -53,13 +53,18 @@ const MORPH_OPTIONS = {
       }
 
       // Special case for elements that need to keep their style
-      const elements = ['floating-panel-component'];
+      const elements = ['floating-panel-component', 'fieldset.variant-option'];
+      const ids = ['account-popover'];
 
       for (const element of elements) {
-        const tagName = element.toUpperCase();
-        if (oldNode.tagName === tagName && newNode.tagName === tagName) {
+        if (oldNode.matches(element) && newNode.matches(element)) {
           const oldStyle = oldNode.getAttribute('style');
-
+          if (oldStyle) newNode.setAttribute('style', oldStyle);
+        }
+      }
+      for (const id of ids) {
+        if (oldNode.id === id && newNode.id === id) {
+          const oldStyle = oldNode.getAttribute('style');
           if (oldStyle) newNode.setAttribute('style', oldStyle);
         }
       }
@@ -311,27 +316,9 @@ function updateInput(newNode, oldNode) {
   // Skip file inputs since they can't be changed programmatically
   if (oldNode.type === 'file') return;
 
-  // For quantity inputs, prevent events from firing during morph to avoid triggering quantity updates
-  const isQuantityInput = oldNode.name === 'quantity' || 
-                         oldNode.name?.includes('updates[]') || 
-                         oldNode.dataset?.cartLine !== undefined;
-  
   if (newValue !== oldNode.value) {
     oldNode.setAttribute('value', newValue);
-    
-    // Temporarily disable events for quantity inputs during morph
-    if (isQuantityInput) {
-      oldNode.dataset.morphing = 'true';
-    }
-    
     oldNode.value = newValue;
-    
-    // Re-enable after a microtask to allow morph to complete
-    if (isQuantityInput) {
-      queueMicrotask(() => {
-        delete oldNode.dataset.morphing;
-      });
-    }
   }
 
   if (newValue === 'null') {

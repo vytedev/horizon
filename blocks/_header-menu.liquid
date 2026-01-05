@@ -1,4 +1,3 @@
-{% # import schema from '../schemas/blocks/_header-menu.js' %}
 {%- doc -%}
   Renders a header menu block.
 
@@ -7,15 +6,8 @@
 {%- enddoc -%}
 
 {% liquid
+  assign block_settings = block.settings
   assign animation_speed = 200
-
-  if block.settings.menu_style == 'featured_products' and block.settings.product_title_case == 'uppercase'
-    assign title_case_style = ' --title-case: uppercase;'
-  elsif block.settings.menu_style == 'featured_collections' and block.settings.collection_title_case == 'uppercase'
-    assign title_case_style = ' --title-case: uppercase;'
-  elsif block.settings.menu_style == 'collection_images' and block.settings.collection_title_case == 'uppercase'
-    assign title_case_style = ' --title-case: uppercase;'
-  endif
 %}
 
 {% case variant %}
@@ -23,28 +15,27 @@
     <div
       class="header__drawer desktop:hidden"
       ref="headerDrawerContainer"
-      style="{{ title_case_style }}"
       {{ block.shopify_attributes }}
     >
       {% render 'header-drawer',
         class: 'header__drawer--mobile',
-        linklist: block.settings.menu,
+        linklist: block_settings.menu,
         data_header_drawer_type: 'mobile-drawer'
       %}
     </div>
 
   {% when 'navigation_bar' %}
-    {% if block.settings.navigation_bar == true %}
+    {% if block_settings.navigation_bar == true %}
       <div
-        class="menu-list menu-list--mobile{% if transparent == blank %} color-{{ block.settings.color_scheme_navigation_bar }}{% endif %}"
-        style="--menu-horizontal-gap: 15px; --mobile-nav-margin: auto;{{ title_case_style }}"
+        class="menu-list menu-list--mobile{% if transparent == blank %} color-{{ block_settings.color_scheme_navigation_bar }}{% endif %}"
+        style="--menu-horizontal-gap: 15px; --mobile-nav-margin: auto;"
       >
         <div class="menu-list__scroll-container">
           <ul
             class="menu-list__list list-unstyled"
             role="list"
           >
-            {% for link in block.settings.menu.links %}
+            {% for link in block_settings.menu.links %}
               <li>
                 <a
                   href="{{ link.url }}"
@@ -57,62 +48,141 @@
                   {{- link.title -}}
                 </a>
               </li>
-              {%- comment -%} Insert Collection link after "totes" and before "about" {%- endcomment -%}
-              {% if link.handle == 'totes' or link.title == 'Totes' or link.title == 'totes' %}
-                <li>
-                  <a
-                    href="{{ routes.all_products_collection_url }}"
-                    id="MenuItem-collection"
-                    class="menu-list__item{% if request.page_type == 'collection' and collection.handle == 'all' %} menu-list__item--active{% endif %}"
-                    {% if request.page_type == 'collection' and collection.handle == 'all' %}
-                      aria-current="page"
-                    {% endif %}
-                  >
-                    Collection
-                  </a>
-                </li>
-              {% endif %}
             {% endfor %}
           </ul>
         </div>
       </div>
     {% endif %}
   {% else %}
+    {% liquid
+      assign block_settings = block.settings
+      assign menu_content_type = block_settings.menu_style | default: 'text'
+      assign image_border_radius = block_settings.image_border_radius
+      assign color_scheme_classes = ''
+      assign color_scheme_setting_id = 'color_scheme_' | append: section.settings.menu_row
+      assign current_color_scheme = block_settings.color_scheme
+      assign parent_color_scheme = section.settings[color_scheme_setting_id]
+
+      if parent_color_scheme.id != current_color_scheme.id
+        assign color_scheme_classes = ' color-' | append: current_color_scheme
+      endif
+
+      # Check if header and menu colors match. This is used to apply different padding styles in css
+      if parent_color_scheme.settings.background.rgb == current_color_scheme.settings.background.rgb
+        assign color_scheme_classes = color_scheme_classes | append: ' color-scheme-matches-parent'
+      endif
+
+      if block_settings.menu_style == 'featured_collections'
+        assign ratio = block_settings.featured_collections_aspect_ratio
+      elsif block_settings.menu_style == 'featured_products'
+        assign ratio = block_settings.featured_products_aspect_ratio
+      endif
+    %}
+
+    {% capture children %}
+      {% for link in block_settings.menu.links %}
+        <li
+          role="presentation"
+          class="menu-list__list-item"
+          on:focus="/activate"
+          on:blur="/deactivate"
+          on:pointerenter="/activate"
+          on:pointerleave="/deactivate"
+        >
+          <a
+            href="{{ link.url }}"
+            data-skip-node-update="true"
+            class="menu-list__link{% if link.active %} menu-list__link--active{% endif %}"
+            {%- if link.links != blank -%}
+              aria-controls="submenu-{{ forloop.index }}"
+              aria-haspopup="true"
+              aria-expanded="false"
+            {%- endif -%}
+            ref="menuitem"
+          >
+            <span class="menu-list__link-title">{{- link.title -}}</span>
+          </a>
+          {%- if link.links != blank -%}
+            <div class="menu-list__submenu{{ color_scheme_classes }}" ref="submenu[]">
+              <div
+                id="submenu-{{ forloop.index }}"
+                class="menu-list__submenu-inner"
+                style="{% render 'submenu-font-styles', settings: block_settings %}"
+              >
+                {% assign list_id = 'MegaMenuList-' | append: forloop.index %}
+                <div class="mega-menu section section--full-width-margin section--{{ section.settings.section_width }}">
+                  <div
+                    class="mega-menu__grid"
+                    data-menu-grid-id="{{ list_id }}"
+                  >
+                    {% render 'mega-menu-list',
+                      parent_link: link,
+                      id: list_id,
+                      section: section,
+                      grid_columns_count: 6,
+                      grid_columns_count_tablet: 4,
+                      grid_columns_count_collection_images: 8,
+                      menu_content_type: menu_content_type,
+                      content_aspect_ratio: ratio,
+                      image_border_radius: image_border_radius
+                    %}
+                  </div>
+                </div>
+              </div>
+            </div>
+          {%- endif -%}
+        </li>
+      {% endfor %}
+      <li
+        class="menu-list__list-item"
+        role="presentation"
+        slot="more"
+        on:focus="/activate"
+        on:blur="/deactivate"
+        on:pointerenter="/activate"
+        on:pointerleave="/deactivate"
+      >
+        <button role="menuitem" class="button menu-list__link button-unstyled">
+          <span class="menu-list__link-title">{{ 'actions.more' | t }}</span>
+        </button>
+      </li>
+    {% endcapture %}
+
     <header-menu
       ref="headerMenu"
       class="header-menu mobile:hidden"
       data-animation-delay="{{ animation_speed }}"
       {{ block.shopify_attributes }}
-      style="--submenu-animation-speed: {{ animation_speed }}ms;{{ title_case_style }}"
+      style="--submenu-animation-speed: {{ animation_speed }}ms;"
     >
       <div class="header-menu__inner">
-        {%- render 'header-menu' %}
+        <nav header-menu>
+          <div
+            class="menu-list"
+            style="{% render 'menu-font-styles', settings: block_settings %}"
+          >
+            {% assign class = 'overflow-menu' | append: color_scheme_classes %}
+            {% render 'overflow-list',
+              class: class,
+              ref: 'overflowMenu',
+              children: children,
+              minimum-items: 2,
+              data-testid: 'header-menu-overflow-list',
+              attributes: 'data-skip-node-update'
+            %}
+          </div>
+        </nav>
       </div>
 
       <script
         src="{{ 'header-menu.js' | asset_url }}"
         type="module"
+        fetchpriority="low"
       ></script>
     </header-menu>
 {% endcase %}
 
 {% stylesheet %}
-  /* Override icon stroke width to make icons thinner */
-  .header-actions__action svg,
-  .header-actions__action .svg-wrapper svg {
-    --icon-stroke-width: 0.8px;
-  }
-
-  /* Persistent hover underline color for all menu links */
-  .menu-list__link::after {
-    background-color: #dec55d !important;
-  }
-
-  /* Ensure mobile nav also gets the gold underline */
-  .menu-list--mobile a::after {
-    background-color: #dec55d !important;
-  }
-
   .menu-list--mobile {
     &.menu-list {
       display: grid;
@@ -122,7 +192,6 @@
       width: max-content;
       margin-inline: auto;
       gap: var(--menu-horizontal-gap);
-      
     }
 
     & li {
@@ -140,36 +209,13 @@
 
     & a {
       color: var(--color-foreground);
-      position: relative;
-      
-      /* Animated underline effect for mobile */
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 8px;
-        left: 0;
-        width: 0;
-        height: 1px;
-        background-color: #dec55d;
-        transition: width 0.5s ease-out;
-      }
-
-      &:hover::after,
-      &:focus::after {
-        width: 100%;
-      }
-
-      /* Persistent underline for active state on mobile */
-      &.menu-list__item--active::after {
-        width: 100%;
-      }
     }
   }
 
   .menu-list__scroll-container {
     position: relative;
     overflow-x: auto;
-    mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent);
     padding-block: var(--padding-2xs);
   }
 
@@ -179,7 +225,7 @@
 
   /* Drawer menu featured content */
   .menu-drawer__featured-content {
-    z-index: var(--layer-lowest);
+    z-index: var(--layer-base);
     container-type: inline-size;
   }
 
@@ -212,12 +258,6 @@
 
   .menu-drawer__featured-content-list-item:last-child {
     margin-inline-end: var(--margin-xl);
-  }
-
-  /* Apply title case to drawer menu featured content */
-  .menu-drawer__featured-content-list-item--product .resource-card__title,
-  .menu-drawer__featured-content-list-item--collection .resource-card__title {
-    text-transform: var(--title-case);
   }
 
   .menu-list {
@@ -254,34 +294,10 @@
     display: flex;
     min-height: var(--minimum-touch-target);
     align-items: center;
-    position: relative;
-    margin-top: 4px;
 
     &:hover,
     &:focus {
       color: var(--menu-top-level-font-color);
-    }
-
-    /* Animated underline effect */
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 8px;
-      left: 0;
-      width: 0;
-      height: 1px;
-      background-color: #dec55d;
-      transition: width 0.5s ease-out;
-    }
-
-    &:hover::after,
-    &:focus::after {
-      width: 100%;
-    }
-
-    /* Persistent underline for active state */
-    &.menu-list__link--active::after {
-      width: 100%;
     }
 
     @media screen and (min-width: 750px) {
@@ -297,7 +313,7 @@
   .menu-list:where(:has(.menu-list__list-item:focus-within)),
   .menu-list:where(:has(.menu-list__list-item:not([aria-hidden='true']) .menu-list__link--active)) {
     .menu-list__link {
-      color: rgb(from var(--menu-top-level-font-color) r g b / var(--opacity-subdued-text));
+      color: rgb(var(--menu-top-level-font-color-rgb) / var(--opacity-subdued-text));
     }
   }
 
@@ -309,10 +325,10 @@
   }
 
   .overflow-menu::part(list) {
-    gap: 0 var(--menu-horizontal-gap);
-
     /* Make sure focus outline is not cut off by overflow hidden */
     --focus-outline-size: calc(var(--focus-outline-offset) + var(--focus-outline-width));
+
+    gap: 0 var(--menu-horizontal-gap);
   }
 
   .overflow-menu {
@@ -331,8 +347,10 @@
     height: var(--submenu-height);
     background-color: var(--color-background);
     box-shadow: var(--shadow-popover);
-    clip-path: inset(0.5px 0 -100px 0);
-    transition: height var(--submenu-animation-speed) var(--ease-out-cubic);
+    clip-path: inset(0.5px 0 -100px 0); /* stylelint-disable-line */
+    opacity: var(--submenu-opacity, 1);
+    transition: height var(--submenu-animation-speed) var(--ease-out-cubic),
+      opacity var(--animation-speed-slow) var(--ease-out-cubic) var(--animation-speed-fast);
     z-index: calc(var(--layer-header-menu) - 1);
   }
 
@@ -357,16 +375,15 @@
     --submenu-content-opacity: 0;
     --submenu-content-animation: opacity calc(var(--submenu-animation-speed) * 0.75) var(--animation-easing);
 
-    box-shadow: var(--shadow-drawer);
     visibility: hidden;
-    background-color: transparent;
+    background-color: var(--color-background);
     position: absolute;
     width: 100%;
     left: 0;
     top: calc(100% - 1px + var(--border-bottom-width));
     z-index: var(--layer-header-menu);
     padding-inline: var(--padding-inline);
-    clip-path: rect(0 100% var(--submenu-height) 0);
+    clip-path: rect(0 100% var(--submenu-height) 0); /* stylelint-disable-line */
     transition: clip-path var(--submenu-animation-speed) var(--ease-out-cubic);
   }
 
@@ -377,15 +394,17 @@
   /* Keep the submenus open when they are hovered */
   .menu-list__submenu:is(:hover),
   .overflow-menu::part(overflow):hover {
-    visibility: visible;
     --submenu-content-opacity: 1;
+
+    visibility: visible;
   }
 
   .menu-list__list-item:has([data-animating]) > .menu-list__submenu {
-    visibility: visible;
     --submenu-content-opacity: 0;
 
-    &:before {
+    visibility: visible;
+
+    &::before {
       height: 0;
     }
   }
@@ -400,6 +419,7 @@
 
   .overflow-menu::part(overflow) {
     --menu-top-level-font-size: var(--font-size--xlarge);
+
     display: grid;
     grid-template-columns: var(--full-page-grid-with-margins);
   }
@@ -415,8 +435,19 @@
     grid-gap: 0;
   }
 
+  /* Make overflow menu scrollable when content exceeds viewport */
+  .menu-list__submenu-inner,
+  .overflow-menu::part(overflow-list) {
+    max-height: calc(80vh - var(--header-height));
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-foreground-rgb) / var(--opacity-40)) transparent;
+  }
+
   .menu-list__list-item:is([slot='overflow']) {
     --menu-top-level-font-color: var(--color-foreground);
+    --menu-top-level-font-color-rgb: var(--color-foreground-rgb);
 
     display: contents;
     white-space: normal;
@@ -522,6 +553,33 @@
     border-radius: var(--menu-image-border-radius);
   }
 
+  /* Fix alignment for collection image mode links without images */
+
+  /* Target only top-level links (direct children of column > div) in collection image mode */
+  .mega-menu__grid:has(.mega-menu__link-image)
+    .mega-menu__column
+    > div
+    > .mega-menu__link:not(:has(.mega-menu__link-image)) {
+    display: flex;
+    flex-direction: column;
+    padding-inline: 0;
+    padding-block: var(--padding-sm) 0;
+  }
+
+  .mega-menu__grid:has(.mega-menu__link-image)
+    .mega-menu__column
+    > div
+    > .mega-menu__link:not(:has(.mega-menu__link-image))::before {
+    content: '';
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    margin-bottom: var(--padding-sm);
+    background-color: var(--color-foreground-muted);
+    opacity: 0.1;
+    border-radius: var(--menu-image-border-radius);
+  }
+
   .mega-menu__grid {
     display: grid;
     grid-template-columns: repeat(var(--menu-columns-tablet), minmax(0, 1fr));
@@ -549,7 +607,7 @@
     grid-column: span 4;
   }
 
-  .mega-menu__column--collection-image {
+  .mega-menu__column--wide-collection-image {
     grid-column: span 1;
 
     @media screen and (min-width: 990px) {
@@ -557,18 +615,8 @@
     }
   }
 
-  .mega-menu__column--collection-image .mega-menu__link {
-    text-transform: var(--title-case);
-  }
-
-  .mega-menu__submenu .mega-menu__column--collection-image {
+  .mega-menu__submenu .mega-menu__column--wide-collection-image {
     grid-column: span 1;
-  }
-
-  /* Apply title case to featured products and collections */
-  .mega-menu__content-list--products .resource-card__title,
-  .mega-menu__content-list--collections .resource-card__title {
-    text-transform: var(--title-case);
   }
 
   .mega-menu__content-list {
@@ -632,7 +680,7 @@
   }
 
   .mega-menu__more-list-item .mega-menu__link {
-    color: rgb(from var(--menu-top-level-font-color) r g b / var(--opacity-subdued-text));
+    color: rgb(var(--menu-top-level-font-color-rgb) / var(--opacity-subdued-text));
   }
 
   .mega-menu__more-list-item:where(:hover, .active) .mega-menu__link {
@@ -661,13 +709,116 @@
       "default": "main-menu"
     },
     {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "primary"
+    },
+    {
+      "type": "header",
+      "content": "t:content.typography"
+    },
+    {
+      "type": "select",
+      "id": "type_font_primary_size",
+      "label": "t:settings.top_level_size",
+      "options": [
+        {
+          "value": "0.625rem",
+          "label": "10px"
+        },
+        {
+          "value": "0.75rem",
+          "label": "12px"
+        },
+        {
+          "value": "0.875rem",
+          "label": "14px"
+        },
+        {
+          "value": "1rem",
+          "label": "16px"
+        },
+        {
+          "value": "1.125rem",
+          "label": "18px"
+        }
+      ],
+      "default": "1rem"
+    },
+    {
+      "type": "select",
+      "id": "menu_font_style",
+      "label": "t:settings.submenu_size",
+      "options": [
+        {
+          "value": "regular",
+          "label": "t:options.small"
+        },
+        {
+          "value": "inverse",
+          "label": "t:options.medium"
+        },
+        {
+          "value": "inverse_large",
+          "label": "t:options.large"
+        }
+      ],
+      "default": "inverse"
+    },
+    {
+      "type": "select",
+      "id": "type_font_primary_link",
+      "label": "t:settings.font",
+      "options": [
+        {
+          "value": "body",
+          "label": "t:options.body"
+        },
+        {
+          "value": "subheading",
+          "label": "t:options.subheading"
+        },
+        {
+          "value": "heading",
+          "label": "t:options.heading"
+        },
+        {
+          "value": "accent",
+          "label": "t:options.accent"
+        }
+      ],
+      "default": "heading"
+    },
+    {
+      "type": "select",
+      "id": "type_case_primary_link",
+      "label": "t:settings.text_case",
+      "options": [
+        {
+          "value": "none",
+          "label": "t:options.default"
+        },
+        {
+          "value": "uppercase",
+          "label": "t:options.uppercase"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "header",
+      "content": "t:content.submenu_feature"
+    },
+    {
       "type": "select",
       "id": "menu_style",
-      "label": "t:settings.style",
+      "label": "t:settings.media_type",
+      "info": "t:info.media_type_info",
       "options": [
         {
           "value": "text",
-          "label": "t:options.text_only"
+          "label": "t:options.none"
         },
         {
           "value": "collection_images",
@@ -736,270 +887,6 @@
       "unit": "px",
       "default": 0,
       "visible_if": "{{ block.settings.menu_style != 'text' }}"
-    },
-    {
-      "type": "select",
-      "id": "product_title_case",
-      "label": "t:settings.product_title_case",
-      "options": [
-        {
-          "value": "default",
-          "label": "t:options.default"
-        },
-        {
-          "value": "uppercase",
-          "label": "t:options.uppercase"
-        }
-      ],
-      "default": "default",
-      "visible_if": "{{ block.settings.menu_style == 'featured_products' }}"
-    },
-    {
-      "type": "select",
-      "id": "collection_title_case",
-      "label": "t:settings.collection_title_case",
-      "options": [
-        {
-          "value": "default",
-          "label": "t:options.default"
-        },
-        {
-          "value": "uppercase",
-          "label": "t:options.uppercase"
-        }
-      ],
-      "default": "default",
-      "visible_if": "{{ block.settings.menu_style == 'featured_collections' or block.settings.menu_style == 'collection_images' }}"
-    },
-    {
-      "type": "color_scheme",
-      "id": "color_scheme",
-      "label": "t:settings.color_scheme",
-      "default": "primary"
-    },
-    {
-      "type": "select",
-      "id": "menu_font_style",
-      "label": "t:settings.text_hierarchy",
-      "options": [
-        {
-          "value": "regular",
-          "label": "t:options.classic"
-        },
-        {
-          "value": "inverse",
-          "label": "t:options.inverse"
-        },
-        {
-          "value": "inverse_large",
-          "label": "t:options.inverse_large"
-        }
-      ],
-      "default": "inverse"
-    },
-    {
-      "type": "header",
-      "content": "t:content.typography_primary"
-    },
-    {
-      "type": "select",
-      "id": "type_font_primary_link",
-      "label": "t:settings.font",
-      "options": [
-        {
-          "value": "body",
-          "label": "t:options.body"
-        },
-        {
-          "value": "subheading",
-          "label": "t:options.subheading"
-        },
-        {
-          "value": "heading",
-          "label": "t:options.heading"
-        },
-        {
-          "value": "accent",
-          "label": "t:options.accent"
-        }
-      ],
-      "default": "heading"
-    },
-    {
-      "type": "select",
-      "id": "type_font_primary_size",
-      "label": "t:settings.size",
-      "options": [
-        {
-          "value": "0.625rem",
-          "label": "10px"
-        },
-        {
-          "value": "0.75rem",
-          "label": "12px"
-        },
-        {
-          "value": "0.875rem",
-          "label": "14px"
-        },
-        {
-          "value": "1rem",
-          "label": "16px"
-        },
-        {
-          "value": "1.125rem",
-          "label": "18px"
-        },
-        {
-          "value": "1.25rem",
-          "label": "20px"
-        },
-        {
-          "value": "1.5rem",
-          "label": "24px"
-        },
-        {
-          "value": "2rem",
-          "label": "32px"
-        },
-        {
-          "value": "2.5rem",
-          "label": "40px"
-        },
-        {
-          "value": "3rem",
-          "label": "48px"
-        },
-        {
-          "value": "3.5rem",
-          "label": "56px"
-        },
-        {
-          "value": "4.5rem",
-          "label": "72px"
-        },
-        {
-          "value": "5.5rem",
-          "label": "88px"
-        },
-        {
-          "value": "7.5rem",
-          "label": "120px"
-        },
-        {
-          "value": "9.5rem",
-          "label": "152px"
-        },
-        {
-          "value": "11.5rem",
-          "label": "184px"
-        }
-      ],
-      "default": "1rem"
-    },
-    {
-      "type": "select",
-      "id": "type_case_primary_link",
-      "label": "t:settings.text_case",
-      "options": [
-        {
-          "value": "none",
-          "label": "t:options.default"
-        },
-        {
-          "value": "uppercase",
-          "label": "t:options.uppercase"
-        }
-      ],
-      "default": "none"
-    },
-    {
-      "type": "header",
-      "content": "t:content.typography_secondary"
-    },
-    {
-      "type": "select",
-      "id": "type_font_secondary_link",
-      "label": "t:settings.font",
-      "options": [
-        {
-          "value": "body",
-          "label": "t:options.body"
-        },
-        {
-          "value": "subheading",
-          "label": "t:options.subheading"
-        },
-        {
-          "value": "heading",
-          "label": "t:options.heading"
-        },
-        {
-          "value": "accent",
-          "label": "t:options.accent"
-        }
-      ],
-      "default": "subheading"
-    },
-    {
-      "type": "select",
-      "id": "type_case_secondary_link",
-      "label": "t:settings.text_case",
-      "options": [
-        {
-          "value": "none",
-          "label": "t:options.default"
-        },
-        {
-          "value": "uppercase",
-          "label": "t:options.uppercase"
-        }
-      ],
-      "default": "none"
-    },
-    {
-      "type": "header",
-      "content": "t:content.typography_tertiary"
-    },
-    {
-      "type": "select",
-      "id": "type_font_tertiary_link",
-      "label": "t:settings.font",
-      "options": [
-        {
-          "value": "body",
-          "label": "t:options.body"
-        },
-        {
-          "value": "subheading",
-          "label": "t:options.subheading"
-        },
-        {
-          "value": "heading",
-          "label": "t:options.heading"
-        },
-        {
-          "value": "accent",
-          "label": "t:options.accent"
-        }
-      ],
-      "default": "body"
-    },
-    {
-      "type": "select",
-      "id": "type_case_tertiary_link",
-      "label": "t:settings.text_case",
-      "options": [
-        {
-          "value": "none",
-          "label": "t:options.default"
-        },
-        {
-          "value": "uppercase",
-          "label": "t:options.uppercase"
-        }
-      ],
-      "default": "none"
     },
     {
       "type": "header",

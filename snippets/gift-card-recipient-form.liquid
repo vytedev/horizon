@@ -9,6 +9,12 @@
   {% render 'gift-card-recipient-form', product: product, form: form, section: section, block: block %}
 {% endcomment %}
 
+<script
+  src="{{ 'gift-card-recipient-form.js' | asset_url }}"
+  type="module"
+  fetchpriority="low"
+></script>
+
 <gift-card-recipient-form
   class="recipient-form"
   data-section-id="{{ section.id }}"

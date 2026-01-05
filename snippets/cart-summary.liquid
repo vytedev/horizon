@@ -1,731 +1,484 @@
 {%- doc -%}
   Renders the cart summary totals.
+
+  @param {string} [accelerated_checkout_buttons_layout] - { 'vertical' } Forced layout of the additional checkout buttons, instead of relying on platform's layout.
 {%- enddoc -%}
 
-{% if template.name == 'cart' %}
-  {% # Cart page layout # %}
-  <div class="cart__summary-totals">
-    {% # Group 1: Cart Totals Title and Line # %}
-    <div class="cart__summary-group cart__summary-group--title">
-      <p class="cart__summary-title">CART TOTALS</p>
-      <div class="cart__summary-divider"></div>
-    </div>
-
-    {% # Group 2: Discount and Subtotal # %}
-    <div class="cart__summary-group cart__summary-group--discount-subtotal">
-      {% if settings.show_add_discount_code %}
-        {% render 'cart-discount', section_id: section.id %}
-      {% endif %}
-
-      {% # We need to keep this node in place to allow morphing to work properly # %}
-      <div class="cart__original-total-container cart-primary-typography">
-        {%- if cart.cart_level_discount_applications.size > 0 -%}
-          <div class="cart__summary-discounts">
-            <ul
-              class="discounts list-unstyled"
-              role="list"
-              aria-label="{{ 'content.discounts' | t }}"
-            >
-              {%- for discount in cart.cart_level_discount_applications -%}
-                {%- liquid
-                  if cart.original_total_price > 0
-                    assign discount_percentage = discount.total_allocated_amount | times: 100.0 | divided_by: cart.original_total_price | round
-                  else
-                    assign discount_percentage = 0
-                  endif
-                -%}
-                <li class="cart__summary-item cart__discount">
-                  <span class="cart__discount-value cart-secondary-typography">
-                    -{{ discount.total_allocated_amount | money -}}
-                    <span class="cart__discount-percentage">
-                      -{{ discount_percentage }}%
-                    </span>
-                  </span>
-                </li>
-              {%- endfor -%}
-            </ul>
-          </div>
-        {%- endif -%}
-      </div>
-
-      <div class="cart__subtotal-container">
-        <span class="cart__summary-item cart__subtotal">
-          <span class="cart__subtotal-label cart-primary-typography">{{ 'content.cart_subtotal' | t }}</span>
-          <span class="cart__subtotal-value cart-secondary-typography">
-            {%- if cart.cart_level_discount_applications.size > 0 -%}
-              {{- cart.original_total_price | money -}}
-            {%- else -%}
-              {{- cart.total_price | money -}}
-            {%- endif -%}
-          </span>
+<div class="cart__summary-totals">
+  {% # We need to keep this node in place to allow morphing to work properly # %}
+  <div class="cart__original-total-container cart-primary-typography">
+    {%- if cart.cart_level_discount_applications.size > 0 -%}
+      <span class="cart__summary-item cart__original-total">
+        <span class="cart__original-total-label">{{ 'content.cart_subtotal' | t }}</span>
+        <span class="cart__original-total-value cart-secondary-typography">
+          {{- cart.original_total_price | money -}}
         </span>
-      </div>
-    </div>
-
-    {% # Group 3: Estimated Total and Reminder # %}
-    <div class="cart__summary-group cart__summary-group--total-reminder">
-      <div class="cart__summary-divider"></div>
-
-      {%- liquid
-        if settings.currency_code_enabled_cart_total
-          assign total_price = cart.total_price | money_with_currency
-        else
-          assign total_price = cart.total_price | money
-        endif
-      -%}
-
-      <div class="cart__total-container">
-        <span
-          class="cart__summary-item cart__total"
-          role="status"
+      </span>
+      <div class="cart__summary-discounts">
+        <ul
+          class="discounts list-unstyled"
+          role="list"
+          aria-label="{{ 'content.discounts' | t }}"
         >
-          <span class="cart__total-label cart-primary-typography">Est. Total</span>
-          <text-component
-            ref="cartTotal"
-            value="{{ total_price | strip_html }}"
-            class="cart__total-value cart-secondary-typography"
-            {% comment %} Used by payment_terms web component {% endcomment %}
-            data-cart-subtotal
+          {%- for discount in cart.cart_level_discount_applications -%}
+            <li class="cart__summary-item cart__discount">
+              <span class="cart__discount-label">
+                {{- 'icon-discount.svg' | inline_asset_content -}}
+                {{ discount.title | escape }}
+              </span>
+              <span class="cart__discount-value cart-secondary-typography"
+                >-{{ discount.total_allocated_amount | money -}}
+              </span>
+            </li>
+          {%- endfor -%}
+        </ul>
+      </div>
+    {%- endif -%}
+  </div>
+
+  {% if settings.show_cart_note or settings.show_add_discount_code %}
+    <div class="cart-actions">
+      {% if settings.show_cart_note %}
+        <script
+          type="module"
+          src="{{ 'cart-note.js' | asset_url }}"
+        ></script>
+
+        <cart-note style="display: flex;">
+          <accordion-custom
+            class="cart-note"
+            {% if settings.cart_note_open_by_default %}
+              open-by-default-on-desktop
+              open-by-default-on-mobile
+            {% endif %}
           >
-            {{ total_price }}
-          </text-component>
-        </span>
+            <details
+              class="details"
+              {% if settings.cart_note_open_by_default %}
+                open
+              {% endif %}
+            >
+              <summary class="cart-note__summary">
+                <span class="cart-note__label cart-primary-typography">
+                  {{ 'content.seller_note' | t }}
+                </span>
+
+                <span class="svg-wrapper icon-plus">
+                  {{- 'icon-plus.svg' | inline_asset_content -}}
+                </span>
+              </summary>
+
+              <div class="details-content cart-note__inner">
+                <label
+                  for="cart-note"
+                  class="visually-hidden"
+                >
+                  {{- 'content.seller_note' | t -}}
+                </label>
+                <textarea
+                  form="cart-form"
+                  on:input="/updateCartNote"
+                  id="cart-note"
+                  class="cart-note__instructions"
+                  name="note"
+                >{{ cart.note }}</textarea>
+              </div>
+            </details>
+          </accordion-custom>
+        </cart-note>
+      {% endif %}
+      {% if settings.show_cart_note and settings.show_add_discount_code %}
+        <div class="cart-actions__divider"></div>
+      {% endif %}
+      {% if settings.show_add_discount_code %}
+        {% liquid
+          assign discount_codes = cart.cart_level_discount_applications | where: 'type', 'discount_code' | map: 'title'
+          for item in cart.items
+            for allocation in item.line_level_discount_allocations
+              if allocation.discount_application.type == 'discount_code'
+                assign discount_codes = item.line_level_discount_allocations | slice: forloop.index0 | map: 'discount_application' | map: 'title' | concat: discount_codes
+              endif
+            endfor
+          endfor
+
+          assign discount_codes = discount_codes | uniq
+
+          # Evaluate the boolean expression for the disclosure state
+          if discount_codes.size == 0
+            assign disclosure_expanded = false
+          else
+            assign disclosure_expanded = true
+          endif
+        %}
+
+        <disclosure-custom class="cart-discount">
+          <button
+            aria-controls="cart-discount-disclosure"
+            aria-expanded="{% if disclosure_expanded %}true{% else %}false{% endif %}"
+            aria-label="{% if disclosure_expanded %}{{ 'actions.close' | t }}{% else %}{{ 'actions.open' | t }}{% endif %} {{ 'accessibility.discount_menu' | t }}"
+            class="disclosure-trigger"
+            data-disclosure-open="{{ 'actions.open' | t }} {{ 'accessibility.discount_menu' | t }}"
+            data-disclosure-close="{{ 'actions.close' | t }} {{ 'accessibility.discount_menu' | t }}"
+            on:click="/toggleDisclosure"
+            ref="disclosureTrigger"
+            type="button"
+          >
+            <span class="disclosure-trigger__label cart-primary-typography">{{ 'content.discount' | t }}</span>
+
+            <span class="svg-wrapper icon-plus">
+              {{- 'icon-plus.svg' | inline_asset_content -}}
+            </span>
+          </button>
+
+          <div
+            class="disclosure-content"
+            {% unless disclosure_expanded %}
+              inert
+            {% endunless %}
+            ref="disclosureContent"
+          >
+            <div id="cart-discount-disclosure">
+              <cart-discount-component
+                data-section-id="{{ section.id }}"
+              >
+                <div class="cart-discount__content">
+                  <form
+                    on:submit="/applyDiscount"
+                    onsubmit="return false;"
+                    class="cart-discount__form"
+                  >
+                    <label
+                      for="cart-discount"
+                      class="visually-hidden"
+                    >
+                      {{- 'accessibility.discount' | t -}}
+                    </label>
+                    <input
+                      id="cart-discount"
+                      class="cart-discount__input"
+                      type="text"
+                      name="discount"
+                      size="8"
+                      placeholder="{{ 'content.discount_code' | t }}"
+                      required
+                    >
+                    <button
+                      type="submit"
+                      class="button button--primary cart-discount__button"
+                    >
+                      {{ 'actions.apply' | t }}
+                    </button>
+                  </form>
+                </div>
+                <div
+                  class="cart-discount__error hidden"
+                  role="alert"
+                  ref="cartDiscountError"
+                >
+                  <span class="svg-wrapper">
+                    {{- 'icon-error.svg' | inline_asset_content -}}
+                  </span>
+                  <small
+                    class="cart-discount__error-text cart-primary-typography hidden"
+                    ref="cartDiscountErrorDiscountCode"
+                  >
+                    {{ 'content.discount_code_error' | t: code: 'test' }}
+                  </small>
+                  <small
+                    class="cart-discount__error-text cart-primary-typography hidden"
+                    ref="cartDiscountErrorShipping"
+                  >
+                    {{ 'content.shipping_discount_error' | t }}
+                  </small>
+                </div>
+                <ul class="cart-discount__codes">
+                  {% for discount_code in discount_codes %}
+                    <li
+                      class="cart-discount__pill"
+                      data-discount-code="{{ discount_code }}"
+                      aria-label="{{ 'accessibility.discount_applied' | t: code: discount_code }}"
+                    >
+                      <p class="cart-discount__pill-code">
+                        {{ discount_code }}
+                      </p>
+                      <button
+                        type="button"
+                        on:click="/removeDiscount"
+                        class="cart-discount__pill-remove svg-wrapper svg-wrapper--smaller button-unstyled"
+                        aria-label="{{ 'actions.remove_discount' | t: code: discount_code }}"
+                      >
+                        {{- 'icon-filters-close.svg' | inline_asset_content -}}
+                      </button>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </cart-discount-component>
+            </div>
+          </div>
+        </disclosure-custom>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {%- liquid
+    if settings.currency_code_enabled_cart_total
+      assign total_price = cart.total_price | money_with_currency
+    else
+      assign total_price = cart.total_price | money
+    endif
+  -%}
+
+  <div class="cart__total-container{% if settings.show_installments %} cart__total-container--has-installments{% endif %}">
+    <span
+      class="cart__summary-item cart__total"
+      role="status"
+    >
+      <span class="cart__total-label cart-primary-typography">{{ 'content.cart_estimated_total' | t }}</span>
+      <text-component
+        ref="cartTotal"
+        value="{{ total_price | strip_html }}"
+        class="cart__total-value cart-secondary-typography"
+        {% comment %} Used by payment_terms web component {% endcomment %}
+        data-cart-subtotal
+      >
+        {{ total_price }}
+      </text-component>
+    </span>
+    {% if settings.show_installments %}
+      <span class="cart__summary-item cart__installments">
         {% form 'cart', cart %}
           {{ form | payment_terms }}
         {% endform %}
-      </div>
-    </div>
-
-    {% if settings.show_cart_note %}
-      <div class="cart-actions">
-        {% render 'cart-note' %}
-      </div>
-    {% endif %}
-  </div>
-
-  <div class="cart__buttons-group">
-    <div class="cart__ctas-divider"></div>
-
-  <div class="cart__ctas">
-    <button
-      type="submit"
-      id="checkout"
-      class="cart__checkout-button button"
-      name="checkout"
-      {% if cart == empty %}
-        disabled
-      {% endif %}
-      form="cart-form"
-    >
-      PROCEED TO CHECKOUT
-    </button>
-
-    {% if additional_checkout_buttons and settings.show_accelerated_checkout_buttons %}
-      <div class="cart__payment-buttons additional-checkout-buttons additional-checkout-buttons--horizontal">
-        {{ content_for_additional_checkout_buttons }}
-      </div>
-    {% endif %}
-    </div>
-  </div>
-{% else %}
-  {% # Cart drawer layout - original structure # %}
-  <div class="cart__summary-totals">
-    {% # We need to keep this node in place to allow morphing to work properly # %}
-    <div class="cart__original-total-container cart-primary-typography">
-      {%- if cart.cart_level_discount_applications.size > 0 -%}
-        <span class="cart__summary-item cart__original-total">
-          <span class="cart__original-total-label">{{ 'content.cart_subtotal' | t }}</span>
-          <span class="cart__original-total-value cart-secondary-typography">
-            {{- cart.original_total_price | money -}}
-          </span>
-        </span>
-        <div class="cart__summary-discounts">
-          <ul
-            class="discounts list-unstyled"
-            role="list"
-            aria-label="{{ 'content.discounts' | t }}"
-          >
-            {%- for discount in cart.cart_level_discount_applications -%}
-              {%- liquid
-                if cart.original_total_price > 0
-                  assign discount_percentage = discount.total_allocated_amount | times: 100.0 | divided_by: cart.original_total_price | round
-                else
-                  assign discount_percentage = 0
-                endif
-              -%}
-              <li class="cart__summary-item cart__discount">
-                <span class="cart__discount-value cart-secondary-typography">
-                  -{{ discount.total_allocated_amount | money -}}
-                  <span class="cart__discount-percentage">
-                    -{{ discount_percentage }}%
-                  </span>
-                </span>
-              </li>
-            {%- endfor -%}
-          </ul>
-        </div>
-      {%- endif -%}
-    </div>
-
-    {% if settings.show_cart_note or settings.show_add_discount_code %}
-      <div class="cart-actions">
-        {% if settings.show_cart_note %}
-          {% render 'cart-note' %}
-        {% endif %}
-
-        {% if settings.show_add_discount_code %}
-          {% render 'cart-discount', section_id: section.id %}
-        {% endif %}
-      </div>
-    {% endif %}
-
-    {%- liquid
-      if settings.currency_code_enabled_cart_total
-        assign total_price = cart.total_price | money_with_currency
-      else
-        assign total_price = cart.total_price | money
-      endif
-    -%}
-
-    <div class="cart__total-container">
-      <span
-        class="cart__summary-item cart__total"
-        role="status"
-      >
-        <span class="cart__total-label cart-primary-typography">{{ 'content.cart_estimated_total' | t }}</span>
-        <text-component
-          ref="cartTotal"
-          value="{{ total_price | strip_html }}"
-          class="cart__total-value cart-secondary-typography"
-          {% comment %} Used by payment_terms web component {% endcomment %}
-          data-cart-subtotal
-        >
-          {{ total_price }}
-        </text-component>
       </span>
-      {% form 'cart', cart %}
-        {{ form | payment_terms }}
-      {% endform %}
-    </div>
-  </div>
-
-  <div class="cart__buttons-group">
-    <div class="cart__ctas-divider"></div>
-
-  <div class="cart__ctas">
-    <button
-      type="submit"
-      id="checkout"
-      class="cart__checkout-button button"
-      name="checkout"
-      {% if cart == empty %}
-        disabled
-      {% endif %}
-      form="cart-form"
-    >
-      PROCEED TO CHECKOUT
-    </button>
-
-    {% if additional_checkout_buttons and settings.show_accelerated_checkout_buttons %}
-      <div class="cart__payment-buttons additional-checkout-buttons additional-checkout-buttons--horizontal">
-        {{ content_for_additional_checkout_buttons }}
-      </div>
     {% endif %}
-    </div>
-
     <div class="cart__summary-item tax-note cart-primary-typography">
       {% render 'tax-info', has_discounts_enabled: settings.show_add_discount_code %}
     </div>
   </div>
-{% endif %}
+</div>
+
+<div class="cart__ctas">
+  <button
+    type="submit"
+    id="checkout"
+    class="cart__checkout-button button"
+    name="checkout"
+    {% if cart == empty %}
+      disabled
+    {% endif %}
+    form="cart-form"
+  >
+    {{ 'content.checkout' | t }}
+  </button>
+
+  {% if additional_checkout_buttons and settings.show_accelerated_checkout_buttons %}
+    <div
+      class="
+        additional-checkout-buttons
+        {% if accelerated_checkout_buttons_layout == 'vertical' %}additional-checkout-buttons--vertical{% endif %}
+      "
+    >
+      {{ content_for_additional_checkout_buttons }}
+    </div>
+  {% endif %}
+</div>
 
 {% stylesheet %}
-  /* Cart page specific styles */
-  .cart-page .cart__summary-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-2xs);
-  }
-
-  .cart-page .cart__summary-group--title {
-    margin-bottom: var(--margin-xs);
-  }
-
-  .cart-page .cart__summary-group--title .cart__summary-divider {
-    margin-block: 0;
-  }
-
-  .cart-page .cart__summary-group--discount-subtotal {
-    margin-bottom: var(--margin-xs);
-    gap: var(--gap-2xs);
-  }
-
-  .cart-page .cart__summary-group--discount-subtotal .cart-discount {
-    margin-bottom: 0;
-  }
-
-  .cart-page .cart__summary-group--total-reminder {
-    margin-bottom: var(--margin-xs);
-  }
-
-  .cart-page .cart__summary-group--total-reminder .cart__summary-divider {
-    margin-block: 0;
-    margin-bottom: var(--margin-xs);
-  }
-
-  .cart-page .cart__summary-title {
-    font-family: var(--font-body--family);
-    font-size: var(--font-size--2xl);
-    font-weight: var(--font-weight-bold);
-    line-height: var(--font-body--line-height);
-    letter-spacing: var(--font-body--letter-spacing);
-    color: var(--color-foreground);
-    margin: 0;
-    margin-bottom: var(--margin-3xs);
-    text-transform: uppercase;
-  }
-
-  .cart-page .cart__summary-divider {
-    width: 100%;
-    height: 1px;
-    background-color: var(--color-border);
-    margin-block: var(--margin-3xs);
-  }
-
-
   .cart-actions {
     display: flex;
     flex-direction: column;
-    gap: var(--gap-2xs);
+    gap: 0;
+    border-block: 1px solid var(--color-border);
+    padding-block: 0;
     margin-block-start: var(--margin-3xs);
+  }
+
+  .cart-actions__divider {
+    border-block-start: 1px solid var(--color-border);
   }
 
   .cart__summary-totals:not(:has(.cart-actions)) {
     margin-block-start: var(--margin-3xs);
+    border-block-start: 1px solid var(--color-border);
     padding-block-start: var(--margin-xl);
-  }
-
-  .cart-page .cart__subtotal-container {
-    margin-top: var(--margin-3xs);
-    margin-bottom: 0;
   }
 
   .cart__installments {
     color: var(--color-foreground);
+    font-size: var(--cart-font-size--2xs);
   }
 
-  .cart-page .cart__subtotal-value,
-  .cart-page .cart__total-value,
-  .cart-page .cart__discount-value {
-    font-size: var(--font-size--md);
-  }
-
-  .cart-page .cart__ctas {
-    display: flex;
-    flex-direction: column;
-    gap: var(--gap-sm);
-    margin-top: var(--margin-lg);
-  }
-
-  .cart-page .cart__continue-shopping {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--gap-xs);
-    color: var(--color-foreground);
-    text-decoration: none;
-    font-family: var(--font-body--family);
-    font-size: var(--font-body--size);
-  }
-
-  .cart-page .cart__continue-shopping:hover {
-    text-decoration: underline;
-  }
-
-  /* Cart drawer specific styles */
-  .cart-drawer .cart__total-value,
-  .cart-drawer__dialog .cart__total-value {
-    font-size: var(--cart-font-size--md) !important;
-  }
-
-  /* Discount percentage badge with red text, white with hint of red background, and circular pseudo-elements */
-  .cart__summary-item.cart__discount {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-  }
-
-  .cart__discount-value {
-    display: inline-flex !important;
-    align-items: center !important;
-    gap: var(--gap-xs) !important;
-    flex-wrap: nowrap !important;
-    white-space: nowrap !important;
-  }
-
-  .cart__discount-percentage {
-    display: inline-flex !important;
-    align-items: center;
-    gap: var(--gap-2xs);
-    position: relative;
-    padding: 4px 8px;
-    font-size: var(--font-size--xs);
-    font-weight: var(--font-body--weight);
-    color: #ff0000 !important;
-    background-color: #fff5f5;
-    white-space: nowrap;
-    margin-left: var(--gap-xs);
-  }
-
-  .cart__discount-percentage::before,
-  .cart__discount-percentage::after {
-    content: '';
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: var(--color-background);
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .cart__discount-percentage::before {
-    left: -8px;
-  }
-
-  .cart__discount-percentage::after {
-    right: -8px;
-  }
-
-  .cart__installment-info-icon {
-    display: inline-flex;
-    align-items: center;
-    margin-left: 0.25em;
-    vertical-align: middle;
-    position: relative;
-    cursor: help;
-  }
-
-  .cart__installment-info-icon svg {
-    width: 14px;
-    height: 14px;
-    display: block;
-  }
-
-  .cart__installment-tooltip {
-    position: absolute;
-    top: 50%;
-    left: 100%;
-    transform: translateY(-50%);
-    margin-left: 8px;
-    padding: var(--padding-sm) var(--padding-md);
-    background-color: var(--color-background);
-    border: 1px solid var(--color-border);
+  .cart-discount__input {
+    background-color: var(--color-input-background);
+    color: var(--color-input-text);
+    border-width: var(--style-border-width-inputs);
+    border-color: var(--color-input-border);
+    border-style: solid;
     border-radius: var(--style-border-radius-inputs);
-    box-shadow: var(--shadow-drawer);
-    font-size: var(--cart-font-size--xs);
+    padding: var(--padding-sm) var(--padding-md);
+    height: 100%;
+    flex-grow: 1;
+    min-width: 0;
+    font-size: var(--cart-font-size--sm);
+  }
+
+  .cart-discount__input::placeholder {
+    color: rgb(var(--color-input-text-rgb) / var(--opacity-subdued-text));
+  }
+
+  .cart-discount__pill-code {
+    overflow: hidden;
+    max-width: 100px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  .cart-discount {
+    width: 100%;
+  }
+
+  .cart-discount .svg-wrapper {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+  }
+
+  .cart-discount__codes {
+    display: none;
+    gap: var(--padding-xs);
+    flex-wrap: wrap;
+    list-style: none;
+    padding-inline: 0;
+    margin: 0;
+  }
+
+  .cart-discount__codes:has(.cart-discount__pill) {
+    display: flex;
+  }
+
+  .cart-discount__button {
+    height: 100%;
+  }
+
+  .cart-discount__content {
+    height: calc(var(--button-size) + var(--padding-2xs) + var(--padding-sm));
+  }
+
+  .cart-discount__pill {
+    display: flex;
     color: var(--color-foreground);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    transition: opacity 0.2s ease, visibility 0.2s ease;
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25em;
-    max-width: 200px !important;
-    width: max-content;
-    min-width: 100%;
-  }
-
-  .cart-drawer__summary {
-    overflow: visible !important;
-  }
-
-  .cart__total-container {
-    overflow: visible !important;
-    row-gap: var(--gap-3xs) !important;
-  }
-
-  .cart__total-value {
-    font-size: calc(var(--cart-font-size--2xl) * 1.2) !important;
-    font-weight: 700 !important;
-  }
-
-  .cart-page .cart__total-value {
-    font-size: var(--cart-font-size--2xl) !important;
-    font-weight: 500 !important;
-  }
-
-  .cart__summary-totals {
-    gap: var(--gap-xs) !important;
-  }
-
-  .cart__buttons-group .tax-note {
-    text-align: center;
-    margin-top: var(--margin-md);
-    display: flex;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .cart__installment-info-icon:hover .cart__installment-tooltip {
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .cart__installment-tooltip-line {
-    white-space: nowrap;
-  }
-
-  .cart__installment-tooltip-group {
-    display: flex;
+    gap: var(--padding-xs);
     align-items: center;
-    gap: 0.25em;
-    white-space: nowrap;
-    width: 100%;
+    padding: var(--padding-xs) var(--padding-sm);
+    border-radius: var(--style-border-radius-pills);
+    background-color: var(--color-input-background);
+    text-transform: uppercase;
   }
 
-  .cart__installment-tooltip .svg-wrapper {
-    display: inline-flex;
-    align-items: center;
-    vertical-align: middle;
-    flex-shrink: 0;
-    width: auto !important;
-    height: auto !important;
-  }
-
-  .cart__installment-tooltip .svg-wrapper svg,
-  .cart__installment-tooltip .svg-wrapper > svg {
-    width: auto !important;
-    height: 14px !important;
-    max-width: none !important;
-    max-height: none !important;
-    display: block;
-  }
-
-  .cart__installment-tooltip .cart__installments-price {
-    color: #d4c4e8 !important;
-    font-weight: 500;
-  }
-
-  .cart__installments-text {
-    display: block;
-    font-size: var(--cart-font-size--xs) !important;
-    margin-top: var(--margin-sm);
-  }
-
-  .cart__installments-text.cart-primary-typography,
-  .cart-drawer .cart__installments-text,
-  .cart-drawer .cart__installments-text.cart-primary-typography {
-    font-size: var(--cart-font-size--xs) !important;
-  }
-
-  .cart__installments-text .svg-wrapper {
-    display: inline-flex;
-    align-items: center;
-    vertical-align: middle;
-    height: 24px;
-    width: auto;
-    flex-shrink: 0;
-    margin: 0 3px;
-    padding: 0;
-  }
-
-  .cart__installments-text .svg-wrapper svg,
-  .cart-drawer .cart__installments-text .svg-wrapper svg {
-    width: auto !important;
-    height: 16px !important;
-    max-width: none !important;
-    max-height: none !important;
-    display: block;
-  }
-
-  .cart__installments-price {
-    color: #d4c4e8 !important;
-    font-weight: 500;
-  }
-
-  /* Payment buttons container - side by side layout */
-  .cart__payment-buttons {
+  .cart-discount__form {
     display: flex;
-    gap: var(--gap-sm);
-    width: 100%;
+    gap: var(--padding-md);
+    align-items: center;
+    height: 100%;
+    padding-block: var(--padding-2xs) var(--padding-sm);
   }
 
-  /* Shopify default checkout buttons - horizontal layout */
-  .additional-checkout-buttons--horizontal {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: var(--gap-sm) !important;
-    width: 100% !important;
-  }
+  :is(.cart-discount__pill-remove, .cart-discount__pill-remove:hover) {
+    --close-icon-opacity: 0.4;
 
-  .additional-checkout-buttons--horizontal > * {
-    flex: 1 !important;
-    min-height: var(--minimum-touch-target) !important;
-  }
-
-  /* Style Shopify's default buttons to match our layout */
-  .additional-checkout-buttons--horizontal [data-shopify-button] {
-    width: 100% !important;
-    height: 100% !important;
-    min-height: var(--minimum-touch-target) !important;
-  }
-
-  .additional-checkout-buttons--horizontal iframe {
-    width: 100% !important;
-    min-height: var(--minimum-touch-target) !important;
-  }
-
-  /* Hide Shop Pay buttons to prevent CSP errors with shop.app */
-  .additional-checkout-buttons--horizontal shopify-payment-button[data-shopify-payment-button],
-  .additional-checkout-buttons--horizontal shopify-accelerated-checkout,
-  .additional-checkout-buttons--horizontal iframe[src*="shop.app"],
-  .additional-checkout-buttons--horizontal iframe[src*="shopify.com/shop-pay"],
-  .additional-checkout-buttons--horizontal [data-shopify-button*="shop-pay"],
-  .additional-checkout-buttons--horizontal [data-shopify-button*="shop_pay"] {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    overflow: hidden !important;
-  }
-
-  /* Show payment_terms component - we extract its content for the tooltip but also display it */
-  .cart__installments shopify-payment-terms {
-    display: block !important;
-    visibility: visible !important;
-  }
-
-  /* Hide text amount and SVG in payment_terms, only show the link */
-  /* Note: Since shopify-payment-terms uses shadow DOM, CSS can't directly style it */
-  /* JavaScript is used to hide content via shadow DOM access */
-
-  /* Divider before buttons */
-  .cart__buttons-group {
-    width: 100%;
-  }
-
-  .cart__ctas-divider {
-    width: 100%;
-    height: 1px;
-    background-color: var(--color-border);
-    margin-top: var(--margin-2xs);
-    margin-bottom: var(--margin-2xs);
-  }
-
-  .cart__summary-totals + .cart__buttons-group {
-    margin-top: calc(-1 * var(--margin-sm));
-  }
-
-  /* Checkout button - text only with underline on hover */
-  .cart__checkout-button {
-    background-color: transparent !important;
-    border: none !important;
-    color: var(--color-foreground) !important;
-    padding: var(--padding-sm) var(--padding-md) !important;
-    text-decoration: none;
-    font-weight: var(--button-font-weight-primary);
-    text-transform: var(--button-text-case-primary);
+    color: var(--color-foreground);
+    background-color: transparent;
+    pointer-events: all;
     cursor: pointer;
-    transition: text-decoration 0.2s ease;
+    height: 100%;
   }
 
-  .cart__checkout-button:hover:not(:disabled) {
-    text-decoration: underline;
-    background-color: transparent !important;
+  .cart-discount__error {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding-block: var(--padding-2xs) var(--padding-sm);
   }
 
-  .cart__checkout-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .cart-discount__error .svg-wrapper {
+    flex-shrink: 0;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+    margin-inline: var(--margin-3xs) var(--margin-xs);
+  }
+
+  .cart-discount__error-text {
+    margin-block-start: var(--margin-3xs);
+  }
+
+  .disclosure-trigger {
+    cursor: pointer;
+    color: var(--color-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--padding-sm);
+    padding-inline: 0;
+    width: 100%;
+    border: none;
+    background: #0000;
+
+    &[aria-expanded='true'] .horizontal {
+      rotate: 90deg;
+    }
+
+    &:is(:hover, :focus-visible) {
+      color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+    }
+
+    .horizontal {
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    svg {
+      aspect-ratio: 1;
+      width: var(--icon-size-xs);
+      height: var(--icon-size-xs);
+    }
+  }
+
+  .disclosure-trigger__label {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--gap-2xs);
+    font-size: var(--cart-font-size--2xs);
+    font-weight: 500;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .disclosure-trigger .horizontal {
+      transition: rotate var(--surface-transition-duration) var(--surface-transition-timing);
+    }
+  }
+
+  .disclosure-content {
+    display: grid;
+    grid-template-rows: 1fr;
+    /* stylelint-disable-next-line plugin/no-unsupported-browser-features */
+    clip-path: inset(-5% -5% 0 -5%);
+    opacity: 1;
+
+    &[inert] {
+      grid-template-rows: 0fr;
+      opacity: 0;
+    }
+
+    & > * {
+      min-height: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .disclosure-content {
+      transition-property: grid-template-rows, opacity;
+      transition-duration: var(--surface-transition-duration);
+      transition-timing-function: var(--surface-transition-timing);
+    }
   }
 {% endstylesheet %}
-
-{% javascript %}
-  // Hide Shop Pay buttons that cause CSP errors with shop.app
-  (function() {
-    function hideShopPayButtons() {
-      const paymentButtonsContainer = document.querySelector('.cart__payment-buttons');
-      if (!paymentButtonsContainer) return;
-
-      // Find and hide Shop Pay buttons/iframes
-      const shopPayElements = paymentButtonsContainer.querySelectorAll(
-        'shopify-payment-button[data-shopify-payment-button], ' +
-        'shopify-accelerated-checkout, ' +
-        'iframe[src*="shop.app"], ' +
-        'iframe[src*="shopify.com/shop-pay"], ' +
-        '[data-shopify-button*="shop-pay"], ' +
-        '[data-shopify-button*="shop_pay"]'
-      );
-
-      shopPayElements.forEach(element => {
-        // Hide the parent container if it's a button wrapper
-        const parent = element.closest('div[class*="shopify"], div[class*="payment"]');
-        if (parent) {
-          parent.style.display = 'none';
-        } else {
-          element.style.display = 'none';
-        }
-      });
-
-      // Also check for buttons with Shop Pay text/attributes
-      const allButtons = paymentButtonsContainer.querySelectorAll('button, a, div[role="button"]');
-      allButtons.forEach(button => {
-        const text = button.textContent?.toLowerCase() || '';
-        const ariaLabel = button.getAttribute('aria-label')?.toLowerCase() || '';
-        const dataAttr = button.getAttribute('data-shopify-button')?.toLowerCase() || '';
-        
-        if (text.includes('shop pay') || 
-            text.includes('shopify pay') || 
-            ariaLabel.includes('shop pay') ||
-            dataAttr.includes('shop-pay') ||
-            dataAttr.includes('shop_pay')) {
-          const parent = button.closest('div[class*="shopify"], div[class*="payment"]');
-          if (parent) {
-            parent.style.display = 'none';
-          } else {
-            button.style.display = 'none';
-          }
-        }
-      });
-    }
-
-    // Run immediately
-    hideShopPayButtons();
-
-    // Run after DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', hideShopPayButtons);
-    }
-
-    // Run after a delay to catch dynamically loaded buttons
-    setTimeout(hideShopPayButtons, 500);
-    setTimeout(hideShopPayButtons, 1000);
-    setTimeout(hideShopPayButtons, 2000);
-
-    // Use MutationObserver to watch for dynamically added buttons
-    const observer = new MutationObserver(function(mutations) {
-      let shouldCheck = false;
-      mutations.forEach(function(mutation) {
-        if (mutation.addedNodes.length > 0) {
-          shouldCheck = true;
-        }
-      });
-      if (shouldCheck) {
-        hideShopPayButtons();
-      }
-    });
-
-    // Observe the payment buttons container
-    const paymentButtonsContainer = document.querySelector('.cart__payment-buttons');
-    if (paymentButtonsContainer) {
-      observer.observe(paymentButtonsContainer, {
-        childList: true,
-        subtree: true
-      });
-    }
-  })();
-{% endjavascript %}

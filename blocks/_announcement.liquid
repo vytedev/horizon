@@ -43,17 +43,6 @@
 {%- endunless -%}
 
 {% stylesheet %}
-  .text-block {
-    width: var(--width);
-    max-width: 100%;
-  }
-
-  .text-block > * {
-    width: var(--width);
-    max-width: var(--max-width, 100%);
-    text-align: var(--text-align);
-  }
-
   .text-block:not(.text-block--full-width).rte,
   .text-block:not(.text-block--full-width).paragraph {
     /* Safari doesn't support pretty, so fallback to balance */
@@ -323,7 +312,11 @@
   ],
   "presets": [
     {
-      "name": "t:names.announcement"
+      "name": "t:names.announcement",
+      "settings": {
+        "font": "var(--font-subheading--family)",
+        "font_size": "0.75rem"
+      }
     }
   ]
 }

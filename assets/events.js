@@ -57,6 +57,7 @@ export class VariantUpdateEvent extends Event {
    * @param {string} resource.id - The id of the variant
    * @param {boolean} resource.available - Whether the variant is available
    * @param {boolean} resource.inventory_management - Whether the variant has inventory management
+   * @param {string} [resource.sku] - The SKU of the variant
    * @param {Object} [resource.featured_media] - The featured media of the variant
    * @param {string} [resource.featured_media.id] - The id of the featured media
    * @param {Object} [resource.featured_media.preview_image] - The preview image of the featured media

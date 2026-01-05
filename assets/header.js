@@ -1,5 +1,5 @@
 import { Component } from '@theme/component';
-import { onDocumentReady, changeMetaThemeColor } from '@theme/utilities';
+import { onDocumentLoaded, changeMetaThemeColor } from '@theme/utilities';
 
 /**
  * @typedef {Object} HeaderComponentRefs
@@ -52,6 +52,12 @@ class HeaderComponent extends Component {
   #timeout = null;
 
   /**
+   * RAF ID for scroll handler throttling
+   * @type {number | null}
+   */
+  #scrollRafId = null;
+
+  /**
    * The duration to wait for hiding animation, when sticky behavior is 'scroll-up'
    * @constant {number}
    */
@@ -62,10 +68,12 @@ class HeaderComponent extends Component {
    * which other theme components can then consume
    */
   #resizeObserver = new ResizeObserver(([entry]) => {
-    if (!entry) return;
+    if (!entry || !entry.borderBoxSize[0]) return;
 
-    const { height } = entry.target.getBoundingClientRect();
-    document.body.style.setProperty('--header-height', `${height}px`);
+    // The initial height is calculated using the .offsetHeight property, which returns an integer.
+    // We round to the nearest integer to avoid unnecessaary reflows.
+    const roundedHeaderHeight = Math.round(entry.borderBoxSize[0].blockSize);
+    document.body.style.setProperty('--header-height', `${roundedHeaderHeight}px`);
 
     // Check if the menu drawer should be hidden in favor of the header menu
     if (this.#menuDrawerHiddenWidth && window.innerWidth > this.#menuDrawerHiddenWidth) {
@@ -91,7 +99,7 @@ class HeaderComponent extends Component {
 
       if (alwaysSticky) {
         this.dataset.stickyState = isIntersecting ? 'inactive' : 'active';
-        changeMetaThemeColor(this.refs.headerRowTop);
+        if (this.dataset.themeColor) changeMetaThemeColor(this.dataset.themeColor);
       } else {
         this.#offscreen = !isIntersecting || this.dataset.stickyState === 'active';
       }
@@ -125,23 +133,33 @@ class HeaderComponent extends Component {
   }
 
   #handleWindowScroll = () => {
+    if (this.#scrollRafId !== null) return;
+
+    this.#scrollRafId = requestAnimationFrame(() => {
+      this.#scrollRafId = null;
+      this.#updateScrollState();
+    });
+  };
+
+  #updateScrollState = () => {
     const stickyMode = this.getAttribute('sticky');
     if (!this.#offscreen && stickyMode !== 'always') return;
 
     const scrollTop = document.scrollingElement?.scrollTop ?? 0;
+    const headerTop = this.getBoundingClientRect().top;
     const isScrollingUp = scrollTop < this.#lastScrollTop;
+    const isAtTop = headerTop >= 0;
+
     if (this.#timeout) {
       clearTimeout(this.#timeout);
       this.#timeout = null;
     }
 
     if (stickyMode === 'always') {
-      if (isScrollingUp) {
-        if (this.getBoundingClientRect().top >= 0) {
-          this.dataset.scrollDirection = 'none';
-        } else {
-          this.dataset.scrollDirection = 'up';
-        }
+      if (isAtTop) {
+        this.dataset.scrollDirection = 'none';
+      } else if (isScrollingUp) {
+        this.dataset.scrollDirection = 'up';
       } else {
         this.dataset.scrollDirection = 'down';
       }
@@ -153,7 +171,7 @@ class HeaderComponent extends Component {
     if (isScrollingUp) {
       this.removeAttribute('data-animating');
 
-      if (this.getBoundingClientRect().top >= 0) {
+      if (isAtTop) {
         // reset sticky state when header is scrolled up to natural position
         this.#offscreen = false;
         this.dataset.stickyState = 'inactive';
@@ -201,6 +219,10 @@ class HeaderComponent extends Component {
     this.#intersectionObserver?.disconnect();
     this.removeEventListener('overflowMinimum', this.#handleOverflowMinimum);
     document.removeEventListener('scroll', this.#handleWindowScroll);
+    if (this.#scrollRafId !== null) {
+      cancelAnimationFrame(this.#scrollRafId);
+      this.#scrollRafId = null;
+    }
     document.body.style.setProperty('--header-height', '0px');
   }
 }
@@ -209,20 +231,42 @@ if (!customElements.get('header-component')) {
   customElements.define('header-component', HeaderComponent);
 }
 
-onDocumentReady(() => {
-  const header = document.querySelector('#header-component');
+onDocumentLoaded(() => {
+  const header = document.querySelector('header-component');
   const headerGroup = document.querySelector('#header-group');
+
+  // Note: Initial header heights are set via inline script in theme.liquid
+  // This ResizeObserver handles dynamic updates after page load
 
   // Update header group height on resize of any child
   if (headerGroup) {
-    const resizeObserver = new ResizeObserver(() => calculateHeaderGroupHeight(header, headerGroup));
+    const resizeObserver = new ResizeObserver((entries) => {
+      const headerGroupHeight = entries.reduce((totalHeight, entry) => {
+        if (
+          entry.target !== header ||
+          (header.hasAttribute('transparent') && header.parentElement?.nextElementSibling)
+        ) {
+          return totalHeight + (entry.borderBoxSize[0]?.blockSize ?? 0);
+        }
+        return totalHeight;
+      }, 0);
+      // The initial height is calculated using the .offsetHeight property, which returns an integer.
+      // We round to the nearest integer to avoid unnecessaary reflows.
+      const roundedHeaderGroupHeight = Math.round(headerGroupHeight);
+      document.body.style.setProperty('--header-group-height', `${roundedHeaderGroupHeight}px`);
+    });
+
+    if (header instanceof HTMLElement) {
+      resizeObserver.observe(header);
+    }
 
     // Observe all children of the header group
     const children = headerGroup.children;
     for (let i = 0; i < children.length; i++) {
       const element = children[i];
-      if (element === header || !(element instanceof HTMLElement)) continue;
-      resizeObserver.observe(element);
+      if (element instanceof HTMLElement) {
+        resizeObserver.observe(element);
+      }
     }
 
     // Also observe the header group itself for child changes
@@ -233,8 +277,9 @@ onDocumentReady(() => {
           const children = headerGroup.children;
           for (let i = 0; i < children.length; i++) {
             const element = children[i];
-            if (element === header || !(element instanceof HTMLElement)) continue;
-            resizeObserver.observe(element);
+            if (element instanceof HTMLElement) {
+              resizeObserver.observe(element);
+            }
           }
         }
       }

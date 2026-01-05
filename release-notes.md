@@ -1,29 +1,29 @@
-# Release Notes - Version 3.1.0
+# Release Notes - Version 3.2.1
 
-This release introduces the ability to add mobile-specific media in the Hero section. It also includes several Safari bug fixes, and improved handling of transparent headers.
+This release delivers extensive performance optimizations across many components and resolves issues in the menu drawer, cart, and sticky add-to-cart behavior.
 
 ## What's Changed
 
-### Added
-
-- [Hero section] Set custom mobile media and layout settings
-
-### Changed
-
-- [Product] Quantity rules are shown on product pages
-- [Footer] Rename "Utilities" to "Policies and links"
-- [Product grid] Removed price from zoomed out grid view
-- [Filters] Filter count always shown in vertical filters
-
 ### Fixes and improvements
 
-- [Featured product carousel] Fix starting position on mobile Safari
-- [Slideshows] Ensure slideshow control buttons are circular on Safari
-- [Accessibility] Add background color to skip links for better visibility
-- [Product page] Shop Pay Instalments messaging no longer inherits custom typography from price block
-- [Product page] "Constrain image heights to viewport" accounts for transparent headers
-- [Header] Announcement bar visibility fix when used with transparent headers
-- [Collection links section] Links stack vertically on mobile
-- [Marquee] Fixed disappearing text
-- [Footer] Fixed email signup button icon color
-- [Footer] Menu block respects group block's vertical layout on mobile
+- [Performance] Improved Liquid rendering performance by reducing snippet use
+- [Performance] Improved overall CSS performance
+- [Performance] Improved animation performance
+- [Performance] Improved header, email signup, quick-add, meta color, predictive search, hero banner, fly-to-cart, jumbo text, and slideshow performance
+- [Performance] Improved page load speed when page transitions are turned off
+- [Performance] Disabled all view transitions for low-powered devices
+- [Performance] Improved interaction performance for various components
+- [Menu drawer] Fixed menu drawer not closing on Firefox
+- [Footer] Fixed footer copyright text wrapping
+- [Quick add] Fixed quick add modal variant selector appearance issues after opening multiple modals
+- [Collection cards] Collection cards in lists and grids match height of tallest card
+- [Slideshow] Fixed slideshow controls visibility on transparent product images
+- [Marquee] Fixed marquee jump on mobile scroll
+- [Sticky add to cart] Polished sticky add to cart behaviors
+- [Cart drawer] Entire cart drawer becomes scrollable when its footer is too tall
+- [Cart drawer] Addressed UI inconsistencies in the cart drawer
+- [Gift cards] Fixed "copy gift card code" button
+- [Cart] Fixed discount field sizing for narrow viewports
+- [Blog] Removed section title uppercase styling
+- [Editor] Added recommended blocks to Slideshow and Layered slideshow
+- [Editor] Improved the clarity of a number of labels in the editor

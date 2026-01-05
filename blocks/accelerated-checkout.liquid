@@ -1,14 +1,19 @@
-{% # import schema from '../schemas/blocks/accelerated-checkout.js' %}
-
 {%- doc -%}
   This block is used to display the accelerated checkout button.
   Intended for product-form.liquid block.
 
   @param {string} can_add_to_cart - Whether the product can be added to the cart
+  @param form_obj - The form object
 
   @example
-  {% content_for 'block', type: 'accelerated-checkout', id: 'accelerated-checkout', can_add_to_cart: can_add_to_cart %}
+  {% content_for 'block', type: 'accelerated-checkout', id: 'accelerated-checkout', can_add_to_cart: can_add_to_cart, form_obj: form %}
 {%- enddoc -%}
+
+{% capture accelerated_checkout_button %}
+  {% if product != blank and form_obj != blank %}
+    {{ form_obj | payment_button }}
+  {% endif %}
+{% endcapture %}
 
 {% liquid
   assign product = closest.product
@@ -17,128 +22,21 @@
   endif
 %}
 
-<div
-  class="accelerated-checkout-block"
-  ref="acceleratedCheckoutButtonContainer"
-  {{ block.shopify_attributes }}
-  {% if request.visual_preview_mode %}
-    data-shopify-visual-preview
-  {% endif %}
-  {% unless can_add_to_cart %}
-    data-disabled="true"
-  {% endunless %}
->
-  {% if product != blank %}
-    {%- form 'product', product -%}
-      {{ form | payment_button }}
-    {%- endform -%}
-  {% endif %}
-</div>
-
-{% assign shop_logo_svg = 'icon-shop-logo.svg' | inline_asset_content %}
-<script>
-  (function() {
-    const block = document.querySelector('.accelerated-checkout-block');
-    if (!block) return;
-
-    const shopLogoSVG = {{ shop_logo_svg | json }};
-    
-    // Handle initial disabled state
-    if (block.dataset.disabled === 'true') {
-      const paymentButton = block.querySelector('button[data-shopify-payment-button], shopify-payment-button button, shopify-accelerated-checkout button');
-      if (paymentButton) {
-        paymentButton.disabled = true;
-        paymentButton.innerHTML = 'Sold Out';
-      }
-    }
-
-    function customizeButton() {
-      // Try multiple selectors for Shop Pay button
-      const selectors = [
-        'shopify-accelerated-checkout button',
-        '.shopify-payment-button__button--branded',
-        'shopify-payment-button button',
-        'button[data-shopify-payment-button]',
-        '.shopify-payment-button__button',
-        'button'
-      ];
-      
-      let shopPayButton = null;
-      for (const selector of selectors) {
-        shopPayButton = block.querySelector(selector);
-        if (shopPayButton && shopPayButton.textContent && !shopPayButton.dataset.customized) {
-          break;
-        }
-      }
-      
-      if (shopPayButton && !shopPayButton.dataset.customized) {
-        shopPayButton.dataset.customized = 'true';
-        
-        // Handle disabled state
-        const isDisabled = block.dataset.disabled === 'true' || shopPayButton.disabled;
-        if (isDisabled) {
-          shopPayButton.disabled = true;
-          // Show "Sold Out" text when disabled
-          shopPayButton.innerHTML = 'Sold Out';
-        } else {
-          // Create flex container
-          const flexContainer = document.createElement('span');
-          flexContainer.className = 'buy-with-content';
-          
-          // Create new content with "Buy with" and Shop logo
-          const buyWithText = document.createTextNode('Buy with ');
-          const shopLogo = document.createElement('span');
-          shopLogo.className = 'shop-logo-inline';
-          
-          // Use innerHTML to properly insert the SVG
-          shopLogo.innerHTML = shopLogoSVG;
-          
-          // Add text and logo to flex container
-          flexContainer.appendChild(buyWithText);
-          flexContainer.appendChild(shopLogo);
-          
-          // Clear and add flex container
-          shopPayButton.innerHTML = '';
-          shopPayButton.appendChild(flexContainer);
-        }
-      }
-    }
-
-    const observer = new MutationObserver(function(mutations) {
-      customizeButton();
-      // Check if disabled state changed
-      const paymentButton = block.querySelector('button[data-shopify-payment-button], shopify-payment-button button, shopify-accelerated-checkout button');
-      if (paymentButton && paymentButton.dataset.customized === 'true') {
-        const isDisabled = block.dataset.disabled === 'true' || paymentButton.disabled;
-        if (isDisabled && paymentButton.textContent !== 'Sold Out') {
-          paymentButton.innerHTML = 'Sold Out';
-          paymentButton.disabled = true;
-        } else if (!isDisabled && paymentButton.textContent === 'Sold Out') {
-          // Re-customize the button if it was showing "Sold Out" but is now enabled
-          paymentButton.dataset.customized = 'false';
-          customizeButton();
-        }
-      }
-    });
-
-    observer.observe(block, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-disabled'] });
-    
-    // Also check immediately and on intervals
-    customizeButton();
-    setTimeout(customizeButton, 100);
-    setTimeout(customizeButton, 500);
-    setTimeout(customizeButton, 1000);
-    setTimeout(customizeButton, 2000);
-    setTimeout(customizeButton, 3000);
-    
-    // Also listen for when the web component is ready
-    if (window.customElements) {
-      customElements.whenDefined('shopify-accelerated-checkout').then(() => {
-        setTimeout(customizeButton, 100);
-      }).catch(() => {});
-    }
-  })();
-</script>
+{% if accelerated_checkout_button != blank %}
+  <div
+    class="accelerated-checkout-block"
+    ref="acceleratedCheckoutButtonContainer"
+    {{ block.shopify_attributes }}
+    {% if request.visual_preview_mode %}
+      data-shopify-visual-preview
+    {% endif %}
+    {% unless can_add_to_cart %}
+      hidden
+    {% endunless %}
+  >
+    {{ accelerated_checkout_button }}
+  </div>
+{% endif %}
 
 {% stylesheet %}
   .accelerated-checkout-block[data-shopify-visual-preview] {
@@ -159,63 +57,6 @@
 
   .shopify-payment-button__more-options[aria-hidden='true'] {
     display: none;
-  }
-
-  /* Ensure Shop Pay button displays correctly */
-  .accelerated-checkout-block .shopify-payment-button__button,
-  .accelerated-checkout-block shopify-payment-button button,
-  .accelerated-checkout-block .shopify-payment-button__button--branded,
-  .accelerated-checkout-block shopify-accelerated-checkout button,
-  .accelerated-checkout-block shopify-accelerated-checkout .shopify-payment-button__button {
-    width: 100% !important;
-    min-height: var(--minimum-touch-target) !important;
-    border-radius: var(--style-border-radius-buttons-primary) !important;
-    background-color: #5a31f4 !important;
-    color: #ffffff !important;
-  }
-
-  .accelerated-checkout-block .shopify-payment-button__button--branded:hover,
-  .accelerated-checkout-block shopify-payment-button button:hover,
-  .accelerated-checkout-block shopify-accelerated-checkout button:hover {
-    background-color: #4c29d1 !important;
-  }
-
-  .accelerated-checkout-block button[data-shopify-payment-button],
-  .accelerated-checkout-block .shopify-payment-button__button[data-shopify-payment-button] {
-    background-color: #5a31f4 !important;
-    color: #ffffff !important;
-  }
-
-  .buy-with-content {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 0.25em;
-  }
-
-  .shop-logo-inline {
-    display: inline-flex;
-    align-items: center;
-    line-height: 1;
-  }
-
-  .shop-logo-inline svg {
-    width: 51px;
-    height: 20px;
-    display: block;
-  }
-
-  /* Disabled state for accelerated checkout button */
-  .accelerated-checkout-block[data-disabled="true"] button,
-  .accelerated-checkout-block[data-disabled="true"] shopify-payment-button button,
-  .accelerated-checkout-block[data-disabled="true"] shopify-accelerated-checkout button,
-  .accelerated-checkout-block button:disabled,
-  .accelerated-checkout-block shopify-payment-button button:disabled,
-  .accelerated-checkout-block shopify-accelerated-checkout button:disabled {
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
-    pointer-events: none !important;
   }
 {% endstylesheet %}
 

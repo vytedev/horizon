@@ -13,7 +13,7 @@
   @param {boolean} [autofocus] - whether the input should be autofocused
 {%- enddoc -%}
 <div
-  class="checkbox"
+  class="checkbox{% if disabled %} checkbox--disabled{% endif %}"
   {{ events }}
 >
   <input

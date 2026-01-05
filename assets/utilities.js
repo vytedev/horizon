@@ -6,6 +6,31 @@ export const requestIdleCallback =
   typeof window.requestIdleCallback == 'function' ? window.requestIdleCallback : setTimeout;
 
 /**
+ * Returns a promise that resolves after yielding to the main thread.
+ * @see https://web.dev/articles/optimize-long-tasks#scheduler-yield
+ */
+export const yieldToMainThread = () => {
+  if ('yield' in scheduler) {
+    // @ts-ignore - TypeScript doesn't recognize the yield method yet.
+    return scheduler.yield();
+  }
+
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => {
+      setTimeout(resolve, 0);
+    });
+  });
+};
+
+/**
+ * Tells if we are on a low power device based on the number of CPU cores and RAM
+ * @returns {boolean} True if the device is a low power device, false otherwise
+ */
+export function isLowPowerDevice() {
+  return Number(navigator.hardwareConcurrency) <= 2 || Number(navigator.deviceMemory) <= 2;
+}
+
+/**
  * Check if the browser supports View Transitions API
  * @returns {boolean} True if the browser supports View Transitions API, false otherwise
  */
@@ -65,40 +90,38 @@ const viewTransitionTypes = {
  * @returns {Promise<void>} A promise that resolves when the view transition finishes
  */
 export function startViewTransition(callback, types) {
-  return new Promise(async (resolve) => {
-    // Check if View Transitions API is supported, not on mobile (to prevent crashes), and user hasn't reduced motion
-    if (supportsViewTransitions() && !prefersReducedMotion() && !isMobileBreakpoint()) {
-      let cleanupFunctions = [];
+  // Check if the API is supported and transitions are desired
+  if (!supportsViewTransitions() || isLowPowerDevice() || prefersReducedMotion()) {
+    callback();
+    return Promise.resolve();
+  }
 
-      if (types) {
-        for (const type of types) {
-          if (viewTransitionTypes[type]) {
-            const cleanupFunction = await viewTransitionTypes[type]();
-            if (cleanupFunction) cleanupFunctions.push(cleanupFunction);
-          }
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise(async (resolve) => {
+    let cleanupFunctions = [];
+
+    if (types) {
+      for (const type of types) {
+        if (viewTransitionTypes[type]) {
+          const cleanupFunction = await viewTransitionTypes[type]();
+          if (cleanupFunction) cleanupFunctions.push(cleanupFunction);
         }
       }
-
-      const transition = document.startViewTransition(callback);
-
-      if (!viewTransition.current) {
-        viewTransition.current = transition.finished;
-      }
-
-      if (types) types.forEach((type) => transition.types.add(type));
-
-      transition.finished.then(() => {
-        viewTransition.current = undefined;
-        cleanupFunctions.forEach((cleanupFunction) => cleanupFunction());
-        resolve();
-      });
-
-      return;
     }
 
-    // Fallback for browsers that don't support this API yet
-    callback();
-    resolve();
+    const transition = document.startViewTransition(callback);
+
+    if (!viewTransition.current) {
+      viewTransition.current = transition.finished;
+    }
+
+    if (types) types.forEach((type) => transition.types.add(type));
+
+    transition.finished.then(() => {
+      viewTransition.current = undefined;
+      cleanupFunctions.forEach((cleanupFunction) => cleanupFunction());
+      resolve();
+    });
   });
 }
 
@@ -237,14 +260,40 @@ export function formatMoney(value) {
 }
 
 /**
- * Check if the document is ready and call the callback when it is.
+ * Check if the document is ready/loaded and call the callback when it is.
  * @param {() => void} callback The function to call when the document is ready.
  */
-export function onDocumentReady(callback) {
+export function onDocumentLoaded(callback) {
   if (document.readyState === 'complete') {
     callback();
   } else {
     window.addEventListener('load', callback);
+  }
+}
+
+/**
+ * Check if the DOM is ready and call the callback when it is.
+ * This fires when the DOM is fully parsed but before all resources are loaded.
+ * @param {() => void} callback The function to call when the DOM is ready.
+ */
+export function onDocumentReady(callback) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback);
+  } else {
+    callback();
+  }
+}
+
+/**
+ * Removes will-change from an element after an animation ends.
+ * Intended to be used as an animationend event listener.
+ * @param {AnimationEvent} event The animation event.
+ */
+export function removeWillChangeOnAnimationEnd(event) {
+  const target = event.target;
+  if (target && target instanceof HTMLElement) {
+    target.style.setProperty('will-change', 'unset');
+    target.removeEventListener('animationend', removeWillChangeOnAnimationEnd);
   }
 }
 
@@ -440,6 +489,23 @@ export function getVisibleElements(root, elements, ratio = 1, axis) {
   });
 }
 
+export function getIOSVersion() {
+  const { userAgent } = navigator;
+  const isIOS = /(iPhone|iPad)/i.test(userAgent);
+
+  if (!isIOS) return null;
+
+  const version = userAgent.match(/OS ([\d_]+)/)?.[1];
+  const [major, minor] = version?.split('_') || [];
+  if (!version || !major) return null;
+
+  return {
+    fullString: version.replace('_', '.'),
+    major: parseInt(major, 10),
+    minor: minor ? parseInt(minor, 10) : 0,
+  };
+}
+
 /**
  * Determines which grid items should be animated during a transition.
  * It makes an estimation based on the zoom-out card size because it's
@@ -527,13 +593,40 @@ export function resetShimmer(container = document.body) {
 }
 
 /**
- * Change the meta theme color of the header.
- * @param {Element} colorSourceElement - The HTML element whose background-color will determine the new theme-color.
+ * Change the meta theme color of the browser.
+ * @param {string} color - The color value (e.g., 'rgb(255, 255, 255)')
  */
-export function changeMetaThemeColor(colorSourceElement) {
+export function changeMetaThemeColor(color) {
   const metaThemeColor = document.head.querySelector('meta[name="theme-color"]');
-  const containerStyle = window.getComputedStyle(colorSourceElement);
-  if (metaThemeColor) metaThemeColor.setAttribute('content', containerStyle.backgroundColor);
+  if (metaThemeColor && color) {
+    metaThemeColor.setAttribute('content', color);
+  }
+}
+
+/**
+ * Gets the `view` URL search parameter value, if it exists.
+ * Useful for Section Rendering API calls to get HTML markup for the correct template view.
+ * Primarily used in testing alternative template views.
+ * @returns {string | null} The view parameter value, or null if it doesn't exist
+ */
+export function getViewParameterValue() {
+  return new URLSearchParams(window.location.search).get('view');
+}
+
+/**
+ * Helper to parse integer with a default fallback
+ * Handles the case where 0 is a valid value (not falsy)
+ * @template {number|null} T
+ * @param {string|number|null|undefined} value - The value to parse
+ * @param {T} defaultValue - The default value (number or null)
+ * @returns {number|T} The parsed integer or default value
+ */
+export function parseIntOrDefault(value, defaultValue) {
+  if (value === null || value === undefined || value === '') {
+    return defaultValue;
+  }
+  const parsed = parseInt(value.toString());
+  return isNaN(parsed) ? defaultValue : parsed;
 }
 
 class Scheduler {
@@ -558,7 +651,7 @@ class Scheduler {
 
   flush = () => {
     for (const task of this.#queue) {
-      task();
+      setTimeout(task, 0);
     }
 
     this.#queue.clear();
@@ -568,7 +661,120 @@ class Scheduler {
 
 export const scheduler = new Scheduler();
 
-Theme.utilities = {
-  ...Theme.utilities,
-  scheduler: scheduler,
-};
+/**
+ * Executes a callback once per session when in the Shopify theme editor
+ * @param {HTMLElement} element - The element to check for the shopify editor block id
+ * @param {string} sessionKeyName - Unique key for the session storage
+ * @param {() => void} callback - Function to execute
+ * @returns {void} - Void if the callback was executed, undefined if it wasn't
+ */
+export function oncePerEditorSession(element, sessionKeyName, callback) {
+  const isInThemeEditor = window.Shopify?.designMode;
+  const shopifyEditorSectionId = JSON.parse(element.dataset.shopifyEditorSection || '{}').id;
+  const shopifyEditorBlockId = JSON.parse(element.dataset.shopifyEditorBlock || '{}').id;
+  const editorId = shopifyEditorSectionId || shopifyEditorBlockId;
+  const uniqueSessionKey = `${sessionKeyName}-${editorId}`;
+
+  if (isInThemeEditor && sessionStorage.getItem(uniqueSessionKey)) return;
+
+  callback();
+
+  if (isInThemeEditor) sessionStorage.setItem(uniqueSessionKey, 'true');
+
+  return;
+}
+
+/**
+ * A custom ResizeObserver that only calls the callback when the element is resized.
+ * By default the ResizeObserver callback is called when the element is first observed.
+ */
+export class ResizeNotifier extends ResizeObserver {
+  #initialized = false;
+
+  /**
+   * @param {ResizeObserverCallback} callback
+   */
+  constructor(callback) {
+    super((entries) => {
+      if (this.#initialized) return callback(entries, this);
+      this.#initialized = true;
+    });
+  }
+
+  disconnect() {
+    this.#initialized = false;
+    super.disconnect();
+  }
+}
+
+// Header calculation functions for maintaining CSS variables
+export function calculateHeaderGroupHeight(
+  header = document.querySelector('#header-component'),
+  headerGroup = document.querySelector('#header-group')
+) {
+  if (!headerGroup) return 0;
+
+  let totalHeight = 0;
+  const children = headerGroup.children;
+  for (let i = 0; i < children.length; i++) {
+    const element = children[i];
+    if (element === header || !(element instanceof HTMLElement)) continue;
+    totalHeight += element.offsetHeight;
+  }
+
+  // If the header is transparent and has a sibling section, add the height of the header to the total height
+  if (header instanceof HTMLElement && header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
+    return totalHeight + header.offsetHeight;
+  }
+
+  return totalHeight;
+}
+
+/**
+ * Updates CSS custom properties for transparent header offset calculation
+ * Avoids expensive :has() selectors
+ */
+function updateTransparentHeaderOffset() {
+  const header = document.querySelector('#header-component');
+  const headerGroup = document.querySelector('#header-group');
+  const hasHeaderSection = headerGroup?.querySelector('.header-section');
+  if (!hasHeaderSection || !header?.hasAttribute('transparent')) {
+    document.body.style.setProperty('--transparent-header-offset-boolean', '0');
+    return;
+  }
+
+  const hasImmediateSection = hasHeaderSection.nextElementSibling?.classList.contains('shopify-section');
+
+  const shouldApplyOffset = !hasImmediateSection ? '1' : '0';
+  document.body.style.setProperty('--transparent-header-offset-boolean', shouldApplyOffset);
+}
+
+/**
+ * Initialize and maintain header height CSS variables.
+ */
+function updateHeaderHeights() {
+  const header = document.querySelector('header-component');
+
+  // Early exit if no header - nothing to do
+  if (!(header instanceof HTMLElement)) return;
+
+  // Calculate initial heights
+  const headerHeight = header.offsetHeight;
+  const headerGroupHeight = calculateHeaderGroupHeight(header);
+
+  document.body.style.setProperty('--header-height', `${headerHeight}px`);
+  document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
+}
+
+export function updateAllHeaderCustomProperties() {
+  updateHeaderHeights();
+  updateTransparentHeaderOffset();
+}
+
+// Theme is not defined in some layouts, like the gift card page
+if (typeof Theme !== 'undefined') {
+  Theme.utilities = {
+    ...Theme.utilities,
+    scheduler: scheduler,
+  };
+}

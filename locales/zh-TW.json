@@ -1,12 +1,3 @@
-/*
- * ------------------------------------------------------------
- * IMPORTANT: The contents of this file are auto-generated.
- *
- * This file may be updated by the Shopify admin language editor
- * or related systems. Please exercise caution as any changes
- * made to this file may be overwritten.
- * ------------------------------------------------------------
- */
 {
   "blocks": {
     "load_video": "載入影片：{{ description }}",
@@ -25,7 +16,8 @@
       "comment": "留言",
       "post_success": "感謝您聯絡我們。我們會盡快回覆您。",
       "error_heading": "請調整以下內容："
-    }
+    },
+    "slider_label": "投影播放器"
   },
   "accessibility": {
     "play_model": "播放 3D 模型",
@@ -46,7 +38,7 @@
     "search_results_count": "找到 {{ count }} 筆「{{ query }}」的搜尋結果",
     "search_results_no_results": "找不到「{{ query }}」的相關結果",
     "filters": "篩選條件",
-    "account": "開啟帳戶選單",
+    "account": "帳號",
     "cart": "購物車",
     "cart_count": "購物車內品項總數",
     "filter_count": {
@@ -59,17 +51,21 @@
     "scroll_to": "捲動至 {{ title }}",
     "loading_product_recommendations": "正在載入商品推薦",
     "discount": "套用折扣代碼",
+    "discount_menu": "折扣代碼",
     "discount_applied": "套用的折扣代碼：{{ code }}",
-    "open_cart_drawer": "開啟購物車",
     "inventory_status": "庫存狀態",
     "pause_video": "暫停影片",
     "find_country": "尋找國家/地區",
-    "localization_region_and_language": "開啟地區和語言選擇器",
-    "open_search_modal": "開啟購物車搜尋",
+    "localization_region_and_language": "地區和語言選擇器",
     "decrease_quantity": "減少數量",
     "increase_quantity": "增加數量",
     "quantity": "數量",
-    "rating": "本商品的評分為 {{ rating }}/5"
+    "rating": "本商品的評分為 {{ rating }}/5",
+    "nested_product": "適用於 {{ parent_title }} 的 {{ product_title }}",
+    "remove": "移除",
+    "view_pricing_info": "檢視定價資訊",
+    "open_hotspot": "開啟熱點",
+    "slideshow": "素材輪播"
   },
   "actions": {
     "add_to_cart": "加入購物車",
@@ -108,7 +104,8 @@
     "open_image_in_full_screen": "全螢幕開啟圖片",
     "sign_up": "註冊",
     "sort": "排序",
-    "show_all_options": "顯示所有選項"
+    "show_all_options": "顯示所有選項",
+    "open": "開啟"
   },
   "content": {
     "reviews": "評論",
@@ -221,7 +218,50 @@
     "page_placeholder_title": "頁面標題",
     "page_placeholder_content": "選取一個頁面，即可顯示其內容。",
     "placeholder_image": "佔位符圖片",
-    "shipping_policy": "結帳時計算運費。"
+    "shipping_policy": "結帳時計算運費。",
+    "recipient_form_send_to": "傳送至",
+    "recipient_form_email_label": "收件者電子郵件",
+    "recipient_form_email_label_my_email": "我的電子郵件",
+    "recipient_form_email_address": "收件者電子郵件地址",
+    "recipient_form_name_label": "收件者姓名 (選填)",
+    "recipient_form_characters_used": "已使用 {{ used_chars }} 個字元/上限 {{ max_chars }} 個字元",
+    "recipient_form_send_on": "YYYY-MM-DD",
+    "recipient_form_send_on_label": "傳送時間 (選填)",
+    "recipient_form_message": "訊息 (選填)",
+    "recipient_form_fields_visible": "收件人表單欄位現已可見",
+    "recipient_form_fields_hidden": "收件人表單欄位現已隱藏",
+    "recipient_form_error": "提交表單時發生錯誤",
+    "product_custom_property_character_count": "已使用 {{ used_chars }} 個字元/上限 {{ max_chars }} 個字元",
+    "terms_and_policies": "條款及政策",
+    "pagination": {
+      "nav_label": "分頁導覽",
+      "previous": "上一頁",
+      "next": "下一頁",
+      "page": "第 {{ page }} 頁"
+    },
+    "volume_pricing_available": "提供批發價",
+    "volume_pricing": "批發價",
+    "at_price_each": "{{ price }}/每件",
+    "each": "({{ price }}/每件",
+    "each_abbreviation": "每件",
+    "price_at": "價格",
+    "price_range": "價格範圍",
+    "cancel": "取消",
+    "product_subtotal": "商品小計",
+    "quantity_per_item": "/件",
+    "remove_all": "全部移除",
+    "remove_all_items_confirmation": "是否要從購物車移除全部 {{ count }} 個品項？",
+    "remove_one_item_confirmation": "是否要從您的購物車移除 1 個品項？",
+    "total_items": "品項總數",
+    "variant": "子類",
+    "variant_total": "子類總計",
+    "view_cart": "檢視購物車",
+    "your_cart": "您的購物車",
+    "items_added_to_cart": {
+      "one": "1 個品項已加入購物車",
+      "other": "{{ count }} 個品項已加入購物車"
+    },
+    "item_count_cutoff": "超過 {{ count }} 個品項"
   },
   "gift_cards": {
     "issued": {
@@ -236,25 +276,6 @@
       "copy_code_success": "已成功複製代碼",
       "expired": "已到期"
     }
-  },
-  "placeholders": {
-    "password": "密碼",
-    "search": "搜尋",
-    "product_title": "產品名稱",
-    "collection_title": "商品系列標題"
-  },
-  "products": {
-    "product": {
-      "add_to_cart": "加入購物車",
-      "added_to_cart": "已放入購物車",
-      "adding_to_cart": "正在新增…",
-      "add_to_cart_error": "加入購物車時發生錯誤",
-      "sold_out": "售罄",
-      "unavailable": "無可用資料"
-    }
-  },
-  "fields": {
-    "separator": "至"
   },
   "blogs": {
     "article": {
@@ -274,6 +295,38 @@
       "post": "發布留言",
       "success_moderated": "已發布留言，正等待審核",
       "success": "已發布留言"
+    }
+  },
+  "fields": {
+    "separator": "至"
+  },
+  "placeholders": {
+    "password": "密碼",
+    "search": "搜尋",
+    "product_title": "產品名稱",
+    "collection_title": "商品系列標題",
+    "blog_posts": "部落格貼文",
+    "blog_post_title": "標題",
+    "blog_post_author": "作者",
+    "blog_post_date": "日期",
+    "blog_post_description": "您部落格貼文的內容摘錄"
+  },
+  "products": {
+    "product": {
+      "add_to_cart": "加入購物車",
+      "adding_to_cart": "正在新增…",
+      "added_to_cart": "已放入購物車",
+      "add_to_cart_error": "加入購物車時發生錯誤",
+      "quantity_error_max": "此品項上限為 {{ maximum }}",
+      "sold_out": "售罄",
+      "unavailable": "無可用資料",
+      "quantity": "數量",
+      "quantity_increments": "{{ increment }} 的倍數",
+      "quantity_minimum": "最少 {{ minimum }} 個",
+      "quantity_maximum": "最多 {{ maximum }} 個",
+      "in_cart": "在購物車中",
+      "default_title": "預設標題",
+      "sticky_add_to_cart": "快速加入購物車列"
     }
   }
 }

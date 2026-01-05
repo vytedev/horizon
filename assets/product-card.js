@@ -1,6 +1,7 @@
+import { OverflowList } from '@theme/overflow-list';
 import VariantPicker from '@theme/variant-picker';
 import { Component } from '@theme/component';
-import { debounce, isDesktopBreakpoint, mediaQueryLarge } from '@theme/utilities';
+import { debounce, isDesktopBreakpoint, mediaQueryLarge, yieldToMainThread } from '@theme/utilities';
 import { ThemeEvents, VariantSelectedEvent, VariantUpdateEvent, SlideshowSelectEvent } from '@theme/events';
 import { morph } from '@theme/morph';
 
@@ -22,10 +23,28 @@ export class ProductCard extends Component {
     return this.refs.productCardLink.href;
   }
 
+  /**
+   * Gets the currently selected variant ID from the product card
+   * @returns {string | null} The variant ID or null if none selected
+   */
+  getSelectedVariantId() {
+    const checkedInput = /** @type {HTMLInputElement | null} */ (
+      this.querySelector('input[type="radio"]:checked[data-variant-id]')
+    );
+
+    return checkedInput?.dataset.variantId || null;
+  }
+
+  /**
+   * Gets the product card link element
+   * @returns {HTMLAnchorElement | null} The product card link or null
+   */
+  getProductCardLink() {
+    return this.refs.productCardLink || null;
+  }
+
   #fetchProductPageHandler = () => {
-    if (!this.refs.quickAdd?.cachedProductHtml) {
-      this.refs.quickAdd?.fetchProductPage(this.productPageUrl);
-    }
+    this.refs.quickAdd?.fetchProductPage(this.productPageUrl);
   };
 
   /**
@@ -123,7 +142,36 @@ export class ProductCard extends Component {
 
     this.#updateVariantImages();
     this.#previousSlideIndex = null;
+
+    // Remove attribute after re-rendering since a variant selection has been made
+    this.removeAttribute('data-no-swatch-selected');
+
+    // Force overflow list to reflow after variant update
+    // This fixes an issue where the overflow counter doesn't update properly in some browsers
+    this.#updateOverflowList();
   };
+
+  /**
+   * Forces the overflow list to recalculate by dispatching a reflow event.
+   * This ensures the overflow counter displays correctly after variant updates.
+   */
+  #updateOverflowList() {
+    // Find the overflow list in the variant picker
+    const overflowList = this.querySelector('swatches-variant-picker-component overflow-list');
+    const isActiveOverflowList = overflowList?.querySelector('[slot="overflow"]') ? true : false;
+    if (!overflowList || !isActiveOverflowList) return;
+
+    // Use requestAnimationFrame to ensure DOM has been updated
+    requestAnimationFrame(() => {
+      // Dispatch a reflow event to trigger recalculation
+      overflowList.dispatchEvent(
+        new CustomEvent('reflow', {
+          bubbles: true,
+          detail: {},
+        })
+      );
+    });
+  }
 
   /**
    * Updates the DOM with a new price.
@@ -156,7 +204,16 @@ export class ProductCard extends Component {
       // If the href is empty, don't update the product URL eg: unavailable variant
       if (anchorElement.getAttribute('href')?.trim() === '') return;
 
-      this.refs.productCardLink.href = anchorElement.href;
+      const productUrl = anchorElement.href;
+      const { productCardLink, productTitleLink, cardGalleryLink } = this.refs;
+
+      productCardLink.href = productUrl;
+      if (cardGalleryLink instanceof HTMLAnchorElement) {
+        cardGalleryLink.href = productUrl;
+      }
+      if (productTitleLink instanceof HTMLAnchorElement) {
+        productTitleLink.href = productUrl;
+      }
     }
   }
 
@@ -205,6 +262,8 @@ export class ProductCard extends Component {
 
         slide.hidden = slide.getAttribute('slide-id') !== selectedImageId;
       }
+
+      slideshow.select({ id: selectedImageId }, undefined, { animate: false });
     }
   }
 
@@ -263,9 +322,9 @@ export class ProductCard extends Component {
     this.resetVariant.cancel();
 
     if (this.#previousSlideIndex != null && this.#previousSlideIndex > 0) {
-      slideshow.select(this.#previousSlideIndex, undefined, { animate: true });
+      slideshow.select(this.#previousSlideIndex, undefined, { animate: false });
     } else {
-      slideshow.next(undefined, { animate: true });
+      slideshow.next(undefined, { animate: false });
       setTimeout(() => this.#preloadNextPreviewImage());
     }
   }
@@ -281,7 +340,7 @@ export class ProductCard extends Component {
 
     if (!this.variantPicker) {
       if (!slideshow) return;
-      slideshow.previous(undefined, { animate: true });
+      slideshow.previous(undefined, { animate: false });
     } else {
       this.#resetVariant();
     }
@@ -295,23 +354,25 @@ export class ProductCard extends Component {
 
     if (!slideshow) return;
 
-    const defaultSlide = slideshow.defaultSlide;
-    const slideId = defaultSlide?.getAttribute('slide-id');
-    if (defaultSlide && slideshow.slides?.includes(defaultSlide) && slideId) {
-      slideshow.select({ id: slideId }, undefined, { animate: true });
-      return;
-    } else if (!this.variantPicker?.selectedOption) {
-      slideshow.previous(undefined, { animate: true });
+    // If we have a selected variant, always use its image
+    if (this.variantPicker?.selectedOption) {
+      const id = this.variantPicker.selectedOption.dataset.optionMediaId;
+      if (id) {
+        slideshow.select({ id }, undefined, { animate: false });
+        return;
+      }
+    }
+
+    // No variant selected - use initial slide if it's valid
+    const initialSlide = slideshow.initialSlide;
+    const slideId = initialSlide?.getAttribute('slide-id');
+    if (initialSlide && slideshow.slides?.includes(initialSlide) && slideId) {
+      slideshow.select({ id: slideId }, undefined, { animate: false });
       return;
     }
 
-    const id = this.variantPicker.selectedOption.dataset.optionMediaId;
-    if (!id) {
-      slideshow.previous(undefined, { animate: true });
-      return;
-    }
-
-    slideshow.select({ id }, undefined, { animate: true });
+    // No valid initial slide or selected variant - go to previous
+    slideshow.previous(undefined, { animate: false });
   };
 
   /**
@@ -330,10 +391,13 @@ export class ProductCard extends Component {
   navigateToProduct = (event) => {
     if (!(event.target instanceof Element)) return;
 
-    const interactiveElement = event.target.closest('button, input, label, select, a, [tabindex="1"]');
+    // Don't navigate if this product card is marked as no-navigation (e.g., in theme editor)
+    if (this.hasAttribute('data-no-navigation')) return;
 
-    // If the click was on an interactive element which is not the main link, do nothing.
-    if (interactiveElement && interactiveElement !== this.refs.productCardLink) {
+    const interactiveElement = event.target.closest('button, input, label, select, [tabindex="1"]');
+
+    // If the click was on an interactive element, do nothing.
+    if (interactiveElement) {
       return;
     }
 
@@ -344,15 +408,25 @@ export class ProductCard extends Component {
     const productCardAnchor = link.getAttribute('id');
     if (!productCardAnchor) return;
 
-    const url = new URL(window.location.href);
-    const parent = this.closest('li');
-    url.hash = productCardAnchor;
-    if (parent && parent.dataset.page) {
-      url.searchParams.set('page', parent.dataset.page);
-    }
-    history.replaceState({}, '', url.toString());
+    const infiniteResultsList = this.closest('results-list[infinite-scroll="true"]');
+    if (!window.Shopify.designMode && infiniteResultsList) {
+      const url = new URL(window.location.href);
+      const parent = this.closest('li');
+      url.hash = productCardAnchor;
+      if (parent && parent.dataset.page) {
+        url.searchParams.set('page', parent.dataset.page);
+      }
 
-    this.#navigateToURL(event, linkURL);
+      yieldToMainThread().then(() => {
+        history.replaceState({}, '', url.toString());
+      });
+    }
+
+    const targetLink = event.target.closest('a');
+    // Let the native navigation handle the click if it was on a link.
+    if (!targetLink) {
+      this.#navigateToURL(event, linkURL);
+    }
   };
 
   /**
@@ -367,13 +441,80 @@ if (!customElements.get('product-card')) {
 
 /**
  * A custom element that displays a variant picker with swatches.
- *
- * @typedef {object} SwatchesRefs
- * @property {HTMLElement} overflowList
- *
+ * @typedef {import('@theme/variant-picker').VariantPickerRefs & {overflowList: HTMLElement}} SwatchesRefs
+ */
+
+/**
  * @extends {VariantPicker<SwatchesRefs>}
  */
 class SwatchesVariantPickerComponent extends VariantPicker {
+  connectedCallback() {
+    super.connectedCallback();
+
+    // Cache the parent product card
+    this.parentProductCard = this.closest('product-card');
+
+    // Listen for variant updates to apply pending URL changes
+    this.addEventListener(ThemeEvents.variantUpdate, this.#handleCardVariantUrlUpdate.bind(this));
+  }
+
+  /**
+   * Updates the card URL when a variant is selected.
+   */
+  #handleCardVariantUrlUpdate() {
+    if (this.pendingVariantId && this.parentProductCard instanceof ProductCard) {
+      const currentUrl = new URL(this.parentProductCard.refs.productCardLink.href);
+      currentUrl.searchParams.set('variant', this.pendingVariantId);
+      this.parentProductCard.refs.productCardLink.href = currentUrl.toString();
+      this.pendingVariantId = null;
+    }
+  }
+
+  /**
+   * Override the variantChanged method to handle unavailable swatches with available alternatives.
+   * @param {Event} event - The variant change event.
+   */
+  variantChanged(event) {
+    if (!(event.target instanceof HTMLElement)) return;
+
+    // Check if this is a swatch input
+    const isSwatchInput = event.target instanceof HTMLInputElement && event.target.name?.includes('-swatch');
+    const clickedSwatch = event.target;
+    const availableCount = parseInt(clickedSwatch.dataset.availableCount || '0');
+    const firstAvailableVariantId = clickedSwatch.dataset.firstAvailableOrFirstVariantId;
+
+    // For swatch inputs, check if we need special handling
+    if (isSwatchInput && availableCount > 0 && firstAvailableVariantId) {
+      // If this is an unavailable variant but there are available alternatives
+      // Prevent the default handling
+      event.stopPropagation();
+
+      // Update the selected option visually
+      this.updateSelectedOption(clickedSwatch);
+
+      // Build request URL with the first available variant
+      const productUrl = this.dataset.productUrl?.split('?')[0];
+
+      if (!productUrl) return;
+
+      const url = new URL(productUrl, window.location.origin);
+      url.searchParams.set('variant', firstAvailableVariantId);
+      url.searchParams.set('section_id', 'section-rendering-product-card');
+
+      const requestUrl = url.href;
+
+      // Store the variant ID we want to apply to the URL
+      this.pendingVariantId = firstAvailableVariantId;
+
+      // Use parent's fetch method
+      this.fetchUpdatedSection(requestUrl);
+      return;
+    }
+
+    // For all other cases, use the default behavior
+    super.variantChanged(event);
+  }
+
   /**
    * Shows all swatches.
    * @param {Event} [event] - The event that triggered the show all swatches.

@@ -13,7 +13,7 @@ name: accordion_accessibility_standards
 description: Enforce accordion component accessibility standards and WAI-ARIA Accordion Pattern compliance
 filters:
   - type: file_extension
-    pattern: "\\.(vue|jsx|tsx|html|php|js|ts|liquid)$"
+    pattern: "\\.(vue|jsx|tsx|html|liquid|php|js|ts)$"
 
 actions:
 
@@ -60,7 +60,7 @@ actions:
 
   - pattern: "(?i)<[^>]_role=\"region\"[^>]_>"
     pattern_negate: "aria-labelledby=\"[^\"]+\""
-    message: "Accordion panels with role='region' must have aria-labelledby referencing the controlling button."
+    message: "Accordion panels with role='region' must have aria-labelledby referencing the heading element."
 
   # Missing keyboard event handlers
 
@@ -90,7 +90,7 @@ actions:
   **Optional ARIA Attributes:**
 
   - **role='region':** On panel content containers (avoid with >6 panels)
-  - **aria-labelledby:** On panels with role='region', referencing the header button
+  - **aria-labelledby:** On panels with role='region', referencing the heading element
 
   **Keyboard Interaction Requirements:**
 
@@ -116,11 +116,11 @@ actions:
     <h3
       role="heading"
       aria-level="3"
+      id="header-1"
     >
       <button
         aria-expanded="false"
         aria-controls="panel-1"
-        id="header-1"
       >
         Section Title
       </button>
@@ -175,11 +175,10 @@ actions:
 
   ```html
   <div class="accordion-item">
-    <h3>
+    <h3 id="header-2">
       <button
         aria-expanded="false"
         aria-controls="panel-2"
-        id="header-2"
       >
         Section Title
       </button>

@@ -1,138 +1,17 @@
-{% # import schema from '../schemas/blocks/product-title' %}
-
-{% if closest.product == blank and request.design_mode %}
+{% if closest.product == blank %}
   {% assign text = 'placeholders.product_title' | t %}
   {% assign product_title = '<p>' | append: text | append: '</p>' %}
   {% render 'text', fallback_text: product_title, block: block %}
-{% elsif closest.product != blank %}
-  {% if closest.product.vendor != blank %}
-    {% assign product_title = '<p class="product-title-with-vendor"><span style="font-family: var(--font-paragraph--family); font-style: var(--font-paragraph--style); font-weight: var(--font-paragraph--weight); font-size: var(--font-paragraph--size); line-height: var(--font-paragraph--line-height); text-transform: uppercase; color: var(--color-foreground);">' | append: closest.product.vendor | append: '</span> ' | append: closest.product.title | append: '</p>' %}
-  {% else %}
+{% else %}
   {% assign product_title = '<p>' | append: closest.product.title | append: '</p>' %}
-  {% endif %}
-  {% render 'text', fallback_text: product_title, block: block %}
+  <a
+    class="contents user-select-text"
+    ref="productTitleLink"
+    href="{{ closest.product.selected_or_first_available_variant.url }}"
+  >
+    {% render 'text', fallback_text: product_title, block: block %}
+  </a>
 {% endif %}
-
-{% stylesheet %}
-  /* Target product title with vendor in all contexts */
-  .text-block .product-title-with-vendor,
-  .text-block > .product-title-with-vendor,
-  .text-block > rte-formatter .product-title-with-vendor,
-  .text-block > rte-formatter > .product-title-with-vendor,
-  rte-formatter .product-title-with-vendor,
-  rte-formatter > .product-title-with-vendor,
-  .product-title-with-vendor {
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    display: block !important;
-    text-wrap: nowrap !important;
-    line-height: 1.5 !important;
-    word-break: normal !important;
-    word-wrap: normal !important;
-    hyphens: none !important;
-  }
-  
-  /* Ensure vendor and title stay inline together - all children must be inline */
-  .text-block .product-title-with-vendor *,
-  .text-block > .product-title-with-vendor *,
-  .text-block > rte-formatter .product-title-with-vendor *,
-  rte-formatter .product-title-with-vendor *,
-  rte-formatter > .product-title-with-vendor *,
-  .product-title-with-vendor * {
-    display: inline !important;
-    white-space: nowrap !important;
-    vertical-align: baseline !important;
-    line-height: inherit !important;
-  }
-  
-  /* Prevent vendor from wrapping separately - keep it inline, no breaks allowed */
-  .product-title-with-vendor span {
-    display: inline !important;
-    white-space: nowrap !important;
-    vertical-align: baseline !important;
-    word-wrap: normal !important;
-    word-break: keep-all !important;
-    overflow: visible !important;
-    position: static !important;
-    float: none !important;
-    clear: none !important;
-    max-width: none !important;
-    min-width: 0 !important;
-    width: auto !important;
-    flex-shrink: 0 !important;
-    flex-grow: 0 !important;
-    text-wrap: nowrap !important;
-    line-break: auto !important;
-    overflow-wrap: normal !important;
-    break-inside: avoid !important;
-    break-after: avoid !important;
-    break-before: avoid !important;
-    box-decoration-break: clone !important;
-    unicode-bidi: embed !important;
-    direction: ltr !important;
-  }
-  
-  /* Ensure vendor text content inside span also doesn't wrap */
-  .product-title-with-vendor span *,
-  .product-title-with-vendor span::before {
-    white-space: nowrap !important;
-    text-wrap: nowrap !important;
-  }
-  
-  /* Ensure no breaks between vendor and title */
-  .product-title-with-vendor span::after {
-    content: ' ';
-    white-space: pre;
-    display: inline;
-  }
-  
-  /* Ensure the paragraph itself doesn't break the span */
-  .product-title-with-vendor {
-    word-spacing: normal !important;
-    letter-spacing: normal !important;
-  }
-  
-  /* Ensure the text block itself doesn't constrain width */
-  .text-block:has(.product-title-with-vendor) {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-  
-  /* Override any text-wrap or line-break styles from parent */
-  .text-block:has(.product-title-with-vendor) > *,
-  .text-block:has(.product-title-with-vendor) > rte-formatter {
-    text-wrap: nowrap !important;
-    white-space: nowrap !important;
-  }
-  
-  .text-block:has(.product-title-with-vendor) .product-title-with-vendor {
-    text-wrap: nowrap !important;
-    white-space: nowrap !important;
-  }
-  
-  /* Prevent any line breaks */
-  .product-title-with-vendor br {
-    display: none !important;
-  }
-  
-  /* Force vendor to stay inline - critical for preventing wrap */
-  .product-title-with-vendor span {
-    unicode-bidi: embed !important;
-    direction: ltr !important;
-  }
-  
-  /* Ensure paragraph content flows as inline */
-  .product-title-with-vendor {
-    box-sizing: border-box !important;
-  }
-  
-  .product-title-with-vendor * {
-    box-sizing: border-box !important;
-  }
-{% endstylesheet %}
 
 {% schema %}
 {
@@ -449,14 +328,14 @@
       "type": "checkbox",
       "id": "background",
       "label": "t:settings.background",
-      "default": true
+      "default": false
     },
     {
       "type": "color",
       "id": "background_color",
       "label": "t:settings.background_color",
       "alpha": true,
-      "default": "#1e1e20",
+      "default": "#00000026",
       "visible_if": "{{ block.settings.background }}"
     },
     {

@@ -1,8 +1,16 @@
 import { Component } from '@theme/component';
 import { QuantitySelectorUpdateEvent } from '@theme/events';
+import { parseIntOrDefault } from '@theme/utilities';
 
 /**
  * A custom element that allows the user to select a quantity.
+ *
+ * This component follows a pure event-driven architecture where quantity changes
+ * are broadcast via QuantitySelectorUpdateEvent. Parent components that contain
+ * quantity selectors listen for these events and handle them according to their
+ * specific needs, with event filtering ensuring each parent only processes events
+ * from its own quantity selectors to prevent conflicts between different cart
+ * update strategies.
  *
  * @typedef {Object} Refs
  * @property {HTMLInputElement} quantityInput
@@ -24,41 +32,105 @@ class QuantitySelectorComponent extends Component {
   }
 
   /**
-   * Updates the stock message position to be relative to buttons group
+   * Updates min/max/step constraints and snaps value to valid increment
+   * @param {string} min - Minimum value
+   * @param {string|null} max - Maximum value (null if no max)
+   * @param {string} step - Step increment
    */
-  #updateMessagePosition() {
-    const stockMessage = this.refs.stockMessage;
-    const buttonsGroup = this.#getButtonsGroup();
-    
-    if (stockMessage && buttonsGroup && stockMessage instanceof HTMLElement) {
-      // Move message to buttons group if not already there
-      if (stockMessage.parentElement !== buttonsGroup) {
-        buttonsGroup.appendChild(stockMessage);
-        // Ensure it's still accessible via refs
-        this.refs.stockMessage = stockMessage;
-      }
+  updateConstraints(min, max, step) {
+    const { quantityInput } = this.refs;
+    const currentValue = parseInt(quantityInput.value) || 0;
+
+    quantityInput.min = min;
+    if (max) {
+      quantityInput.max = max;
+    } else {
+      quantityInput.removeAttribute('max');
     }
-  }
-  
-  /**
-   * Gets the stock message element (may be moved to buttons group)
-   */
-  #getStockMessage() {
-    const stockMessage = this.refs.stockMessage;
-    // If refs don't work, try to find it in buttons group
-    if (!stockMessage) {
-      const buttonsGroup = this.#getButtonsGroup();
-      if (buttonsGroup) {
-        return buttonsGroup.querySelector('.quantity-selector__stock-message');
-      }
+    quantityInput.step = step;
+
+    const newMin = parseIntOrDefault(min, 1);
+    const newStep = parseIntOrDefault(step, 1);
+    const effectiveMax = this.getEffectiveMax();
+
+    // Snap to valid increment if not already aligned
+    let newValue = currentValue;
+    if ((currentValue - newMin) % newStep !== 0) {
+      // Snap DOWN to closest valid increment
+      newValue = newMin + Math.floor((currentValue - newMin) / newStep) * newStep;
     }
-    return stockMessage;
+
+    // Ensure value is within bounds
+    newValue = Math.max(newMin, Math.min(effectiveMax ?? Infinity, newValue));
+
+    if (newValue !== currentValue) {
+      quantityInput.value = newValue.toString();
+    }
+
+    this.updateButtonStates();
   }
 
-  connectedCallback() {
-    super.connectedCallback?.();
-    // Update message position after component is connected
-    setTimeout(() => this.#updateMessagePosition(), 0);
+  /**
+   * Gets current values from DOM (fresh read every time)
+   * @returns {{min: number, max: number|null, step: number, value: number, cartQuantity: number}}
+   */
+  getCurrentValues() {
+    const { quantityInput } = this.refs;
+
+    return {
+      min: parseIntOrDefault(quantityInput.min, 1),
+      max: parseIntOrDefault(quantityInput.max, null),
+      step: parseIntOrDefault(quantityInput.step, 1),
+      value: parseIntOrDefault(quantityInput.value, 0),
+      cartQuantity: parseIntOrDefault(quantityInput.getAttribute('data-cart-quantity'), 0),
+    };
+  }
+
+  /**
+   * Gets the effective maximum value for this quantity selector
+   * Product page: max - cartQuantity (how many can be added)
+   * Override in subclass for different behavior
+   * @returns {number | null} The effective max, or null if no max
+   */
+  getEffectiveMax() {
+    const { max, cartQuantity, min } = this.getCurrentValues();
+    if (max === null) return null;
+    // Product page: can only add what's left
+    return Math.max(max - cartQuantity, min);
+  }
+
+  /**
+   * Updates button states based on current value and limits
+   */
+  updateButtonStates() {
+    const { minusButton, plusButton } = this.refs;
+    const { min, value } = this.getCurrentValues();
+    const effectiveMax = this.getEffectiveMax();
+
+    // Only manage buttons that weren't server-disabled
+    if (!this.serverDisabledMinus) {
+      minusButton.disabled = value <= min;
+    }
+
+    if (!this.serverDisabledPlus) {
+      plusButton.disabled = effectiveMax !== null && value >= effectiveMax;
+    }
+  }
+
+  /**
+   * Updates quantity by a given step
+   * @param {number} stepMultiplier - Positive for increase, negative for decrease
+   */
+  updateQuantity(stepMultiplier) {
+    const { quantityInput } = this.refs;
+    const { min, step, value } = this.getCurrentValues();
+    const effectiveMax = this.getEffectiveMax();
+
+    const newValue = Math.min(effectiveMax ?? Infinity, Math.max(min, value + step * stepMultiplier));
+
+    quantityInput.value = newValue.toString();
+    this.onQuantityChange();
+    this.updateButtonStates();
   }
   /**
    * Handles the quantity increase event.
@@ -149,11 +221,21 @@ class QuantitySelectorComponent extends Component {
    * @param {Event} event - The event.
    */
   setQuantity(event) {
-    if (!(event.target instanceof HTMLElement)) return;
+    if (!(event.target instanceof HTMLInputElement)) return;
 
-    // Skip if this is being updated by morphSection
-    if (this.refs.quantityInput.dataset.morphing === 'true') {
-      console.log('[Quantity Selector] ⏭️ Skipping setQuantity - input is being morphed');
+    event.preventDefault();
+    const { quantityInput } = this.refs;
+    const { min, step } = this.getCurrentValues();
+    const effectiveMax = this.getEffectiveMax();
+
+    // Snap to bounds
+    const quantity = Math.min(effectiveMax ?? Infinity, Math.max(min, parseInt(event.target.value) || 0));
+
+    // Validate step increment
+    if ((quantity - min) % step !== 0) {
+      // Set the invalid value and trigger native HTML validation
+      quantityInput.value = quantity.toString();
+      quantityInput.reportValidity();
       return;
     }
 
@@ -192,18 +274,8 @@ class QuantitySelectorComponent extends Component {
     // Validate quantity after rules check
     this.validateQuantity(event);
     const newValue = parseInt(quantityInput.value);
-    const cartLine = Number(quantityInput.dataset.cartLine);
-    
-    console.log('[Quantity Selector] 🔄 Dispatching QuantitySelectorUpdateEvent:', {
-      cartLine,
-      quantity: newValue,
-      inputValue: quantityInput.value,
-      min: quantityInput.min,
-      max: quantityInput.max,
-      step: quantityInput.step
-    });
 
-    quantityInput.dispatchEvent(new QuantitySelectorUpdateEvent(newValue, cartLine));
+    this.dispatchEvent(new QuantitySelectorUpdateEvent(newValue, Number(quantityInput.dataset.cartLine) || undefined));
   }
 
   /**
@@ -217,56 +289,18 @@ class QuantitySelectorComponent extends Component {
     this.#updateMessagePosition();
     
     const { quantityInput } = this.refs;
-    const stockMessage = this.#getStockMessage();
-    const availableQuantity = parseInt(this.dataset.availableQuantity || '') || parseInt(quantityInput.max || '') || 9999;
-    const requestedQuantity = parseInt(quantityInput.value) || 0;
-    
-    if (stockMessage && stockMessage instanceof HTMLElement) {
-      if (requestedQuantity > availableQuantity) {
-        stockMessage.textContent = `That's the max quantity`;
-        stockMessage.style.display = 'block';
-        // Reset to max available
-        quantityInput.value = String(availableQuantity);
-      } else {
-        stockMessage.style.display = 'none';
-      }
+    const { min, value } = this.getCurrentValues();
+    const effectiveMax = this.getEffectiveMax();
+
+    // Clamp value to new effective max if necessary
+    const clampedValue = Math.min(effectiveMax ?? Infinity, Math.max(min, value));
+
+    if (clampedValue !== value) {
+      quantityInput.value = clampedValue.toString();
     }
-    
-    this.#checkQuantityRules();
+
+    this.updateButtonStates();
   }
-
-  /**
-   * Checks the quantity rules are met
-   */
-  #checkQuantityRules = () => {
-    const { quantityInput } = this.refs;
-    const stockMessage = this.#getStockMessage();
-    const { min, max, value: newValue } = quantityInput;
-    const availableQuantity = parseInt(this.dataset.availableQuantity || '') || parseInt(max || '') || 9999;
-    const numValue = parseInt(newValue) || 0;
-
-    if (numValue < parseInt(min || '1')) {
-      quantityInput.value = min || '1';
-    }
-    
-    if (max && numValue > parseInt(max)) {
-      quantityInput.value = max;
-    }
-    
-    // Update message position before showing
-    this.#updateMessagePosition();
-    
-    // Check against available stock
-    if (numValue > availableQuantity) {
-      quantityInput.value = String(availableQuantity);
-      if (stockMessage && stockMessage instanceof HTMLElement) {
-        stockMessage.textContent = `That's the max quantity`;
-        stockMessage.style.display = 'block';
-      }
-    } else if (stockMessage && stockMessage instanceof HTMLElement) {
-      stockMessage.style.display = 'none';
-    }
-  };
 
   /**
    * Gets the quantity input.

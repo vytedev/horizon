@@ -13,10 +13,18 @@
 
 {% liquid
   assign slideshow_ref = ref | default: 'resourceListCarousel'
+
   if settings.section_width == 'page-width'
     assign slideshow_gutters = 'start end'
+    assign gutter_style = '--gutter-slide-width: var(--util-page-margin-offset);'
   else
     assign slideshow_gutters = null
+    assign gutter_style = '--gutter-slide-width: 0px;'
+  endif
+
+  assign show_arrows = false
+  if settings.icons_style != 'none'
+    assign show_arrows = true
   endif
 %}
 
@@ -25,33 +33,22 @@
     {% render 'slideshow-slide'
       index : forloop.index0,
       children : item,
-      class : 'resource-list__slide',
-      ref : 'slides[]',
-      aria_hidden : false
+      class : 'resource-list__slide'
     %}
   {% endfor %}
 {% endcapture %}
 
-{% capture slideshow_arrows %}
-  {% render 'slideshow-arrows', icon_style: settings.icons_style, icon_shape: settings.icons_shape %}
-{% endcapture %}
-
 <div
   class="resource-list__carousel"
-  style="
-    {% if settings.section_width == 'page-width' %}
-      --gutter-slide-width: var(--util-page-margin-offset);
-    {% elsif settings.section_width == 'full-width' %}
-      --gutter-slide-width: 0px;
-    {% endif %}
-    --slide-width-max: {{ slide_width_max | default: '300px' }};
-  "
+  style="{{ gutter_style }} --slide-width-max: {{ slide_width_max | default: '300px' }};"
 >
   {% render 'slideshow',
     ref: slideshow_ref,
     class: 'resource-list__carousel',
     slides: slides,
-    slideshow_arrows: slideshow_arrows,
+    show_arrows: show_arrows,
+    icon_style: settings.icons_style,
+    icon_shape: settings.icons_shape,
     auto_hide_controls: false,
     infinite: false,
     initial_slide: 0,

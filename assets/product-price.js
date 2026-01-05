@@ -21,7 +21,7 @@ class ProductPrice extends HTMLElement {
   }
 
   /**
-   * Updates the price.
+   * Updates the price and volume pricing note.
    * @param {VariantUpdateEvent} event - The variant update event.
    */
   updatePrice = (event) => {
@@ -31,13 +31,25 @@ class ProductPrice extends HTMLElement {
       return;
     }
 
-    const newPrice = event.detail.data.html.querySelector('product-price [ref="priceContainer"]');
+    // Find the new product-price element in the updated HTML
+    const newProductPrice = event.detail.data.html.querySelector(`product-price[data-block-id="${this.dataset.blockId}"]`);
+    if (!newProductPrice) return;
+
+    // Update price container
+    const newPrice = newProductPrice.querySelector('[ref="priceContainer"]');
     const currentPrice = this.querySelector('[ref="priceContainer"]');
+    if (newPrice && currentPrice) currentPrice.replaceWith(newPrice);
 
-    if (!newPrice || !currentPrice) return;
+    // Update volume pricing note
+    const currentNote = this.querySelector('.volume-pricing-note');
+    const newNote = newProductPrice.querySelector('.volume-pricing-note');
 
-    if (currentPrice.innerHTML !== newPrice.innerHTML) {
-      currentPrice.replaceWith(newPrice);
+    if (!newNote) {
+      currentNote?.remove();
+    } else if (!currentNote) {
+      this.querySelector('[ref="priceContainer"]')?.insertAdjacentElement('afterend', /** @type {Element} */ (newNote.cloneNode(true)));
+    } else {
+      currentNote.replaceWith(newNote);
     }
   };
 }

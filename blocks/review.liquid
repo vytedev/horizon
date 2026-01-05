@@ -1,6 +1,5 @@
-{% # import schema from '../schemas/blocks/review.js' %}
-
 {% liquid
+  assign block_settings = block.settings
   assign product = closest.product
   assign rating = product.metafields.reviews.rating.value.rating
   assign scale_max = product.metafields.reviews.rating.value.scale_max
@@ -33,7 +32,8 @@
   %}
 
   <div
-    class="rating-wrapper justify-{{ block.settings.alignment }} rating-color--{{ block.settings.rating_color }}"
+    class="rating-wrapper rating-color--{{ block_settings.rating_color }} justify-{{ block_settings.alignment }} size-style"
+    style="{% render 'size-style', settings: block_settings %}"
     {{ block.shopify_attributes }}
   >
     <svg
@@ -46,7 +46,7 @@
       <defs>
         <linearGradient id="half" x1="0" x2="100%" y1="0" y2="0">
           <stop offset="50%" stop-color="var(--star-fill-color)"></stop>
-          <stop offset="50%" stop-color="{% if block.settings.stars_style == "outline" %}transparent{% else %}rgb(from var(--star-fill-color) r g b/ 0.2){% endif %}"></stop>
+          <stop offset="50%" stop-color="{% if block_settings.stars_style == "outline" %}transparent{% else %}rgb(var(--star-fill-color-rgb) / var(--opacity-20){% endif %}"></stop>
         </linearGradient>
 
         <symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" id="star">
@@ -56,14 +56,14 @@
     </svg>
     <div
       class="rating"
-      style="--star-size: calc(var(--font-{{ block.settings.type_preset }}--size) * 1.1);"
+      style="--star-size: calc(var(--font-{{ block_settings.type_preset }}--size) * 1.1);"
       aria-label="{{ 'accessibility.rating' | t: rating: rating }}"
     >
-      {% if block.settings.stars_style == 'single' %}
+      {% if block_settings.stars_style == 'single' %}
         <svg
           class="stars {% if svg_filled_stars > 0 %}filled-star{% endif %}"
           viewBox="0 0 32 32"
-          style="--empty-star-fill-color:rgb(from var(--star-fill-color) r g b/ 0.2)"
+          style="--empty-star-fill-color: rgb(var(--star-fill-color-rgb) / var(--opacity-20))"
           role="presentation"
         >
           <use xlink:href="#star"></use>
@@ -73,11 +73,11 @@
           <svg
             class="stars {% if star <= svg_filled_stars %}filled-star{% endif %}"
             viewBox="0 0 32 32"
-            style="--empty-star-fill-color:{% if block.settings.stars_style == 'outline' %}transparent{% else %}rgb(from var(--star-fill-color) r g b/ 0.2){% endif %}"
+            style="--empty-star-fill-color:{% if block_settings.stars_style == 'outline' %}transparent{% else %}rgb(var(--star-fill-color-rgb) / var(--opacity-20)){% endif %}"
             role="presentation"
           >
             <use xlink:href="#star"{% if decimal_rating == 0.5 and star == svg_filled_stars %} fill="url(#half)"{% endif %}></use>
-            {% if block.settings.stars_style == "outline" %}
+            {% if block_settings.stars_style == "outline" %}
               <use xlink:href="#star" fill="none" stroke="var(--star-fill-color)" stroke-width="var(--icon-stroke-width)"></use>
             {% endif %}
           </svg>
@@ -85,15 +85,15 @@
       {% endif %}
     </div>
 
-    {%- if block.settings.show_number or block.settings.stars_style == 'single' -%}
-      <p class="rating-count {{ block.settings.type_preset }}">
-        {%- if block.settings.stars_style == 'single' -%}
+    {%- if block_settings.show_number or block_settings.stars_style == 'single' -%}
+      <p class="rating-count {{ block_settings.type_preset }}">
+        {%- if block_settings.stars_style == 'single' -%}
           <span aria-hidden="true">{{- rating | round: 1 }}</span>
         {%- endif -%}
-        {%- if block.settings.stars_style == 'single' and block.settings.show_number -%}
+        {%- if block_settings.stars_style == 'single' and block_settings.show_number -%}
           <span class="rating-count-separator">|</span>
         {%- endif -%}
-        {%- if block.settings.show_number -%}
+        {%- if block_settings.show_number -%}
           {{- rating_count }}
           {{ 'content.reviews' | t }}
         {%- endif -%}
@@ -104,17 +104,20 @@
 
 {% stylesheet %}
   .rating-wrapper {
-    width: 100%;
     gap: var(--gap-xs);
-    flex-wrap: wrap;
+    min-width: fit-content;
   }
 
   .rating-color--primary {
     --star-fill-color: var(--color-primary);
+    --star-fill-color-rgb: var(--color-primary-rgb);
+    --color: var(--color-primary);
   }
 
   .rating-color--foreground {
     --star-fill-color: var(--color-foreground);
+    --star-fill-color-rgb: var(--color-foreground-rgb);
+    --color: var(--color-foreground);
   }
 
   .rating-wrapper,
@@ -131,7 +134,6 @@
     gap: var(--gap-3xs);
   }
 
-  .rating-wrapper .rating-text,
   .rating-wrapper .rating-count,
   .rating-wrapper .rating-count-separator {
     color: var(--star-fill-color);
@@ -140,7 +142,7 @@
   }
 
   .rating-count-separator {
-    opacity: 0.2;
+    opacity: var(--opacity-20);
     padding-left: calc(var(--padding-xs) / 2);
     padding-right: var(--padding-xs);
   }
@@ -205,7 +207,7 @@
         },
         {
           "value": "primary",
-          "label": "t:options.body"
+          "label": "t:options.link"
         }
       ],
       "default": "primary"
@@ -251,10 +253,27 @@
       "default": "paragraph"
     },
     {
+      "type": "select",
+      "id": "width",
+      "label": "t:settings.width",
+      "options": [
+        {
+          "value": "fit-content",
+          "label": "t:options.fit"
+        },
+        {
+          "value": "100%",
+          "label": "t:options.fill"
+        }
+      ],
+      "default": "100%"
+    },
+    {
       "type": "text_alignment",
       "id": "alignment",
       "label": "t:settings.alignment",
-      "default": "left"
+      "default": "left",
+      "visible_if": "{{ block.settings.width != 'fit-content' }}"
     }
   ],
   "presets": [

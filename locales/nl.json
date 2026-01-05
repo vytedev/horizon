@@ -1,12 +1,3 @@
-/*
- * ------------------------------------------------------------
- * IMPORTANT: The contents of this file are auto-generated.
- *
- * This file may be updated by the Shopify admin language editor
- * or related systems. Please exercise caution as any changes
- * made to this file may be overwritten.
- * ------------------------------------------------------------
- */
 {
   "blocks": {
     "load_video": "Video laden: {{ description }}",
@@ -25,7 +16,8 @@
       "comment": "Reactie",
       "post_success": "Bedankt dat je contact met ons hebt opgenomen. Je hoort zo snel mogelijk van ons.",
       "error_heading": "Pas het volgende aan:"
-    }
+    },
+    "slider_label": "Schuifregelaar"
   },
   "accessibility": {
     "play_model": "3D-model afspelen",
@@ -50,7 +42,7 @@
       "one": "{{ count }} filter toegepast",
       "other": "{{ count }} filters toegepast"
     },
-    "account": "Accountmenu openen",
+    "account": "Account",
     "cart": "Winkelwagen",
     "cart_count": "Totaal aantal artikelen in winkelwagen",
     "menu": "Menu",
@@ -59,17 +51,21 @@
     "scroll_to": "Scrol naar {{ title }}",
     "loading_product_recommendations": "Productaanbevelingen laden",
     "discount": "Kortingscode toepassen",
+    "discount_menu": "Kortingscodes",
     "discount_applied": "Toegepaste kortingscode: {{ code }}",
-    "open_cart_drawer": "Winkelwagen openen",
     "inventory_status": "Voorraadstatus",
     "pause_video": "Video pauzeren",
     "find_country": "Land zoeken",
-    "localization_region_and_language": "Regio- en taalkiezer openen",
-    "open_search_modal": "Zoeken openen",
+    "localization_region_and_language": "Regio- en taalkiezer",
     "decrease_quantity": "Aantal verlagen",
     "increase_quantity": "Aantal verhogen",
     "quantity": "Aantal",
-    "rating": "Beoordeling van dit product is {{ rating }} van 5"
+    "rating": "Beoordeling van dit product is {{ rating }} van 5",
+    "nested_product": "{{ product_title }} voor {{ parent_title }}",
+    "remove": "Verwijderen",
+    "view_pricing_info": "Prijsinformatie bekijken",
+    "open_hotspot": "Hotspot openen",
+    "slideshow": "Diavoorstelling"
   },
   "actions": {
     "add_to_cart": "Aan winkelwagen toevoegen",
@@ -108,7 +104,8 @@
     "sign_up": "Aanmelden",
     "open_image_in_full_screen": "Afbeelding openen in volledig scherm",
     "sort": "Sorteren",
-    "show_all_options": "Alle opties tonen"
+    "show_all_options": "Alle opties tonen",
+    "open": "Openen"
   },
   "content": {
     "reviews": "recensies",
@@ -221,7 +218,50 @@
     "shipping_discount_error": "Verzendkortingen worden bij de checkout getoond nadat het adres is ingevoerd",
     "discount_code_error": "Kortingscode kan niet worden toegepast op je winkelwagen",
     "powered_by": "Deze winkel wordt mogelijk gemaakt door",
-    "store_owner_link_html": "Ben jij de winkeleigenaar? <a href=\"{{ link }}\">Log hier in</a>"
+    "store_owner_link_html": "Ben jij de winkeleigenaar? <a href=\"{{ link }}\">Log hier in</a>",
+    "recipient_form_send_to": "Verzenden naar",
+    "recipient_form_email_label": "E-mailadres ontvanger",
+    "recipient_form_email_label_my_email": "Mijn e-mailadres",
+    "recipient_form_email_address": "E-mailadres ontvanger",
+    "recipient_form_name_label": "Naam ontvanger (optioneel)",
+    "recipient_form_message": "Bericht (optioneel)",
+    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} tekens gebruikt",
+    "recipient_form_send_on": "JJJJ-MM-DD",
+    "recipient_form_send_on_label": "Verzenden op (optioneel)",
+    "recipient_form_fields_visible": "De formuliervelden voor de ontvanger zijn nu zichtbaar",
+    "recipient_form_fields_hidden": "De formuliervelden voor de ontvanger zijn nu verborgen",
+    "recipient_form_error": "Er is een fout opgetreden bij de indiening van het formulier",
+    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} tekens gebruikt",
+    "terms_and_policies": "Voorwaarden en beleid",
+    "pagination": {
+      "nav_label": "Navigatie paginering",
+      "previous": "Vorige",
+      "next": "Volgende",
+      "page": "Pagina {{ page }}"
+    },
+    "volume_pricing_available": "Op volume gebaseerde prijsstelling beschikbaar",
+    "volume_pricing": "Volumeprijzen",
+    "at_price_each": "{{ price }}/st.",
+    "each": "{{ price }}/st.",
+    "each_abbreviation": "st.",
+    "price_at": "voor",
+    "price_range": "Prijsklasse",
+    "cancel": "Annuleren",
+    "product_subtotal": "Productsubtotaal",
+    "quantity_per_item": "/st.",
+    "remove_all": "Alles verwijderen",
+    "remove_all_items_confirmation": "Alle {{ count }} artikelen uit je winkelwagen verwijderen?",
+    "remove_one_item_confirmation": "1 artikel uit je winkelwagen verwijderen?",
+    "total_items": "Totaal aantal artikelen",
+    "variant": "Variant",
+    "variant_total": "Totaal variant",
+    "view_cart": "Winkelwagen bekijken",
+    "your_cart": "Je winkelwagen",
+    "items_added_to_cart": {
+      "one": "1 artikel verwijderd uit winkelwagen",
+      "other": "{{ count }} artikelen toegevoegd aan winkelwagen"
+    },
+    "item_count_cutoff": "Meer dan {{ count }} artikelen"
   },
   "gift_cards": {
     "issued": {
@@ -236,25 +276,6 @@
       "copy_code_success": "Code gekopieerd",
       "expired": "Verlopen"
     }
-  },
-  "placeholders": {
-    "password": "Wachtwoord",
-    "search": "Zoeken",
-    "product_title": "Producttitel",
-    "collection_title": "Collectietitel"
-  },
-  "products": {
-    "product": {
-      "add_to_cart": "Aan winkelwagen toevoegen",
-      "adding_to_cart": "Toevoegen...",
-      "added_to_cart": "Toegevoegd aan winkelwagen",
-      "add_to_cart_error": "Fout bij het toevoegen aan de winkelwagen",
-      "sold_out": "Uitverkocht",
-      "unavailable": "Niet beschikbaar"
-    }
-  },
-  "fields": {
-    "separator": "aan"
   },
   "blogs": {
     "article": {
@@ -274,6 +295,38 @@
       "post": "Reactie plaatsen",
       "success_moderated": "Reactie geplaatst, in afwachting van moderatie",
       "success": "Reactie geplaatst"
+    }
+  },
+  "fields": {
+    "separator": "aan"
+  },
+  "placeholders": {
+    "password": "Wachtwoord",
+    "search": "Zoeken",
+    "product_title": "Producttitel",
+    "collection_title": "Collectietitel",
+    "blog_posts": "Blogposts",
+    "blog_post_title": "Titel",
+    "blog_post_author": "Auteur",
+    "blog_post_date": "Datum",
+    "blog_post_description": "Een uittreksel van de content van je blogpost"
+  },
+  "products": {
+    "product": {
+      "add_to_cart": "Aan winkelwagen toevoegen",
+      "adding_to_cart": "Toevoegen...",
+      "added_to_cart": "Toegevoegd aan winkelwagen",
+      "add_to_cart_error": "Fout bij het toevoegen aan de winkelwagen",
+      "quantity_error_max": "Voor dit artikel geldt een maximum van {{ maximum }}.",
+      "sold_out": "Uitverkocht",
+      "unavailable": "Niet beschikbaar",
+      "quantity": "Aantal",
+      "quantity_increments": "Stappen van {{ increment }}",
+      "quantity_minimum": "Minimum van {{ minimum }}",
+      "quantity_maximum": "Maximum van {{ maximum }}",
+      "in_cart": "in winkelwagen",
+      "default_title": "Standaardtitel",
+      "sticky_add_to_cart": "Balk voor snel toevoegen aan winkelwagen"
     }
   }
 }

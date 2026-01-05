@@ -89,7 +89,7 @@
             <span class="social-icons__icon-label">{{ platform | capitalize }}</span>
             {% if render_icon %}
               <svg
-                class="social-icons__icon"
+                class="social-icons__icon icon-default"
                 aria-hidden="true"
                 focusable="false"
                 xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,6 @@
 
   .social-icons__icon {
     display: flex;
-    fill: currentColor;
     flex-shrink: 0;
     width: var(--icon-size-lg);
     height: var(--icon-size-lg);

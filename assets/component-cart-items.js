@@ -45,6 +45,8 @@ class CartItemsComponent extends Component {
    * @param {QuantitySelectorUpdateEvent} event - The event.
    */
   #onQuantityChange(event) {
+    if (!(event.target instanceof Node) || !this.contains(event.target)) return;
+
     const { quantity, cartLine: line } = event.detail;
 
     console.log('[Cart Items] 📦 Received QuantitySelectorUpdateEvent:', {
@@ -215,7 +217,7 @@ class CartItemsComponent extends Component {
         }
 
         this.dispatchEvent(
-          new CartUpdateEvent({}, this.sectionId, {
+          new CartUpdateEvent(parsedResponseText, this.sectionId, {
             itemCount: newCartItemCount,
             source: 'cart-items-component',
             sections: parsedResponseText.sections,

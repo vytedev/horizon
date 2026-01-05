@@ -1,23 +1,27 @@
-{% # import schema from '../schemas/blocks/_accordion-row.js' %}
+{% assign block_settings = block.settings %}
 
 <accordion-custom
-  {% if block.settings.open_by_default %}
+  {% if block_settings.open_by_default %}
     open-by-default-on-desktop
     open-by-default-on-mobile
   {% endif %}
 >
   <details
     class="details"
+    data-testid="accordion-details"
+    {% if block_settings.open_by_default %}
+      open
+    {% endif %}
     {{ block.shopify_attributes }}
   >
     <summary class="details__header">
       {% render 'icon-or-image',
-        icon: block.settings.icon,
-        image_upload: block.settings.image_upload,
-        width: block.settings.width,
+        icon: block_settings.icon,
+        image_upload: block_settings.image_upload,
+        width: block_settings.width,
         class_name: 'details__icon'
       %}
-      {{ block.settings.heading }}
+      {{ block_settings.heading }}
       <span class="svg-wrapper icon-caret icon-animated">
         {{- 'icon-caret.svg' | inline_asset_content -}}
       </span>
@@ -335,14 +339,14 @@
         "text-1": {
           "type": "text",
           "settings": {
-            "text": "<p>We will work quickly to ship your order as soon as possible. Once your order has shipped, you will receive an email with further information. Delivery times vary depending on your location.</p>",
+            "text": "t:html_defaults.work_quickly_to_ship",
             "width": "100%"
           }
         }
       },
       "block_order": ["text-1"],
       "settings": {
-        "heading": "When will I get my order?"
+        "heading": "t:text_defaults.when_will_order_arrive"
       }
     }
   ]

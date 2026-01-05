@@ -7,7 +7,7 @@
     <button
       ref="closeButton"
       on:click="/closeDialog"
-      class="button quick-add-modal__close"
+      class="button button-unstyled close-button quick-add-modal__close"
       aria-label="{{ 'accessibility.close_dialog' | t }}"
     >
       {{- 'icon-close.svg' | inline_asset_content -}}
@@ -20,13 +20,20 @@
 </quick-add-dialog>
 
 {% stylesheet %}
+  @media screen and (min-width: 750px) {
+    .quick-add-modal {
+      width: var(--wide-content-width);
+      max-width: none;
+    }
+  }
+
   .quick-add-modal {
     padding: 0;
     border: var(--style-border-popover);
     height: fit-content;
     overflow: hidden;
     min-height: 500px;
-    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 5px 30px rgb(0 0 0 / var(--opacity-15));
 
     @media screen and (max-width: 750px) {
       position: fixed;
@@ -62,25 +69,12 @@
     position: absolute;
     top: var(--margin-2xs);
     right: var(--margin-2xs);
-    width: var(--minimum-touch-target);
-    height: var(--minimum-touch-target);
-    color: var(--color-foreground);
-    background-color: var(--color-background);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    z-index: 2;
-    transition: transform 0.15s var(--animation-timing-bounce), opacity 0.15s var(--animation-easing);
+    transition: transform 0.15s var(--animation-timing-bounce);
+    z-index: var(--layer-raised);
   }
 
   .quick-add-modal__close:active {
     transform: scale(0.8);
-  }
-
-  .quick-add-modal__close svg {
-    width: var(--icon-size-xs);
-    height: var(--icon-size-xs);
   }
 
   .quick-add-modal__content {
@@ -88,9 +82,9 @@
     grid-template-columns: repeat(7, 1fr);
     grid-template-rows: 100% 1fr;
     position: relative;
-    max-width: var(--wide-content-width);
     overflow-y: auto;
     max-height: 100vh;
+    flex-grow: 1;
 
     @media screen and (max-width: 750px) {
       grid-template-columns: repeat(4, 1fr);
@@ -179,8 +173,10 @@
     grid-row: 1 / span 2;
     display: flex;
     flex-direction: column;
+    justify-content: stretch;
     height: 100%;
     min-height: 0;
+    overflow-y: auto;
 
     dialog[open] & {
       animation: fadeSlideIn 0.3s var(--animation-timing-fade-in) both;
@@ -190,10 +186,13 @@
     @media screen and (max-width: 750px) {
       grid-column: 2 / span 2;
       grid-row: span 1;
-      overflow-y: auto;
       max-height: 100%;
       height: 100%;
     }
+  }
+
+  .quick-add-modal__content .product-details > .group-block {
+    flex-grow: 1;
   }
 
   .quick-add-modal__content > * {
@@ -203,11 +202,15 @@
   .quick-add-modal__content .product-details :is(.view-product-title, .buy-buttons-block) {
     flex: 0 0 auto;
   }
+  .quick-add-modal__content .product-details :is(.buy-buttons-block) {
+    margin-top: auto;
+  }
 
   .quick-add-modal__content .product-details .variant-picker {
-    flex: 1 1 auto;
-    overflow-y: auto;
-    min-height: 0;
+    flex: 0 0 auto;
+
+    padding-block: min(var(--gap-2xl), var(--gap));
+    margin-block-end: calc(var(--focus-outline-offset) + var(--focus-outline-width));
   }
 
   .quick-add-modal__content .variant-option--swatches {
@@ -223,7 +226,12 @@
   }
 
   .quick-add-modal__content .view-product-title {
-    padding: 0;
+    display: flex;
+    padding-block: 0;
+    margin-block-end: 12px;
+
+    /* Prevent overlap between title and close button */
+    padding-inline: 0 calc(var(--minimum-touch-target) / 2);
   }
 
   .quick-add-modal__content .view-product-title a {
@@ -264,6 +272,7 @@
       .view-more-details__wrapper *
     ) {
     @media screen and (min-width: 750px) {
+      /* stylelint-disable-next-line declaration-no-important */
       display: none !important;
     }
   }
@@ -283,14 +292,15 @@
           product-inventory *,
           .view-more-details__wrapper,
           .view-more-details__wrapper *
-        )
-    ):not(.buy-buttons-block) {
+        ),
+      .buy-buttons-block
+    ) {
     display: none;
   }
 
   @media screen and (min-width: 750px) {
     .quick-add-modal__content .group-block-content {
-      gap: min(var(--gap-2xl), var(--gap));
+      gap: 0;
     }
 
     .quick-add-modal__content .media-gallery__grid {
@@ -301,19 +311,10 @@
     .quick-add-modal__content .media-gallery--grid .product-media img {
       border-radius: 0;
     }
-
-    .quick-add-modal__content .media-gallery--grid .product-media-container:first-child {
-      border-top-right-radius: var(--style-border-radius-popover, 0);
-    }
-
-    .quick-add-modal__content .media-gallery--grid .product-media-container:last-child {
-      border-bottom-right-radius: var(--style-border-radius-popover, 0);
-    }
   }
 
   .quick-add-modal__content .product-details > .group-block {
     padding: var(--padding-2xl);
-    max-height: 100%;
   }
 
   .quick-add-modal__content slideshow-slide:not([aria-hidden='false']) {
@@ -420,6 +421,7 @@
       opacity: 0;
       transform: translateY(10px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);

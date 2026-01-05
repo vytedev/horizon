@@ -44,12 +44,10 @@
       value="{{ search.terms | escape }}"
       placeholder="{{ 'content.search_input_placeholder' | t }}"
     >
-    <button
-      type="button"
-      name="reset"
-      class="button-unstyled search__reset-button{{ color_scheme }}"
+    <a
+      href="{{ routes.search_url }}?type=product&q="
+      class="search__reset-button{{ color_scheme }}"
       aria-label="{{ 'accessibility.reset_search' | t }}"
-      on:click="/handleClearClick"
     >
       <span class="svg-wrapper search__reset-button-icon">
         {{ 'icon-close.svg' | inline_asset_content }}
@@ -57,7 +55,7 @@
       <span class="search__reset-button-text">
         {{ 'actions.clear' | t }}
       </span>
-    </button>
+    </a>
   </search-page-input-component>
 
   {% if search.results.size == 0 and search.terms != blank %}

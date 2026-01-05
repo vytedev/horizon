@@ -1,13 +1,18 @@
 import { Component } from '@theme/component';
 import { VariantSelectedEvent, VariantUpdateEvent } from '@theme/events';
-import { morph } from '@theme/morph';
+import { morph, MORPH_OPTIONS } from '@theme/morph';
+import { yieldToMainThread, getViewParameterValue, ResizeNotifier } from '@theme/utilities';
+
+/**
+ * @typedef {object} VariantPickerRefs
+ * @property {HTMLFieldSetElement[]} fieldsets – The fieldset elements.
+ */
 
 /**
  * A custom element that manages a variant picker.
  *
- * @template {import('@theme/component').Refs} [Refs = {}]
- *
- * @extends Component<Refs>
+ * @template {import('@theme/component').Refs} [TRefs=VariantPickerRefs]
+ * @extends Component<TRefs>
  */
 export default class VariantPicker extends Component {
   /** @type {string | undefined} */
@@ -16,10 +21,35 @@ export default class VariantPicker extends Component {
   /** @type {AbortController | undefined} */
   #abortController;
 
+  /** @type {number[][]} */
+  #checkedIndices = [];
+
+  /** @type {HTMLInputElement[][]} */
+  #radios = [];
+
+  #resizeObserver = new ResizeNotifier(() => this.updateVariantPickerCss());
+
   connectedCallback() {
     super.connectedCallback();
+    const fieldsets = /** @type {HTMLFieldSetElement[]} */ (this.refs.fieldsets || []);
+
+    fieldsets.forEach((fieldset) => {
+      const radios = Array.from(fieldset?.querySelectorAll('input') ?? []);
+      this.#radios.push(radios);
+
+      const initialCheckedIndex = radios.findIndex((radio) => radio.dataset.currentChecked === 'true');
+      if (initialCheckedIndex !== -1) {
+        this.#checkedIndices.push([initialCheckedIndex]);
+      }
+    });
 
     this.addEventListener('change', this.variantChanged.bind(this));
+    this.#resizeObserver.observe(this);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.#resizeObserver.disconnect();
   }
 
   /**
@@ -29,32 +59,37 @@ export default class VariantPicker extends Component {
   variantChanged(event) {
     if (!(event.target instanceof HTMLElement)) return;
 
+    const selectedOption =
+      event.target instanceof HTMLSelectElement ? event.target.options[event.target.selectedIndex] : event.target;
+
+    if (!selectedOption) return;
+
     this.updateSelectedOption(event.target);
-    this.dispatchEvent(new VariantSelectedEvent({ id: event.target.dataset.optionValueId ?? '' }));
+    this.dispatchEvent(new VariantSelectedEvent({ id: selectedOption.dataset.optionValueId ?? '' }));
 
     const isOnProductPage =
-      Theme.template.name === 'product' &&
+      this.dataset.templateProductMatch === 'true' &&
       !event.target.closest('product-card') &&
       !event.target.closest('quick-add-dialog');
 
     // Morph the entire main content for combined listings child products, because changing the product
     // might also change other sections depending on recommendations, metafields, etc.
     const currentUrl = this.dataset.productUrl?.split('?')[0];
-    const newUrl = event.target.dataset.connectedProductUrl;
+    const newUrl = selectedOption.dataset.connectedProductUrl;
     const loadsNewProduct = isOnProductPage && !!newUrl && newUrl !== currentUrl;
+    const isOnFeaturedProductSection = Boolean(this.closest('featured-product-information'));
 
-    this.fetchUpdatedSection(this.buildRequestUrl(event.target), loadsNewProduct);
+    const morphElementSelector = loadsNewProduct
+      ? 'main'
+      : isOnFeaturedProductSection
+      ? 'featured-product-information'
+      : undefined;
+
+    this.fetchUpdatedSection(this.buildRequestUrl(selectedOption), morphElementSelector);
 
     const url = new URL(window.location.href);
 
-    let variantId;
-
-    if (event.target instanceof HTMLInputElement && event.target.type === 'radio') {
-      variantId = event.target.dataset.variantId || null;
-    } else if (event.target instanceof HTMLSelectElement) {
-      const selectedOption = event.target.options[event.target.selectedIndex];
-      variantId = selectedOption?.dataset.variantId || null;
-    }
+    const variantId = selectedOption.dataset.variantId || null;
 
     if (isOnProductPage) {
       if (variantId) {
@@ -70,7 +105,73 @@ export default class VariantPicker extends Component {
     }
 
     if (url.href !== window.location.href) {
-      history.replaceState({}, '', url.toString());
+      yieldToMainThread().then(() => {
+        history.replaceState({}, '', url.toString());
+      });
+    }
+  }
+
+  /**
+   * @typedef {object} FieldsetMeasurements
+   * @property {HTMLFieldSetElement} fieldset
+   * @property {number | undefined} currentIndex
+   * @property {number | undefined} previousIndex
+   * @property {number | undefined} currentWidth
+   * @property {number | undefined} previousWidth
+   */
+
+  /**
+   * Gets measurements for a single fieldset (read phase).
+   * @param {number} fieldsetIndex
+   * @returns {FieldsetMeasurements | null}
+   */
+  #getFieldsetMeasurements(fieldsetIndex) {
+    const fieldsets = /** @type {HTMLFieldSetElement[]} */ (this.refs.fieldsets || []);
+    const fieldset = fieldsets[fieldsetIndex];
+    const checkedIndices = this.#checkedIndices[fieldsetIndex];
+    const radios = this.#radios[fieldsetIndex];
+
+    if (!radios || !checkedIndices || !fieldset) return null;
+
+    const [currentIndex, previousIndex] = checkedIndices;
+
+    return {
+      fieldset,
+      currentIndex,
+      previousIndex,
+      currentWidth: currentIndex !== undefined ? radios[currentIndex]?.parentElement?.offsetWidth : undefined,
+      previousWidth: previousIndex !== undefined ? radios[previousIndex]?.parentElement?.offsetWidth : undefined,
+    };
+  }
+
+  /**
+   * Applies measurements to a fieldset (write phase).
+   * @param {FieldsetMeasurements} measurements
+   */
+  #applyFieldsetMeasurements({ fieldset, currentWidth, previousWidth, currentIndex, previousIndex }) {
+    if (currentWidth) {
+      fieldset.style.setProperty('--pill-width-current', `${currentWidth}px`);
+    } else if (currentIndex !== undefined) {
+      fieldset.style.removeProperty('--pill-width-current');
+    }
+
+    if (previousWidth) {
+      fieldset.style.setProperty('--pill-width-previous', `${previousWidth}px`);
+    } else if (previousIndex !== undefined) {
+      fieldset.style.removeProperty('--pill-width-previous');
+    }
+  }
+
+  /**
+   * Updates the fieldset CSS.
+   * @param {number} fieldsetIndex - The fieldset index.
+   */
+  updateFieldsetCss(fieldsetIndex) {
+    if (Number.isNaN(fieldsetIndex)) return;
+
+    const measurements = this.#getFieldsetMeasurements(fieldsetIndex);
+    if (measurements) {
+      this.#applyFieldsetMeasurements(measurements);
     }
   }
 
@@ -88,6 +189,47 @@ export default class VariantPicker extends Component {
     }
 
     if (target instanceof HTMLInputElement) {
+      const fieldsetIndex = Number.parseInt(target.dataset.fieldsetIndex || '');
+      const inputIndex = Number.parseInt(target.dataset.inputIndex || '');
+
+      if (!Number.isNaN(fieldsetIndex) && !Number.isNaN(inputIndex)) {
+        const fieldsets = /** @type {HTMLFieldSetElement[]} */ (this.refs.fieldsets || []);
+        const fieldset = fieldsets[fieldsetIndex];
+        const checkedIndices = this.#checkedIndices[fieldsetIndex];
+        const radios = this.#radios[fieldsetIndex];
+
+        if (radios && checkedIndices && fieldset) {
+          // Clear previous checked states
+          const [currentIndex, previousIndex] = checkedIndices;
+
+          if (currentIndex !== undefined && radios[currentIndex]) {
+            radios[currentIndex].dataset.previousChecked = 'false';
+          }
+          if (previousIndex !== undefined && radios[previousIndex]) {
+            radios[previousIndex].dataset.previousChecked = 'false';
+          }
+
+          // Update checked indices array - keep only the last 2 selections
+          checkedIndices.unshift(inputIndex);
+          checkedIndices.length = Math.min(checkedIndices.length, 2);
+
+          // Update the new states
+          const newCurrentIndex = checkedIndices[0]; // This is always inputIndex
+          const newPreviousIndex = checkedIndices[1]; // This might be undefined
+
+          // newCurrentIndex is guaranteed to exist since we just added it
+          if (newCurrentIndex !== undefined && radios[newCurrentIndex]) {
+            radios[newCurrentIndex].dataset.currentChecked = 'true';
+          }
+
+          if (newPreviousIndex !== undefined && radios[newPreviousIndex]) {
+            radios[newPreviousIndex].dataset.previousChecked = 'true';
+            radios[newPreviousIndex].dataset.currentChecked = 'false';
+          }
+
+          this.updateFieldsetCss(fieldsetIndex);
+        }
+      }
       target.checked = true;
     }
 
@@ -118,6 +260,10 @@ export default class VariantPicker extends Component {
     let productUrl = selectedOption.dataset.connectedProductUrl || this.#pendingRequestUrl || this.dataset.productUrl;
     this.#pendingRequestUrl = productUrl;
     const params = [];
+    const viewParamValue = getViewParameterValue();
+
+    // preserve view parameter, if it exists, for alternative product view testing
+    if (viewParamValue) params.push(`view=${viewParamValue}`);
 
     if (this.selectedOptionsValues.length && !source) {
       params.push(`option_values=${this.selectedOptionsValues.join(',')}`);
@@ -129,22 +275,33 @@ export default class VariantPicker extends Component {
       }
     }
 
-    // If variant-picker is a child of quick-add-component or swatches-variant-picker-component, we need to append section_id=section-rendering-product-card to the URL
-    if (this.closest('quick-add-component') || this.closest('swatches-variant-picker-component')) {
+    // If variant-picker is a child of some specific sections, we need to append section_id=xxxx to the URL
+    const SECTION_ID_MAP = {
+      'quick-add-component': 'section-rendering-product-card',
+      'swatches-variant-picker-component': 'section-rendering-product-card',
+      'featured-product-information': this.closest('featured-product-information')?.id,
+    };
+
+    const closestSectionId = /** @type {keyof typeof SECTION_ID_MAP} | undefined */ (
+      Object.keys(SECTION_ID_MAP).find((sectionId) => this.closest(sectionId))
+    );
+
+    if (closestSectionId) {
       if (productUrl?.includes('?')) {
         productUrl = productUrl.split('?')[0];
       }
-      return `${productUrl}?section_id=section-rendering-product-card&${params.join('&')}`;
+      return `${productUrl}?section_id=${SECTION_ID_MAP[closestSectionId]}&${params.join('&')}`;
     }
+
     return `${productUrl}?${params.join('&')}`;
   }
 
   /**
    * Fetches the updated section.
    * @param {string} requestUrl - The request URL.
-   * @param {boolean} shouldMorphMain - If the entire main content should be morphed. By default, only the variant picker is morphed.
+   * @param {string} [morphElementSelector] - The selector of the element to be morphed. By default, only the variant picker is morphed.
    */
-  fetchUpdatedSection(requestUrl, shouldMorphMain = false) {
+  fetchUpdatedSection(requestUrl, morphElementSelector) {
     // We use this to abort the previous fetch request if it's still pending.
     this.#abortController?.abort();
     this.#abortController = new AbortController();
@@ -160,8 +317,10 @@ export default class VariantPicker extends Component {
         const textContent = html.querySelector(`variant-picker script[type="application/json"]`)?.textContent;
         if (!textContent) return;
 
-        if (shouldMorphMain) {
+        if (morphElementSelector === 'main') {
           this.updateMain(html);
+        } else if (morphElementSelector) {
+          this.updateElement(html, morphElementSelector);
         } else {
           const newProduct = this.updateVariantPicker(html);
 
@@ -179,7 +338,7 @@ export default class VariantPicker extends Component {
       })
       .catch((error) => {
         if (error.name === 'AbortError') {
-          console.log('Fetch aborted by user');
+          console.warn('Fetch aborted by user');
         } else {
           console.error(error);
         }
@@ -194,7 +353,7 @@ export default class VariantPicker extends Component {
 
   /**
    * Re-renders the variant picker.
-   * @param {Document} newHtml - The new HTML.
+   * @param {Document | Element} newHtml - The new HTML.
    * @returns {NewProduct | undefined} Information about the new product if it has changed, otherwise undefined.
    */
   updateVariantPicker(newHtml) {
@@ -220,9 +379,45 @@ export default class VariantPicker extends Component {
       this.dataset.productUrl = newProductUrl;
     }
 
-    morph(this, newVariantPickerSource);
+    morph(this, newVariantPickerSource, {
+      ...MORPH_OPTIONS,
+      getNodeKey: (node) => {
+        if (!(node instanceof HTMLElement)) return undefined;
+        const key = node.dataset.key;
+        return key;
+      },
+    });
+    this.updateVariantPickerCss();
 
     return newProduct;
+  }
+
+  updateVariantPickerCss() {
+    const fieldsets = /** @type {HTMLFieldSetElement[]} */ (this.refs.fieldsets || []);
+
+    // Batch all reads first across all fieldsets to avoid layout thrashing
+    const measurements = fieldsets.map((_, index) => this.#getFieldsetMeasurements(index)).filter((m) => m !== null);
+
+    // Batch all writes after all reads
+    for (const measurement of measurements) {
+      this.#applyFieldsetMeasurements(measurement);
+    }
+  }
+
+  /**
+   * Re-renders the desired element.
+   * @param {Document} newHtml - The new HTML.
+   * @param {string} elementSelector - The selector of the element to re-render.
+   */
+  updateElement(newHtml, elementSelector) {
+    const element = this.closest(elementSelector);
+    const newElement = newHtml.querySelector(elementSelector);
+
+    if (!element || !newElement) {
+      throw new Error(`No new element source found for ${elementSelector}`);
+    }
+
+    morph(element, newElement);
   }
 
   /**

@@ -1,5 +1,23 @@
 import { requestIdleCallback } from '@theme/utilities';
 
+/*
+ * Declarative shadow DOM is only initialized on the initial render of the page.
+ * If the component is mounted after the browser finishes the initial render,
+ * the shadow root needs to be manually hydrated.
+ */
+export class DeclarativeShadowElement extends HTMLElement {
+  connectedCallback() {
+    if (!this.shadowRoot) {
+      const template = this.querySelector(':scope > template[shadowrootmode="open"]');
+
+      if (!(template instanceof HTMLTemplateElement)) return;
+
+      const shadow = this.attachShadow({ mode: 'open' });
+      shadow.append(template.content.cloneNode(true));
+    }
+  }
+}
+
 /**
  * @typedef {Record<string, Element | Element[] | undefined>} Refs
  */

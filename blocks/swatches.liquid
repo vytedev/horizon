@@ -1,6 +1,5 @@
-{% # import schema from '../schemas/blocks/swatches.js' %}
-
 {%- liquid
+  assign block_settings = block.settings
   for product_option in closest.product.options_with_values
     assign swatch_count = product_option.values | map: 'swatch' | compact | size
 
@@ -15,14 +14,14 @@
     data-product-id="{{ closest.product.id }}"
     data-product-url="{{ closest.product.url }}"
     style="
-      --overflow-list-alignment: {{ block.settings.product_swatches_alignment }};
-      --overflow-list-alignment-mobile: {{ block.settings.product_swatches_alignment_mobile }};
-      --product-swatches-alignment: {% if block.settings.product_swatches_alignment == 'flex-start' %}start{% elsif closest.product_swatches_alignment == 'flex-end' %}end{% else %}center{% endif %};
-      --product-swatches-alignment-mobile: {% if block.settings.product_swatches_alignment_mobile == 'flex-start' %}start{% elsif closest.product_swatches_alignment_mobile == 'flex-end' %}end{% else %}center{% endif %};
-      --product-swatches-padding-block-start: {{ block.settings.product_swatches_padding_top }}px;
-      --product-swatches-padding-block-end: {{ block.settings.product_swatches_padding_bottom }}px;
-      --product-swatches-padding-inline-start: {{ block.settings.product_swatches_padding_left }}px;
-      --product-swatches-padding-inline-end: {{ block.settings.product_swatches_padding_right }}px;
+      --overflow-list-alignment: {{ block_settings.product_swatches_alignment }};
+      --overflow-list-alignment-mobile: {{ block_settings.product_swatches_alignment_mobile }};
+      --product-swatches-alignment: {% if block_settings.product_swatches_alignment == 'flex-start' %}start{% elsif block_settings.product_swatches_alignment == 'flex-end' %}end{% else %}center{% endif %};
+      --product-swatches-alignment-mobile: {% if block_settings.product_swatches_alignment_mobile == 'flex-start' %}start{% elsif block_settings.product_swatches_alignment_mobile == 'flex-end' %}end{% else %}center{% endif %};
+      --product-swatches-padding-block-start: {{ block_settings.product_swatches_padding_top }}px;
+      --product-swatches-padding-block-end: {{ block_settings.product_swatches_padding_bottom }}px;
+      --product-swatches-padding-inline-start: {{ block_settings.product_swatches_padding_left }}px;
+      --product-swatches-padding-inline-end: {{ block_settings.product_swatches_padding_right }}px;
     "
     {{ block.shopify_attributes }}
   >
@@ -35,41 +34,40 @@
   product-swatches {
     width: 100%;
     display: flex;
-    justify-content: var(--product-swatches-alignment);
-    flex-direction: row;
     position: relative;
     overflow: hidden;
     gap: 0;
-
-    @media (max-width: 749px) {
-      justify-content: var(--product-swatches-alignment-mobile);
-    }
+    flex-shrink: 0;
   }
 
   swatches-variant-picker-component {
     display: flex;
     width: 100%;
     flex-direction: row;
-  }
+    justify-content: var(--product-swatches-alignment-mobile);
 
-  swatches-variant-picker-component .variant-option--swatches {
-    padding-block: calc(
+    @media (min-width: 750px) {
+      justify-content: var(--product-swatches-alignment);
+    }
+
+    --overflow-list-padding-block: calc(
         var(--product-swatches-padding-block-start) + var(--focus-outline-offset) + var(--focus-outline-width)
       )
       calc(var(--product-swatches-padding-block-end) + var(--focus-outline-offset) + var(--focus-outline-width));
-    padding-inline: calc(
+    --overflow-list-padding-inline: calc(
         var(--product-swatches-padding-inline-start) + var(--focus-outline-offset) + (1.5 * var(--focus-outline-width))
       )
       calc(var(--product-swatches-padding-inline-end) + var(--focus-outline-offset) + var(--focus-outline-width));
+
+    overflow-list::part(list) {
+      gap: var(--gap-sm);
+    }
   }
 
   .variant-option--swatches {
     overflow-list::part(list) {
-      gap: var(--gap-sm);
-    }
-
-    overflow-list[defer]::part(list) {
-      flex-wrap: nowrap;
+      padding-block: var(--overflow-list-padding-block, 0);
+      padding-inline: var(--overflow-list-padding-inline, 0);
     }
   }
 
@@ -78,13 +76,13 @@
     align-self: center;
     align-items: center;
     justify-content: center;
-    color: rgb(from var(--color-foreground) r g b / var(--opacity-40-60));
+    color: rgb(var(--color-foreground-rgb) / var(--opacity-40-60));
     background-color: transparent;
     padding: 0;
     border: 0;
     border-radius: 0;
 
-    &:before {
+    &::before {
       /* This doesn't work in Safari without the counter-reset. https://stackoverflow.com/a/40179718 */
       counter-reset: overflow-count var(--overflow-count);
       content: '+' counter(overflow-count);
@@ -94,7 +92,7 @@
   }
 
   .hidden-swatches__count:hover {
-    color: rgb(from var(--color-foreground) r g b / 100%);
+    color: var(--color-foreground-rgb);
   }
 {% endstylesheet %}
 

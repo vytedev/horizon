@@ -2,7 +2,10 @@
   Renders a default variant picker, used to display the variant picker in the variants block.
 
   @param {object} product_resource - The product object.
+  @param {object} [block] - The block object
 {%- enddoc -%}
+
+{% assign block_settings = block.settings %}
 
 {% unless product_resource.has_only_default_variant %}
   {% liquid
@@ -14,8 +17,8 @@
     endif
   %}
   <variant-picker
-    class="variant-picker spacing-style variant-picker--{{ block.settings.alignment }}"
-    style="--color-strikethrough-mix: {{ strikethrough_color_mix }}; {% render 'spacing-style', settings: block.settings %}"
+    class="variant-picker spacing-style variant-picker--{{ block_settings.alignment }}"
+    style="--color-strikethrough-mix: {{ strikethrough_color_mix }}; {% render 'spacing-style', settings: block_settings %}"
     data-section-id="{{ section.id }}"
     data-product-id="{{ product_resource.id }}"
     data-block-id="{{ block.id }}"
@@ -33,10 +36,10 @@
       {%- for product_option in product_resource.options_with_values -%}
         {%- liquid
           assign swatch_count = product_option.values | map: 'swatch' | compact | size
-          assign variant_style = block.settings.variant_style
+          assign variant_style = block_settings.variant_style
 
-          if swatch_count > 0 and block.settings.show_swatches
-            if block.settings.variant_style == 'dropdown'
+          if swatch_count > 0 and block_settings.show_swatches
+            if block_settings.variant_style == 'dropdown'
               assign variant_style = 'swatch_dropdown'
             else
               assign variant_style = 'swatch'
@@ -50,9 +53,12 @@
           endif
         -%}
 
-        {%- if variant_style == 'swatch' or block.settings.variant_style == 'buttons' -%}
+        {%- if variant_style == 'swatch' or block_settings.variant_style == 'buttons' -%}
+          {%- assign fieldset_index = forloop.index0 -%}
           <fieldset
             class="variant-option variant-option--buttons{% if variant_style == 'swatch' %} variant-option--swatches{% else %} variant-option--{{ settings.variant_button_width }}{% endif %}"
+            data-fieldset-index="{{ fieldset_index }}"
+            ref="fieldsets[]"
             {{ option_id_attribute }}
           >
             <legend>
@@ -65,7 +71,9 @@
               {% if product_option_value.size > longest_value and option_id_attribute %}
                 {% assign longest_value = product_option_value.size %}
               {% endif %}
-              <label class="variant-option__button-label{% if variant_style == 'swatch' %} variant-option__button-label--has-swatch{% endif %}">
+              <label
+                class="variant-option__button-label{% if variant_style == 'swatch' %} variant-option__button-label--has-swatch{% endif %}"
+              >
                 <input
                   type="radio"
                   name="{{ product_option.name | escape }}-{{ block.id }}-{{ product_resource.id }}"
@@ -74,6 +82,9 @@
                   {% if product_option_value.available == false %}
                     aria-disabled="true"
                   {% endif %}
+                  data-previous-checked="false"
+                  data-fieldset-index="{{ fieldset_index }}"
+                  data-input-index="{{ forloop.index0 }}"
                   data-input-id="{{ product_option.position }}-{{ forloop.index0 }}"
                   data-option-value-id="{{ product_option_value.id }}"
                   data-option-available="{{ product_option_value.available }}"
@@ -82,7 +93,10 @@
                     data-variant-id="{{ product_option_value.variant.id }}"
                   {% endif %}
                   {% if product_option_value.selected %}
+                    data-current-checked="true"
                     checked
+                  {% else %}
+                    data-current-checked="false"
                   {% endif %}
                 >
                 {% if variant_style == 'swatch' %}
@@ -102,7 +116,18 @@
                     mode: 'unscaled'
                   %}
                 {% else %}
-                  <span class="variant-option__button-label__text">{{ product_option_value | escape }}</span>
+                  {% if product_option_value.available == true %}
+                    <span
+                      class="variant-option__button-label__pill"
+                      data-key="variant-option-pill"
+                    ></span>
+                  {% endif %}
+                  <span
+                    class="variant-option__button-label__text"
+                    data-key="variant-option-text"
+                  >
+                    {{- product_option_value | escape -}}
+                  </span>
                 {% endif %}
                 {% render 'strikethrough-variant', product_option: product_option_value %}
               </label>
@@ -110,12 +135,12 @@
             {% if option_id_attribute %}
               {% style %}
                 [data-option-id="{{ fieldset_id }}"] {
-                  --variant-ch: {{ longest_value }}ch;
+                  --variant-ch: {{ longest_value | times: 0.65 }}em;
                 }
               {% endstyle %}
             {% endif %}
           </fieldset>
-        {%- elsif block.settings.variant_style == 'dropdowns' -%}
+        {%- elsif block_settings.variant_style == 'dropdowns' -%}
           {%
             # There is an opportunity to build a custom select component that will allow us to style the select element further (animation for dropdown, swatches shown in the dropdown options, etc)
             # It's too bad as it mean rebuilding baked in behaviours but I think we've already done that for the locale selectors
@@ -190,9 +215,6 @@
   }
 
   .variant-picker__form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--padding-lg);
     width: 100%;
   }
 
@@ -205,6 +227,10 @@
     --options-border-radius: var(--variant-picker-button-radius);
     --options-border-width: var(--variant-picker-button-border-width);
     --variant-option-padding-inline: var(--padding-md);
+  }
+
+  .variant-option + .variant-option {
+    margin-top: var(--padding-lg);
   }
 
   .variant-option--swatches {
@@ -242,35 +268,153 @@
 
   .variant-option__swatch-value {
     padding-inline-start: var(--padding-xs);
-    color: rgba(from var(--color-foreground) r g b / 70%);
+    color: rgb(var(--color-foreground-rgb) / var(--opacity-70));
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .variant-option__button-label,
+    .variant-option__select-wrapper,
+    .variant-option__button-label::before,
+    .variant-option__button-label::after,
+    .variant-option__button-label:has([data-previous-checked='true'], [data-current-checked='true'])
+      .variant-option__button-label__pill,
+    .variant-option__button-label:not(.variant-option__button-label--has-swatch) svg line:last-of-type {
+      transition-duration: var(--animation-speed);
+      transition-timing-function: var(--animation-easing);
+    }
+
+    .variant-option__button-label__pill {
+      transition-property: transform;
+    }
+
+    .variant-option__button-label:not(.variant-option__button-label--has-swatch) svg line:last-of-type {
+      transition-property: clip-path;
+    }
+
+    .variant-option__button-label:has([data-previous-checked='true'], [data-current-checked='true'])
+      .variant-option__button-label__pill {
+      transition-property: transform;
+    }
+
+    .variant-option__button-label::after {
+      transition-property: clip-path;
+    }
+
+    .variant-option__button-label::before {
+      transition-property: border-color;
+    }
+
+    .variant-option__select-wrapper,
+    .variant-option__button-label {
+      transition-property: background-color, border-color, color;
+    }
   }
 
   .variant-option__button-label {
     --variant-picker-stroke-color: var(--color-variant-border);
 
+    cursor: pointer;
     display: flex;
-    flex: 0 0 calc(3ch + 1.3em);
+    flex: 0 0 3.25em;
     align-items: center;
     position: relative;
     padding-block: var(--padding-sm);
     padding-inline: var(--padding-lg);
-    border: var(--style-border-width) solid var(--color-variant-border);
+    border: var(--options-border-width) solid var(--color-variant-border);
     border-radius: var(--options-border-radius);
-    border-width: var(--options-border-width);
     overflow: clip;
     justify-content: center;
-    min-height: calc(3ch + 1.3em);
+    min-height: 3.25em;
     min-width: fit-content;
     white-space: nowrap;
     background-color: var(--color-variant-background);
     color: var(--color-variant-text);
-    transition: background-color var(--animation-speed) var(--animation-easing),
-      border-color var(--animation-speed) var(--animation-easing);
 
-    &:hover {
+    &:hover,
+    &:hover:has([aria-disabled='true']):has([data-option-available='false']) {
       background-color: var(--color-variant-hover-background);
       border-color: var(--color-variant-hover-border);
       color: var(--color-variant-hover-text);
+    }
+
+    /* we need something like overflow-clip-margin to use the pseudoelement but it doesn't work in Safari */
+
+    /* so instead use the layered background image trick */
+    &:not(.variant-option__button-label--has-swatch):has([data-option-available='false']) {
+      border-width: 0;
+    }
+
+    /* ::after/::before act as a fake border for the button style variant */
+
+    /* ::after is the unavailable variant border that clips in */
+    &:not(.variant-option__button-label--has-swatch)::before,
+    &:has([data-option-available='false']):not(.variant-option__button-label--has-swatch)::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: var(--options-border-width) solid var(--color-selected-variant-border);
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 2;
+      /* stylelint-disable-next-line plugin/no-unsupported-browser-features */
+      clip-path: inset(var(--clip, 0 0 0 0));
+    }
+
+    &:has([data-option-available='false']):not(.variant-option__button-label--has-swatch)::before {
+      inset: 0;
+    }
+
+    &:not(.variant-option__button-label--has-swatch)::before {
+      /* stylelint-disable-next-line plugin/no-unsupported-browser-features */
+      clip-path: inset(0 0 0 0);
+      border-color: var(--color-variant-border);
+      inset: calc(var(--options-border-width) * -1);
+    }
+
+    &:has(:checked):not(.variant-option__button-label--has-swatch, :has([data-option-available='false']))::before {
+      border-color: var(--color-selected-variant-border);
+    }
+
+    /* setting left/right accounts for variant buttons of different widths */
+    &:not(:has(:checked)):has(~ label > :checked),
+    &:has(:checked):has(~ label > [data-previous-checked='true']) {
+      .variant-option__button-label__pill {
+        right: 0;
+        left: unset;
+      }
+    }
+
+    &:has([data-previous-checked='true']) ~ label:has([data-current-checked='true']),
+    &:has(:checked) ~ label {
+      .variant-option__button-label__pill {
+        left: 0;
+        right: unset;
+      }
+    }
+
+    &:not(:has(:checked)):has(~ label > :checked) {
+      --pill-offset: calc(100% + 1px);
+    }
+
+    &:has(:checked) ~ label {
+      --pill-offset: calc(-100% - 1px);
+    }
+
+    &:has([data-current-checked='true']):first-of-type
+      ~ label:last-of-type:not(.variant-option__button-label--has-swatch),
+    &:not(:has(:checked)):has(~ label > :checked):not(.variant-option__button-label--has-swatch) {
+      --clip: 0 0 0 100%;
+    }
+
+    &:not(:has([data-current-checked='true'])):first-of-type:has(~ label:last-of-type > :checked):not(
+        .variant-option__button-label--has-swatch
+      ),
+    &:has(:checked) ~ label:not(.variant-option__button-label--has-swatch) {
+      --clip: 0 100% 0 0;
+    }
+
+    &:has([data-previous-checked='true'], [data-current-checked='true']) .variant-option__button-label__pill {
+      width: max(var(--pill-width-current, 100%), var(--pill-width-previous, 100%));
     }
 
     @media screen and (min-width: 750px) {
@@ -278,9 +422,37 @@
     }
   }
 
+  /* wrap around only for 3 or more variants in a row */
+
+  /* the more complex selector rules here produce the wrap around effect for first/last variants */
+  .variant-option--buttons:has(:nth-of-type(3)) {
+    .variant-option__button-label:has([data-current-checked='true']):first-of-type ~ label:last-of-type {
+      --pill-offset: calc(100% + 1px);
+    }
+
+    .variant-option__button-label:not(:has([data-current-checked='true'])):first-of-type:has(
+        ~ label:last-of-type > :checked
+      ) {
+      --pill-offset: calc(-100% - 1px);
+    }
+  }
+
+  .variant-option__button-label__pill {
+    background: var(--color-selected-variant-background);
+    position: absolute;
+    top: calc(var(--options-border-width) * -1);
+    bottom: calc(var(--options-border-width) * -1);
+    border-radius: inherit;
+    pointer-events: none;
+    width: 100%;
+    transform: translateX(var(--pill-offset, 0));
+  }
+
   .variant-option__button-label__text {
-    text-align: left;
+    pointer-events: none;
+    text-align: start;
     text-wrap: auto;
+    z-index: 2;
   }
 
   .variant-option--equal-width-buttons {
@@ -308,6 +480,8 @@
   }
 
   .variant-option__button-label--has-swatch {
+    --focus-outline-radius: var(--variant-picker-swatch-radius);
+
     padding: 0;
     border: none;
     display: block;
@@ -317,29 +491,33 @@
 
   .variant-option__button-label:has(:checked) {
     color: var(--color-selected-variant-text);
-    background-color: var(--color-selected-variant-background);
     border-color: var(--color-selected-variant-border);
-    transition: background-color var(--animation-speed) var(--animation-easing),
-      border-color var(--animation-speed) var(--animation-easing);
+  }
 
-    &:hover {
+  .variant-option__button-label:has(:checked):hover {
+    border-color: var(--color-selected-variant-hover-border);
+    color: var(--color-selected-variant-hover-text);
+
+    .variant-option__button-label__pill {
       background-color: var(--color-selected-variant-hover-background);
-      border-color: var(--color-selected-variant-hover-border);
-      color: var(--color-selected-variant-hover-text);
     }
   }
 
   .variant-option__button-label:has([data-option-available='false']) {
-    color: rgba(from var(--color-variant-text) r g b / 60%);
+    color: rgb(var(--color-variant-text-rgb) / var(--opacity-60));
   }
 
   .facets__inputs-list--swatches-grid .variant-option__button-label--has-swatch:hover .swatch {
-    outline: var(--focus-outline-width) solid rgba(from var(--color-foreground) r g b / var(--opacity-35-55));
+    --focus-outline: var(--focus-outline-width) solid rgb(var(--color-foreground-rgb) / var(--opacity-35-55));
+
+    outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
   }
 
   .facets__inputs-list--swatches-grid .variant-option__button-label:has(:focus-visible) .swatch {
-    outline: var(--focus-outline-width) solid currentcolor;
+    --focus-outline: var(--focus-outline-width) solid currentcolor;
+
+    outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
   }
 
@@ -352,30 +530,53 @@
   }
 
   .variant-option__button-label--has-swatch:hover {
-    outline: var(--focus-outline-width) solid rgba(from var(--color-foreground) r g b / var(--opacity-35-55));
+    outline: var(--focus-outline-width) solid rgb(var(--color-foreground-rgb) / var(--opacity-35-55));
     outline-offset: var(--focus-outline-offset);
   }
 
   .facets__inputs-list--swatches-grid .variant-option__button-label--has-swatch:has(:checked) {
-    outline: none;
+    --focus-outline: none;
   }
 
   .facets__inputs-list--swatches-grid .variant-option__button-label--has-swatch:has(:checked) .swatch {
-    outline: var(--focus-outline-width) solid var(--color-foreground);
+    outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
   }
 
   .variant-option__button-label--has-swatch:has(:checked) {
-    outline: var(--focus-outline-width) solid var(--color-foreground);
+    --focus-outline: var(--focus-outline-width) solid var(--color-foreground);
+
+    outline: var(--focus-outline);
     outline-offset: var(--focus-outline-offset);
   }
 
-  .variant-option__button-label:has([data-option-available='false']):has(:checked) {
-    --variant-picker-stroke-color: rgba(from var(--color-variant-text) r g b / 60%);
+  /* This triggers iOS < 16.4. The outline bug is not recognized as a lack of @supports */
+  @supports not (background-color: rgb(from red 150 g b / alpha)) {
+    /** There is a bug in safari < 16.4 that causes the outline to not follow the elements border radius. This is a workaround. **/
+    .variant-option__button-label--has-swatch:has(:checked),
+    .variant-option__button-label:has(:focus-visible) .swatch,
+    .facets__inputs-list--swatches-grid .variant-option__button-label--has-swatch:hover .swatch {
+      outline: none;
+      position: relative;
+      overflow: visible;
+    }
 
+    .variant-option__button-label--has-swatch:has(:checked)::after,
+    .variant-option__button-label:has(:focus-visible) .swatch::after,
+    .facets__inputs-list--swatches-grid .variant-option__button-label--has-swatch:hover .swatch::after {
+      content: '';
+      position: absolute;
+      inset: calc(-1 * var(--focus-outline-offset));
+      border: var(--focus-outline);
+      border-radius: var(--focus-outline-radius, 50%);
+      background-color: transparent;
+      display: inherit;
+    }
+  }
+
+  .variant-option__button-label:has([data-option-available='false']):has(:checked) {
     background-color: inherit;
-    color: rgba(from var(--color-variant-text) r g b / 60%);
-    border-color: var(--color-selected-variant-border);
+    color: rgb(var(--color-variant-text-rgb) / var(--opacity-60));
   }
 
   .variant-option__button-label input,
@@ -396,12 +597,28 @@
 
   .variant-option__button-label svg {
     position: absolute;
-    top: 0;
-    left: 0;
+    left: var(--options-border-width);
+    top: var(--options-border-width);
+    height: calc(100% - (var(--options-border-width) * 2));
+    width: calc(100% - (var(--options-border-width) * 2));
     cursor: pointer;
     pointer-events: none;
     stroke-width: var(--style-border-width);
     stroke: var(--variant-picker-stroke-color);
+  }
+
+  .variant-option__button-label:not(.variant-option__button-label--has-swatch) svg {
+    stroke: var(--color-variant-border);
+
+    line {
+      stroke-width: var(--options-border-width);
+    }
+
+    line:last-of-type {
+      /* stylelint-disable-next-line plugin/no-unsupported-browser-features */
+      clip-path: inset(var(--clip, 0 0 0 0));
+      stroke: rgb(var(--color-variant-text-rgb) / 1);
+    }
   }
 
   .variant-option__select-wrapper {
@@ -412,8 +629,6 @@
     align-items: center;
     margin-top: var(--margin-2xs);
     overflow: clip;
-    transition: background-color var(--animation-speed) var(--animation-easing),
-      border-color var(--animation-speed) var(--animation-easing);
   }
 
   .variant-option__select-wrapper:has(.swatch) {
