@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/blocks/_collection-card' %}
+
 {% assign collection = closest.collection %}
 
 {% style %}
@@ -71,7 +73,8 @@
           "value": "below_image",
           "label": "t:options.below_image"
         }
-      ]
+      ],
+      "default": "below_image"
     },
     {
       "type": "select",
@@ -91,7 +94,7 @@
           "label": "t:options.right"
         }
       ],
-      "default": "flex-start"
+      "default": "center"
     },
     {
       "type": "select",

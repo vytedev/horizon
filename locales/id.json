@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Muat video: {{ description }}",
@@ -37,7 +46,7 @@
     "slideshow_next": "Slide berikutnya",
     "slideshow_previous": "Slide sebelumnya",
     "filters": "Filter",
-    "account": "Akun",
+    "account": "Buka menu akun",
     "cart": "Keranjang",
     "cart_count": "Total item di keranjang",
     "filter_count": {
@@ -51,16 +60,16 @@
     "loading_product_recommendations": "Memuat rekomendasi produk",
     "discount": "Pakai kode diskon",
     "discount_applied": "Kode diskon yang dipakai: {{ code }}",
+    "open_cart_drawer": "Buka troli",
     "inventory_status": "Status Inventaris",
     "pause_video": "Jeda video",
     "find_country": "Temukan negara",
-    "localization_region_and_language": "Pemilih wilayah dan bahasa",
+    "localization_region_and_language": "Buka selektor wilayah dan bahasa",
+    "open_search_modal": "Buka pencarian",
     "decrease_quantity": "Kurangi jumlah",
     "increase_quantity": "Tambah jumlah",
     "quantity": "Jumlah",
-    "rating": "Peringkat produk ini adalah {{ rating }} dari 5",
-    "nested_product": "{{ product_title }} untuk {{ parent_title }}",
-    "discount_menu": "Kode Diskon"
+    "rating": "Peringkat produk ini adalah {{ rating }} dari 5"
   },
   "actions": {
     "add_to_cart": "Tambahkan ke keranjang",
@@ -99,8 +108,7 @@
     "open_image_in_full_screen": "Buka gambar dalam layar penuh",
     "sign_up": "Daftar",
     "sort": "Urutkan",
-    "show_all_options": "Tampilkan semua opsi",
-    "open": "Buka"
+    "show_all_options": "Tampilkan semua opsi"
   },
   "content": {
     "reviews": "ulasan",
@@ -213,27 +221,7 @@
     "shipping_policy": "Biaya pengiriman dihitung saat checkout.",
     "shipping_discount_error": "Diskon biaya pengiriman akan ditampilkan saat checkout setelah menambahkan alamat",
     "powered_by": "Toko ini didukung oleh",
-    "store_owner_link_html": "Anda pemilik toko? <a href=\"{{ link }}\">Login di sini</a>",
-    "recipient_form_send_to": "Kirim ke",
-    "recipient_form_email_label": "Email penerima",
-    "recipient_form_email_label_my_email": "Email saya",
-    "recipient_form_email_address": "Alamat email penerima",
-    "recipient_form_name_label": "Nama penerima (opsional)",
-    "recipient_form_message": "Pesan (opsional)",
-    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} karakter digunakan",
-    "recipient_form_send_on": "TTTT-BB-HH",
-    "recipient_form_send_on_label": "Kirim pada (opsional)",
-    "recipient_form_fields_visible": "Kolom formulir penerima sekarang ditampilkan",
-    "recipient_form_fields_hidden": "Kolom formulir penerima sekarang disembunyikan",
-    "recipient_form_error": "Terjadi kesalahan saat pengiriman formulir",
-    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} karakter digunakan",
-    "terms_and_policies": "Ketentuan dan Kebijakan",
-    "pagination": {
-      "nav_label": "Navigasi paginasi",
-      "previous": "Sebelumnya",
-      "next": "Berikutnya",
-      "page": "Halaman {{ page }}"
-    }
+    "store_owner_link_html": "Anda pemilik toko? <a href=\"{{ link }}\">Login di sini</a>"
   },
   "gift_cards": {
     "issued": {
@@ -241,7 +229,7 @@
       "title": "Ini dia voucher senilai {{ value }} Anda untuk {{ shop }}!",
       "subtext": "Voucher Anda",
       "shop_link": "Kunjungi toko online",
-      "add_to_apple_wallet": "Tambahkan ke Dompet Apple",
+      "add_to_apple_wallet": "Tambahkan ke Apple Wallet",
       "qr_image_alt": "Kode QR — pindai untuk menukarkan voucher",
       "copy_code": "Salin kode voucher",
       "expiration_date": "Kedaluwarsa pada {{ expires_on }}",
@@ -253,12 +241,7 @@
     "password": "Sandi",
     "search": "Cari",
     "product_title": "Judul produk",
-    "collection_title": "Judul koleksi",
-    "blog_posts": "Postingan Blog",
-    "blog_post_title": "Judul",
-    "blog_post_author": "Penulis",
-    "blog_post_date": "Tanggal",
-    "blog_post_description": "Cuplikan dari konten postingan blog Anda"
+    "collection_title": "Judul koleksi"
   },
   "products": {
     "product": {
@@ -267,13 +250,7 @@
       "adding_to_cart": "Menambahkan...",
       "add_to_cart_error": "Kesalahan saat menambahkan ke keranjang",
       "sold_out": "Habis",
-      "unavailable": "Tidak Tersedia",
-      "quantity_error_max": "Item ini memiliki batas maksimum {{ maximum }}",
-      "quantity": "Jumlah",
-      "quantity_increments": "Nilai peningkatan {{ increment }}",
-      "quantity_minimum": "Minimum {{ minimum }}",
-      "quantity_maximum": "Maksimum {{ maximum }}",
-      "in_cart": "di keranjang"
+      "unavailable": "Tidak Tersedia"
     }
   },
   "fields": {

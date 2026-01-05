@@ -11,7 +11,6 @@
 <script
   src="{{ 'cart-drawer.js' | asset_url }}"
   type="module"
-  fetchpriority="low"
 ></script>
 
 <cart-drawer-component
@@ -24,10 +23,7 @@
   <button
     class="button header-actions__action button-unstyled"
     on:click="/open"
-    aria-haspopup="dialog"
-    aria-label="{{ 'accessibility.cart' | t }}"
-    aria-describedby="cart-bubble-text"
-    data-testid="cart-drawer-trigger"
+    aria-label="{{ 'accessibility.open_cart_drawer' | t }} {{ 'accessibility.cart_count' | t}}: {{ cart.item_count }}"
   >
     {% render 'cart-icon-component' %}
   </button>
@@ -35,7 +31,6 @@
   <dialog
     ref="dialog"
     class="cart-drawer__dialog dialog-modal dialog-drawer color-{{ settings.drawer_color_scheme }}{% if cart.empty? %} cart-drawer--empty{%endif%}"
-    aria-labelledby="{% if cart.empty? %}cart-drawer-heading-empty{% else %}cart-drawer-heading{% endif %}"
     scroll-lock
   >
     <div class="cart-drawer__inner">
@@ -48,7 +43,7 @@
             <button
               ref="closeButton"
               on:click="cart-drawer-component/close"
-              class="button close-button cart-drawer__close-button button-unstyled"
+              class="button cart-drawer__close-button button-unstyled"
               aria-label="{{ 'actions.close_dialog' | t }}"
             >
               <span class="svg-wrapper">
@@ -61,12 +56,12 @@
             class="cart-drawer__content motion-reduce"
             aria-label="{{ 'accessibility.cart' | t }}"
           >
-            <h2
-              class="cart-drawer__heading h3 cart-drawer__heading--empty"
-              id="cart-drawer-heading-empty"
-            >
+            <div class="cart-drawer__empty-image">
+              <img src="{{ 'empty_shop_bag.svg' | asset_url }}" alt="" width="200" height="200">
+            </div>
+            <p class="cart-drawer__heading cart-drawer__heading--empty paragraph">
               {{ 'content.your_cart_is_empty' | t }}
-            </h2>
+            </p>
 
             <div class="cart-drawer__items">
               {% render 'cart-products' %}
@@ -77,18 +72,14 @@
             class="cart-drawer__header"
             id="cart-drawer-header"
           >
-            <h2
-              class="cart-drawer__heading h3"
-              id="cart-drawer-heading"
-            >
-              {{ 'content.cart_title' | t }}
-              {% render 'cart-bubble' %}
+            <h2 class="cart-drawer__heading">
+              your cart
             </h2>
 
             <button
               ref="closeButton"
               on:click="cart-drawer-component/close"
-              class="button close-button cart-drawer__close-button button-unstyled"
+              class="button cart-drawer__close-button button-unstyled"
               aria-label="{{ 'actions.close_dialog' | t }}"
             >
               <span class="svg-wrapper">
@@ -126,6 +117,19 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+  }
+
+  .cart-drawer .cart-drawer__heading,
+  .cart-drawer__dialog .cart-drawer__heading,
+  h2.cart-drawer__heading {
+    font-family: var(--font-h2--family);
+    font-size: var(--font-h2--size);
+    font-weight: var(--font-h2--weight);
+    line-height: var(--font-h2--line-height);
+    letter-spacing: var(--font-h2--letter-spacing);
+    text-transform: lowercase;
+    color: #dec55d !important;
+    margin: 0;
   }
 
   .cart-drawer__heading .cart-bubble {
@@ -177,5 +181,33 @@
     position: sticky;
     bottom: 0;
     z-index: 1;
+  }
+
+  .cart-drawer__empty-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: var(--padding-md);
+    padding-top: var(--padding-xl);
+  }
+
+  .cart-drawer__empty-image img {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
+  }
+
+  .cart-drawer .cart-drawer__heading--empty,
+  .cart-drawer__dialog .cart-drawer__heading--empty,
+  h2.cart-drawer__heading--empty {
+    text-align: center;
+    font-family: var(--font-body--family) !important;
+    font-size: var(--font-size--sm) !important;
+    font-weight: var(--font-body--weight) !important;
+    line-height: var(--font-body--line-height) !important;
+    letter-spacing: var(--font-body--letter-spacing) !important;
+    text-transform: none !important;
+    color: var(--color-foreground) !important;
+    margin: 0;
   }
 {% endstylesheet %}

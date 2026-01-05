@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/sections/product-information' %}
+
 {% liquid
   if section.settings.desktop_media_position == 'left'
     assign render_order = 'media,product-details'
@@ -34,10 +36,107 @@
     when 'content-full-width'
       assign content_width = 'full-width'
   endcase
+
+  # Check if countdown timer should be shown based on collection, products, or tag
+  assign show_countdown_timer = true
+  
+  # Option 1: Check by product tag (if tag is set, use this method - highest priority)
+  if section.settings.countdown_timer_tag != blank
+    assign discount_tag = section.settings.countdown_timer_tag | strip
+    if closest.product.tags contains discount_tag
+      assign show_countdown_timer = true
+    else
+      assign show_countdown_timer = false
+    endif
+  # Option 2: Check by specific products (if product list is set, use this method)
+  elsif section.settings.countdown_timer_products != blank and section.settings.countdown_timer_products.size > 0
+    assign show_countdown_timer = false
+    for selected_product in section.settings.countdown_timer_products
+      if selected_product.id == closest.product.id
+        assign show_countdown_timer = true
+        break
+      endif
+    endfor
+  # Option 3: Check by collection (if products not set, use collection method)
+  elsif section.settings.countdown_timer_collection != blank
+    assign show_countdown_timer = false
+    assign selected_collection_id = section.settings.countdown_timer_collection.id
+    for product_collection in closest.product.collections
+      if product_collection.id == selected_collection_id
+        assign show_countdown_timer = true
+        break
+      endif
+    endfor
+  endif
 %}
 
 <script type="application/ld+json">
   {{ closest.product | structured_data }}
+</script>
+
+<script>
+  // Ensure product data is available before Shopify analytics script runs
+  (function() {
+    // Store product data in window for analytics script to access
+    const productData = {
+      id: {{ closest.product.id | json }},
+      handle: {{ closest.product.handle | json }},
+      collections: [
+        {% for collection in closest.product.collections %}
+          {
+            id: {{ collection.id | json }},
+            handle: {{ collection.handle | json }}
+          }{% unless forloop.last %},{% endunless %}
+        {% endfor %}
+      ],
+      variants: [
+        {% for variant in closest.product.variants %}
+          {
+            id: {{ variant.id | json }},
+            available: {{ variant.available | json }}
+          }{% unless forloop.last %},{% endunless %}
+        {% endfor %}
+      ]
+    };
+
+  // Store product data in multiple locations for Shopify analytics compatibility
+  window.__productData = productData;
+  window.Shopify = window.Shopify || {};
+  window.Shopify.product = window.Shopify.product || productData;
+  
+  // Dispatch custom event when product data is ready
+  const event = new CustomEvent('productDataReady', { 
+    detail: productData 
+  });
+  
+  // Run immediately if DOM is ready, otherwise wait
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      document.dispatchEvent(event);
+    });
+  } else {
+    document.dispatchEvent(event);
+  }
+
+    // Suppress Shopify analytics error until product data is ready
+    window.addEventListener('error', function(event) {
+      if (event.message && event.message.includes('trackViewedProductVariant') && 
+          event.message.includes('Cannot destructure property')) {
+        // If product data is not ready, prevent the error and wait
+        if (!window.__productData) {
+          event.preventDefault();
+          // Retry after a short delay
+          setTimeout(() => {
+            if (window.__productData) {
+              // Product data is now available, allow analytics to retry
+              console.log('Product data now available for analytics');
+            }
+          }, 100);
+          return true;
+        }
+      }
+    }, true);
+  })();
 </script>
 
 <div class="section-background color-{{ section.settings.color_scheme }}"></div>
@@ -115,7 +214,6 @@
     .product-information__media {
       grid-column: 1 / -1;
     }
-
     .product-details {
       grid-column: 2 / 3;
     }
@@ -145,7 +243,6 @@
         .product-information__media {
           padding-right: calc(var(--gap, 0) / 2);
         }
-
         .product-details {
           padding-left: calc(var(--gap, 0) / 2);
         }
@@ -163,7 +260,6 @@
           padding-left: calc(var(--gap, 0) / 2);
           order: 1;
         }
-
         .product-details {
           padding-right: calc(var(--gap, 0) / 2);
           order: 0;
@@ -187,12 +283,10 @@
         &.product-information--media-left {
           .product-information__media {
             grid-column: 2 / 3;
-
             &:has(.media-gallery--extend) {
               grid-column: 1 / 3;
             }
           }
-
           .product-details {
             grid-column: 3 / 4;
           }
@@ -201,12 +295,10 @@
         &.product-information--media-right {
           .product-information__media {
             grid-column: 3 / 4;
-
             &:has(.media-gallery--extend) {
               grid-column: 3 / -1;
             }
           }
-
           .product-details {
             grid-column: 2 / 3;
           }
@@ -226,7 +318,6 @@
         &.product-information--media-left .product-details {
           padding-inline-end: var(--padding-lg);
         }
-
         &.product-information--media-right .product-details {
           padding-inline-start: var(--padding-lg);
         }
@@ -235,39 +326,19 @@
           .product-information__media {
             grid-column: 1 / 3;
           }
-
           .product-details {
             grid-column: 3 / -1;
           }
         }
-
         &.product-information__grid--half.product-information--media-right {
           .product-information__media {
             grid-column: 3 / -1;
           }
-
           .product-details {
             grid-column: 1 / 3;
           }
         }
       }
-    }
-  }
-
-  /* Wider sidebar for large screens */
-  @media screen and (min-width: 1200px) {
-    .product-information__grid:not(
-        .product-information__grid--half,
-        :has(.product-information__media:empty)
-      ).product-information--media-left {
-      grid-template-columns: 2fr 1fr;
-    }
-
-    .product-information__grid:not(
-        .product-information__grid--half,
-        :has(.product-information__media:empty)
-      ).product-information--media-right {
-      grid-template-columns: 1fr 2fr;
     }
   }
 
@@ -279,7 +350,364 @@
   body:has(#header-group #header-component[data-sticky-state='active']) .product-details.sticky-content--desktop {
     --sticky-header-offset: var(--header-height);
   }
+
+  /* Vendor - Sacramento font - target the h4 directly */
+  .product-details .product-description-wrapper .sacramento-font h4,
+  .product-details .product-description-wrapper .sacramento-font h4 * {
+    font-family: 'Sacramento', cursive !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    font-size: 2.5rem !important;
+    color: #dec55d !important;
+    text-transform: lowercase !important;
+  }
+  
+  /* Target vendor text block by class pattern */
+  .product-details .product-description-wrapper .text-block.sacramento-font h4 {
+    font-family: 'Sacramento', cursive !important;
+    font-weight: 400 !important;
+    font-style: normal !important;
+    font-size: 2.5rem !important;
+    color: #dec55d !important;
+    text-transform: lowercase !important;
+  }
+
+  /* Product price - smaller font and bold */
+  .product-details product-price[data-block-id="price_tVjtKg"],
+  .product-details product-price[data-block-id="price_tVjtKg"] .price {
+    font-weight: bold;
+    font-size: 1rem !important;
+  }
+
+  /* Swatches - make them circular */
+  .product-details .swatch {
+    border-radius: 50% !important;
+  }
+
+  /* Swatch container - make border circular */
+  .product-details .variant-option--buttons label:has(.swatch),
+  .product-details .variant-option__button-label--has-swatch {
+    border-radius: 50% !important;
+  }
+
+  /* Product details - make narrower and center */
+  .product-details {
+    width: 100% !important;
+    max-width: 600px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  @media screen and (min-width: 750px) {
+    .product-details {
+      max-width: 500px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+  }
+
+  /* Group blocks inside product details - ensure they don't constrain buy buttons */
+  .product-details > .group-block:has(.buy-buttons-block),
+  .product-details .group-block:has(.buy-buttons-block) {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  /* Buy buttons container - ensure parent containers stretch */
+  .product-details .buy-buttons-block,
+  .product-details .buy-buttons-block[class*="buy-buttons-block--"],
+  .product-details span.buy-buttons-block {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    flex: 1 1 100% !important;
+  }
+
+  .product-details product-form-component {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  .product-details form[data-type='add-to-cart-form'] {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Buy buttons - keep in one row */
+  .product-details .product-form-buttons,
+  .product-details .product-form-buttons.spacing-style {
+    position: relative;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: flex-start;
+    gap: var(--gap-sm);
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* Stock message - position above buttons group */
+  .product-details .product-form-buttons .quantity-selector__stock-message {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    width: 100%;
+    margin-bottom: 8px;
+    text-align: center;
+    font-size: 0.875em;
+    color: var(--color-foreground);
+    line-height: 1.4;
+    white-space: nowrap;
+    z-index: 1;
+  }
+
+  .product-details .product-form-buttons > *:not(.quantity-selector):not(.add-to-cart-button) {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Reorder buttons: quantity (left), accelerated-checkout (middle), add-to-cart (right) */
+  .product-details .product-form-buttons .quantity-selector,
+  .product-details .product-form-buttons quantity-selector-component {
+    order: 1 !important; /* left */
+  }
+
+  .product-details .product-form-buttons .accelerated-checkout-block {
+    order: 2 !important; /* middle */
+  }
+
+  .product-details .product-form-buttons .add-to-cart-button,
+  .product-details .product-form-buttons add-to-cart-component,
+  .product-details .product-form-buttons span:has(.add-to-cart-button) {
+    order: 3 !important; /* right */
+  }
+
+  /* Accelerated checkout button - stretch to remaining width */
+  .product-details .accelerated-checkout-block {
+    flex: 1 !important;
+    min-width: 0;
+  }
+
+  /* Quantity selector - reduce width */
+  .product-details .quantity-selector {
+    flex: 0 0 auto;
+    width: auto;
+    min-width: auto;
+    max-width: 80px;
+    overflow: hidden;
+  }
+
+  /* Quantity selector buttons - smaller size */
+  .product-details .quantity-selector :is(.quantity-minus, .quantity-plus) {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+    flex-shrink: 0;
+  }
+
+  /* Quantity selector icons - smaller */
+  .product-details .quantity-selector svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Quantity selector input - fit within container */
+  .product-details .quantity-selector input[type='number'] {
+    max-width: calc(80px - 48px);
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Add to cart button - hide text, show only icon */
+  .product-details .add-to-cart-text__content {
+    display: none !important;
+  }
+
+  /* Add to cart component wrapper - constrain width */
+  .product-details add-to-cart-component,
+  .product-details span:has(.add-to-cart-button) {
+    flex: 0 0 auto !important;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
+
+  /* Add to cart button - reduce width with background */
+  .product-details .add-to-cart-button {
+    flex: 0 0 auto;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    height: var(--height-buy-buttons, 48px) !important;
+    background-color: var(--color-primary-button-background, var(--color-foreground)) !important;
+    background: var(--color-primary-button-background, var(--color-foreground)) !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+  }
+
+  /* Center the plus icon */
+  .product-details .add-to-cart-text {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 0;
+  }
+
+  /* Make icon visible and properly sized - replace plus with cart icon */
+  .product-details .add-to-cart-text .svg-wrapper.add-to-cart-icon {
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    flex-shrink: 0;
+  }
+
+  .product-details .add-to-cart-text .svg-wrapper.add-to-cart-icon svg {
+    width: 100% !important;
+    height: 100% !important;
+    display: block !important;
+    fill: var(--color-primary-button-text, #ffffff) !important;
+    stroke: var(--color-primary-button-text, #ffffff) !important;
+    color: var(--color-primary-button-text, #ffffff) !important;
+  }
+
+  .product-details .add-to-cart-text .svg-wrapper.add-to-cart-icon svg path,
+  .product-details .add-to-cart-text .svg-wrapper.add-to-cart-icon svg line {
+    stroke: var(--color-primary-button-text, #ffffff) !important;
+    fill: none !important;
+    stroke-width: 1.5 !important;
+  }
+
+
+  .product-details .add-to-cart-button {
+    box-shadow: none !important;
+    filter: none !important;
+  }
 {% endstylesheet %}
+
+{% comment %} Hide countdown timer if product doesn't belong to selected collection {% endcomment %}
+{% unless show_countdown_timer %}
+  {% style %}
+    /* Target GSC Countdown Timer app block - comprehensive selectors */
+    /* Target by block ID */
+    [data-block-id="gsc_countdown_timer_countdown_YPnnPz"],
+    [data-block-id*="gsc_countdown_timer"],
+    [data-block-id*="gsc-timer"],
+    [data-block-id*="countdown"],
+    
+    /* Target by class names */
+    [class*="gsc-countdown-timer"],
+    [class*="gsc-timer"],
+    [class*="countdown-timer"],
+    
+    /* Target by ID attributes */
+    [id*="gsc-countdown-timer"],
+    [id*="gsc-timer"],
+    [id*="GSC-EMBED"],
+    [id*="GSC-EMBED-hARcxfghJufQ"],
+    [id*="hARcxfghJufQ"],
+    
+    /* Target by shopify app block attributes */
+    [data-shopify-block-type*="gsc-countdown-timer"],
+    [data-shopify-block-type*="countdown"],
+    [data-shopify-block-type*="gsc-timer"],
+    
+    /* Target app blocks wrapper */
+    [data-shopify-block-id="gsc_countdown_timer_countdown_YPnnPz"],
+    [data-shopify-block-id*="gsc_countdown_timer"],
+    
+    /* Target within product details */
+    .product-details [data-block-id*="gsc"],
+    .product-details [data-block-id*="countdown"],
+    .product-details [class*="gsc"],
+    .product-details [class*="countdown"],
+    .product-details [id*="GSC"],
+    .product-details [id*="gsc"],
+    
+    /* Target any iframe or embed from GSC */
+    .product-details iframe[src*="gsc"],
+    .product-details iframe[src*="countdown"],
+    .product-details embed[src*="gsc"],
+    
+    /* Nuclear option - target all app blocks if they contain gsc/countdown */
+    .product-details [data-shopify-block-type*="app"]:has([id*="GSC"]),
+    .product-details [data-shopify-block-type*="app"]:has([class*="gsc"]),
+    .product-details [data-shopify-block-type*="app"]:has([id*="countdown"]) {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      max-height: 0 !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      position: absolute !important;
+      left: -9999px !important;
+      width: 0 !important;
+    }
+  {% endstyle %}
+  
+  {% comment %} Also add a data attribute to help with targeting {% endcomment %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Find and hide GSC countdown timer elements
+      const selectors = [
+        '[data-block-id*="gsc_countdown_timer"]',
+        '[data-block-id*="gsc-timer"]',
+        '[id*="GSC-EMBED"]',
+        '[id*="hARcxfghJufQ"]',
+        '[class*="gsc-countdown-timer"]',
+        '[class*="gsc-timer"]'
+      ];
+      
+      selectors.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => {
+          el.style.display = 'none';
+          el.style.visibility = 'hidden';
+          el.style.opacity = '0';
+          el.style.height = '0';
+          el.style.overflow = 'hidden';
+        });
+      });
+      
+      // Also check for dynamically loaded elements
+      const observer = new MutationObserver(function(mutations) {
+        selectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            if (el.offsetParent !== null) {
+              el.style.display = 'none';
+              el.style.visibility = 'hidden';
+              el.style.opacity = '0';
+              el.style.height = '0';
+              el.style.overflow = 'hidden';
+            }
+          });
+        });
+      });
+      
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true
+      });
+    });
+  </script>
+{% endunless %}
 
 {% schema %}
 {
@@ -357,6 +785,53 @@
       "id": "color_scheme",
       "label": "t:settings.color_scheme",
       "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "Countdown Timer"
+    },
+    {
+      "type": "paragraph",
+      "content": "Configure which products should show the countdown timer. Priority: Tag > Products > Collection. Leave all empty to show on all products."
+    },
+    {
+      "type": "paragraph",
+      "content": "Option 1: Use product tag (highest priority)"
+    },
+    {
+      "type": "text",
+      "id": "countdown_timer_tag",
+      "label": "Product tag"
+    },
+    {
+      "type": "paragraph",
+      "content": "Enter a tag name here (e.g., 'discount-collection'). Products with this tag will show the countdown timer. Leave empty to use other methods below."
+    },
+    {
+      "type": "paragraph",
+      "content": "Option 2: Select specific products"
+    },
+    {
+      "type": "product_list",
+      "id": "countdown_timer_products",
+      "label": "Products"
+    },
+    {
+      "type": "paragraph",
+      "content": "Select specific products that should show the countdown timer. Leave empty to use collection method below."
+    },
+    {
+      "type": "paragraph",
+      "content": "Option 3: Select a collection"
+    },
+    {
+      "type": "collection",
+      "id": "countdown_timer_collection",
+      "label": "Collection"
+    },
+    {
+      "type": "paragraph",
+      "content": "Select the collection that matches your discount settings. Products in this collection will show the countdown timer. Leave empty to show on all products."
     },
     {
       "type": "header",

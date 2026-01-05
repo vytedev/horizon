@@ -20,7 +20,6 @@
 
 {% liquid
   assign onboarding = false
-  assign block_settings = block.settings
 
   if collection == blank
     assign onboarding = true
@@ -31,49 +30,48 @@
   class="
     collection-card
     border-style
-    {% if block_settings.placement == 'on_image' %}collection-card--image-bg{% endif %}
+    {% if block.settings.placement == 'on_image' %}collection-card--image-bg{% endif %}
     {% if section.settings.layout_type == 'bento' %}collection-card--image-height-fixed{% endif %}
     {% if section.settings.layout_type == 'editorial' %}collection-card--flexible-aspect-ratio{% endif %}
-    {% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }}{% endif %}
+    {% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }}{% endif %}
   "
   data-block-id="{{ block.id }}"
-  {% if onboarding %}
-    data-placeholder="true"
-  {% endif %}
   style="
-    {% render 'border-override', settings: block_settings %}
-    --horizontal-alignment: {{ block_settings.horizontal_alignment }};
-    --vertical-alignment: {{ block_settings.vertical_alignment }};
-    --background-overlay-color: {{ block_settings.overlay_color }};
-    --collection-card-gap: {{ block_settings.collection_card_gap }}px;
+    {% render 'border-override', settings: block.settings %}
+    --horizontal-alignment: {{ block.settings.horizontal_alignment }};
+    --vertical-alignment: {{ block.settings.vertical_alignment }};
+    --background-overlay-color: {{ block.settings.overlay_color }};
+    --collection-card-gap: {{ block.settings.collection_card_gap }}px;
   "
   {{- block.shopify_attributes -}}
 >
-  <a
-    class="collection-card__link"
-    {% unless onboarding %}
-      href="{{ collection.url }}"
-    {% endunless %}
-  >
-    <span class="visually-hidden">{{ collection.title }}</span>
-  </a>
-  <div class="collection-card__inner">
-    {{ card_image }}
-    <div class="collection-card__content layout-panel-flex--column">
-      {{ children }}
+  {% if collection != blank or request.design_mode %}
+    <a
+      class="collection-card__link"
+      {% unless onboarding %}
+        href="{{ collection.url }}"
+      {% endunless %}
+    >
+      <span class="visually-hidden">{{ collection.title }}</span>
+    </a>
+    <div class="collection-card__inner">
+      {{ card_image }}
+      <div class="collection-card__content layout-panel-flex--column">
+        {{ children }}
+      </div>
     </div>
-  </div>
+  {% endif %}
 </div>
 
 {% stylesheet %}
   .collection-card {
-    --fixed-card-height: var(--height-small);
-    flex: 1 1 var(--card-width-small);
     width: 100%;
     position: relative;
+    --fixed-card-height: var(--height-small);
   }
 
-  .collection-card > svg {
+  .collection-card > placeholder-image,
+  .collection-card > placeholder-image > img {
     height: 100%;
     width: 100%;
     aspect-ratio: var(--ratio);
@@ -102,7 +100,6 @@
       pointer-events: auto;
     }
   }
-
   /* allow all blocks to be selectable in editor preview */
   .shopify-design-mode .collection-card__content * {
     pointer-events: auto;
@@ -123,7 +120,6 @@
   .collection-card__link {
     position: absolute;
     inset: 0;
-
     /* allows focus outline to have radius in supported browsers */
     border-radius: var(--border-radius);
   }
@@ -162,8 +158,7 @@
     height: 100%;
   }
 
-  .collection-card__image svg {
-    height: 100%;
+  .collection-card__image placeholder-image {
     width: 100%;
   }
 

@@ -1,7 +1,113 @@
+{% # import schema from '../schemas/sections/main-collection' %}
+
+{% liquid
+  # Onboarding: When no products are available, we show placeholder items
+  assign products = ''
+  if request.design_mode and shop.products_count == 0
+    for i in (1..16)
+      assign products = products | append: ' ,'
+    endfor
+    assign products = products | split: ','
+  endif
+%}
+
+{% comment %} Load collection data immediately before any scripts run {% endcomment %}
+<script>
+  // Provide collection and product data IMMEDIATELY for Shopify analytics script
+  // Store in multiple formats for compatibility
+  const collectionData = {
+    id: {{ collection.id | json }},
+    handle: {{ collection.handle | json }},
+    title: {{ collection.title | json }},
+    products: [
+      {% for product in collection.products limit: 100 %}
+        {
+          id: {{ product.id | json }},
+          handle: {{ product.handle | json }},
+          collections: [
+            {% for product_collection in product.collections %}
+              {
+                id: {{ product_collection.id | json }},
+                handle: {{ product_collection.handle | json }}
+              }{% unless forloop.last %},{% endunless %}
+            {% endfor %}
+          ],
+          variants: [
+            {% for variant in product.variants %}
+              {
+                id: {{ variant.id | json }},
+                available: {{ variant.available | json }}
+              }{% unless forloop.last %},{% endunless %}
+            {% endfor %}
+          ]
+        }{% unless forloop.last %},{% endunless %}
+      {% endfor %}
+    ]
+  };
+  
+  // Store in multiple locations for Shopify analytics compatibility
+  window.__collectionData = collectionData;
+  window.Shopify = window.Shopify || {};
+  window.Shopify.collection = window.Shopify.collection || collectionData;
+  
+  // Also store collection ID and handle directly
+  window.__collectionId = {{ collection.id | json }};
+  window.__collectionHandle = {{ collection.handle | json }};
+
+  // Patch Shopify's findProductAndVariantInCollection function if it exists
+  // This ensures the analytics script can find products in collections
+  (function() {
+    // Wait for Shopify's script to load, then patch the function
+    const patchFunction = () => {
+      // Try to find and patch the function in various possible locations
+      if (window.Shopify && window.Shopify.analytics) {
+        const analytics = window.Shopify.analytics;
+        if (analytics.findProductAndVariantInCollection) {
+          const original = analytics.findProductAndVariantInCollection;
+          analytics.findProductAndVariantInCollection = function(productId, variantId, collectionId) {
+            // First try the original function
+            let result = original.apply(this, arguments);
+            if (result && result.product) {
+              return result;
+            }
+            
+            // If original fails, use our data
+            if (window.__collectionData) {
+              const product = window.__collectionData.products.find(p => p.id === productId);
+              if (product) {
+                const variant = product.variants.find(v => v.id === variantId);
+                if (variant) {
+                  return {
+                    product: product,
+                    variant: variant,
+                    collection: window.__collectionData
+                  };
+                }
+              }
+            }
+            
+            // Return original result or undefined
+            return result;
+          };
+        }
+      }
+    };
+
+    // Try immediately and also after a delay
+    patchFunction();
+    setTimeout(patchFunction, 100);
+    setTimeout(patchFunction, 500);
+    
+    // Also try when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', patchFunction);
+    }
+  })();
+</script>
+
 <script
   src="{{ 'results-list.js' | asset_url }}"
   type="module"
-  fetchpriority="low"
 ></script>
 
 {% javascript %}
@@ -26,7 +132,9 @@
   class="section product-grid-container color-{{ section.settings.color_scheme }}"
   style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
   section-id="{{ section.id }}"
-  infinite-scroll="{{ section.settings.enable_infinite_scroll }}"
+  data-collection-id="{{ collection.id }}"
+  data-collection-handle="{{ collection.handle }}"
+  data-collection-title="{{ collection.title }}"
 >
   {% render 'skip-to-content-link', href: '#ResultsList', text: 'accessibility.skip_to_results_list' %}
 
@@ -40,44 +148,564 @@
       results_size: collection.products_count
     %}
 
-    {% assign products_per_page = 24 %}
-
-    {% if section.settings.enable_infinite_scroll == false %}
-      {% assign products_per_page = section.settings.products_per_page %}
-    {% endif %}
-
-    {% paginate collection.products by products_per_page %}
-      {% capture children %}
-        {% for product in collection.products %}
+    {% if request.design_mode and shop.products_count == 0 %}
+      {% paginate products by 24 %}
+        {% capture children %}
+          {% for product in products %}
+            <li
+              class="product-grid__item product-grid__item--{{ forloop.index0 }}"
+              data-page="{{ paginate.current_page }}"
+              data-product-id="{{ product.id }}"
+              data-view-transition-id="{{ product.id }}"
+              ref="cards[]"
+            >
+              {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
+            </li>
+          {% endfor %}
+        {% endcapture %}
+        {% render 'product-grid', section: section, children: children, products: products, paginate: paginate %}
+      {% endpaginate %}
+    {% elsif collection.handle == 'all' %}
+      {% comment %} Special layout for /collections/all: group products by collection {% endcomment %}
+      
+      {% comment %} Calculate total collections first and build sorted arrays {% endcomment %}
+      {% liquid
+        # Build arrays of collections with products and without products
+        # Exclude 'all' and 'homepage'/'frontpage' collections
+        assign collections_with_products = ''
+        assign collections_without_products = ''
+        
+        # First pass: separate collections by product count and exclude homepage and new arrivals
+        for c in collections
+          unless c.handle == 'all' or c.handle == 'homepage' or c.handle == 'frontpage' or c.handle == 'home' or c.handle == 'new-arrivals'
+            if c.products_count > 0
+              assign collections_with_products = collections_with_products | append: c.handle | append: '|' | append: c.products_count | append: '||'
+            else
+              assign collections_without_products = collections_without_products | append: c.handle | append: '||'
+            endif
+          endunless
+        endfor
+        
+        # Count total collections (with products only, excluding empty ones)
+        assign total_collections = 0
+        if collections_with_products != ''
+          assign collections_with_products_array = collections_with_products | split: '||'
+          for item in collections_with_products_array
+            if item != ''
+              assign total_collections = total_collections | plus: 1
+            endif
+          endfor
+        endif
+        
+        # Check if there are products without collection
+        assign has_products_without_collection = false
+        for product in collection.products
+          assign product_in_collection = false
+          for product_collection in product.collections
+            unless product_collection.handle == 'all' or product_collection.handle == 'homepage' or product_collection.handle == 'frontpage' or product_collection.handle == 'home' or product_collection.handle == 'new-arrivals'
+              assign product_in_collection = true
+              break
+            endunless
+          endfor
+          if product_in_collection == false
+            assign has_products_without_collection = true
+            break
+          endif
+        endfor
+        # Add 1 to total if "No Collection" section exists
+        if has_products_without_collection
+          assign total_collections = total_collections | plus: 1
+        endif
+        assign total_counter = total_collections | prepend: '0' | slice: -2, 2
+        assign collection_counter_index = 0
+      %}
+      
+      {% comment %} Sort and display collections with products (most to least) {% endcomment %}
+      {% if collections_with_products != '' %}
+        {% assign collections_with_products_array = collections_with_products | split: '||' %}
+        {% assign sorted_collections = '' %}
+        {% assign processed_handles = '' %}
+        
+        {% comment %} Selection sort: find max each iteration and mark as processed {% endcomment %}
+        {% for i in (1..collections_with_products_array.size) %}
+          {% assign max_count = 0 %}
+          {% assign max_handle = '' %}
+          
+          {% for item in collections_with_products_array %}
+            {% if item != '' %}
+              {% assign item_parts = item | split: '|' %}
+              {% assign item_handle = item_parts[0] %}
+              {% assign item_count = item_parts[1] | plus: 0 %}
+              {% assign is_processed = false %}
+              
+              {% if processed_handles != '' %}
+                {% assign processed_array = processed_handles | split: '||' %}
+                {% for processed in processed_array %}
+                  {% if processed == item_handle %}
+                    {% assign is_processed = true %}
+                    {% break %}
+                  {% endif %}
+                {% endfor %}
+              {% endif %}
+              
+              {% unless is_processed %}
+                {% if item_count > max_count %}
+                  {% assign max_count = item_count %}
+                  {% assign max_handle = item_handle %}
+                {% endif %}
+              {% endunless %}
+            {% endif %}
+          {% endfor %}
+          
+          {% if max_handle != '' %}
+            {% assign sorted_collections = sorted_collections | append: max_handle | append: '||' %}
+            {% assign processed_handles = processed_handles | append: max_handle | append: '||' %}
+          {% endif %}
+        {% endfor %}
+        
+        {% assign sorted_collections_array = sorted_collections | split: '||' %}
+        {% for collection_handle in sorted_collections_array %}
+          {% if collection_handle != '' %}
+      {% for coll in collections %}
+              {% if coll.handle == collection_handle %}
+            {% comment %} Collection header with section number and text group {% endcomment %}
+            {% liquid
+              assign collection_counter_index = collection_counter_index | plus: 1
+              assign collection_counter = collection_counter_index | prepend: '0' | slice: -2, 2
+              case collection_counter_index
+                when 1
+                  assign ordinal_text = 'first'
+                when 2
+                  assign ordinal_text = 'second'
+                when 3
+                  assign ordinal_text = 'third'
+                when 4
+                  assign ordinal_text = 'fourth'
+                when 5
+                  assign ordinal_text = 'fifth'
+                when 6
+                  assign ordinal_text = 'sixth'
+                when 7
+                  assign ordinal_text = 'seventh'
+                when 8
+                  assign ordinal_text = 'eighth'
+                when 9
+                  assign ordinal_text = 'ninth'
+                when 10
+                  assign ordinal_text = 'tenth'
+                else
+                  assign ordinal_text = collection_counter_index | append: 'th'
+              endcase
+            %}
+            <div class="collection-group" style="grid-column: var(--full-width); margin-top: 48px; margin-bottom: 24px; padding-inline: calc(var(--page-margin) * 2); position: relative; z-index: 1;">
+              {% comment %} Section header group with text and section number {% endcomment %}
+              <div class="collection-group__header" style="display: flex; flex-direction: row; align-items: center; gap: 12px; margin-bottom: 24px; width: fit-content;">
+                <p style="font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); margin: 0; text-transform: uppercase;">
+                  {{ ordinal_text }} collection
+                </p>
+                <div class="collection-group__section-number" style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 0;">
+                  <div style="position: relative; width: 80px; height: 1px; background-color: transparent; border-radius: 2px; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; height: 100%; background-color: #b0b0b0; width: 100%; border-radius: 2px;"></div>
+                  </div>
+                  <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: #b0b0b0;">{{ collection_counter }}/{{ total_counter }}</span>
+                </div>
+              </div>
+              
+              {% comment %} Collection title with h2 preset like product grid in index.json {% endcomment %}
+              {% liquid
+                assign collection_title_text = '<h2>' | append: coll.title | append: '</h2>'
+              %}
+              <div class="collection-title-wrapper collection-title-lowercase text-block spacing-style" style="width: fit-content; max-width: normal; margin-bottom: 24px; text-align: right; margin-left: auto; font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); background-color: #1e1e20; padding: max(var(--padding-2xs), calc((0 + var(--padding-xs)) * (1 - cos(45deg))));">
+                {{ collection_title_text }}
+              </div>
+              
+              {% comment %} Products for this collection using product-list grid format {% endcomment %}
+              {% liquid
+                assign collection_products = coll.products
+                assign max_items = collection_products.size | at_most: 12
+                assign columns_gap = section.settings.columns_gap_horizontal
+                assign rows_gap = section.settings.columns_gap_vertical
+                assign columns = 4
+                assign mobile_columns = 2
+              %}
+              
+              {% capture list_items %}
+                {% for product in collection_products limit: max_items %}
+                  <div class="resource-list__item" data-collection-id="{{ coll.id }}" data-collection-handle="{{ coll.handle }}" data-product-id="{{ product.id }}">
+                    {% # theme-check-disable %}
+                    {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
+                    {% # theme-check-enable %}
+                  </div>
+                  {% unless forloop.last %}
+                    <!--@list/split-->
+                  {% endunless %}
+                {% endfor %}
+              {% endcapture %}
+              
+              {% comment %} Output using product-list grid structure {% endcomment %}
+              <div class="resource-list resource-list--grid" style="--resource-list-column-gap-desktop: {{ columns_gap }}px; --resource-list-row-gap-desktop: {{ rows_gap }}px; --resource-list-columns: repeat({{ columns }}, 1fr); --resource-list-columns-mobile: repeat({{ mobile_columns }}, 1fr);">
+                {{ list_items }}
+              </div>
+              
+              {% comment %} View more button - only show if collection has more than 12 products {% endcomment %}
+              {% if coll.products_count > 12 %}
+                <div class="collection-group__button" style="display: flex; justify-content: center; margin-top: 24px; position: relative; z-index: 10; background-color: #1e1e20; padding-block: 12px;">
+                  {% liquid
+                    assign button_id = 'view-more-' | append: coll.id
+                  %}
+                  <a
+                    href="{{ coll.url }}"
+                    class="size-style button-secondary button-secondary--{{ button_id }}"
+                    style="--size-style-width: fit-content; --size-style-width-mobile: fit-content;"
+                  >
+                    View More
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      
+      {% comment %} Display collections with no products at the end {% endcomment %}
+      {% if collections_without_products != '' %}
+        {% assign empty_collections_array = collections_without_products | split: '||' %}
+        {% for collection_handle in empty_collections_array %}
+          {% if collection_handle != '' %}
+            {% for coll in collections %}
+              {% if coll.handle == collection_handle %}
+                {% liquid
+                  assign collection_counter_index = collection_counter_index | plus: 1
+                  assign collection_counter = collection_counter_index | prepend: '0' | slice: -2, 2
+                  case collection_counter_index
+                    when 1
+                      assign ordinal_text = 'first'
+                    when 2
+                      assign ordinal_text = 'second'
+                    when 3
+                      assign ordinal_text = 'third'
+                    when 4
+                      assign ordinal_text = 'fourth'
+                    when 5
+                      assign ordinal_text = 'fifth'
+                    when 6
+                      assign ordinal_text = 'sixth'
+                    when 7
+                      assign ordinal_text = 'seventh'
+                    when 8
+                      assign ordinal_text = 'eighth'
+                    when 9
+                      assign ordinal_text = 'ninth'
+                    when 10
+                      assign ordinal_text = 'tenth'
+                    else
+                      assign ordinal_text = collection_counter_index | append: 'th'
+                  endcase
+                %}
+                <div class="collection-group" style="grid-column: var(--full-width); margin-top: 48px; margin-bottom: 24px; padding-inline: calc(var(--page-margin) * 2); position: relative; z-index: 1;">
+                  <div class="collection-group__header" style="display: flex; flex-direction: row; align-items: center; gap: 12px; margin-bottom: 24px; width: fit-content;">
+                    <p style="font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); margin: 0; text-transform: uppercase;">
+                      {{ ordinal_text }} collection
+                    </p>
+                    <div class="collection-group__section-number" style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 0;">
+                      <div style="position: relative; width: 80px; height: 1px; background-color: transparent; border-radius: 2px; overflow: hidden;">
+                        <div style="position: absolute; top: 0; left: 0; height: 100%; background-color: #b0b0b0; width: 100%; border-radius: 2px;"></div>
+                      </div>
+                      <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: #b0b0b0;">{{ collection_counter }}/{{ total_counter }}</span>
+                    </div>
+                  </div>
+                  {% liquid
+                    assign collection_title_text = '<h2>' | append: coll.title | append: '</h2>'
+                  %}
+                  <div class="collection-title-wrapper collection-title-lowercase text-block spacing-style" style="width: fit-content; max-width: normal; margin-bottom: 24px; text-align: right; margin-left: auto; font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); background-color: #1e1e20; padding: max(var(--padding-2xs), calc((0 + var(--padding-xs)) * (1 - cos(45deg))));">
+                    {{ collection_title_text }}
+                  </div>
+                  <p style="font-family: var(--font-body--family); font-size: 1rem; color: var(--color-foreground);">No products in this collection.</p>
+                </div>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+      {% endfor %}
+      {% endif %}
+      
+      {% comment %} Find products that don't belong to any collection (excluding 'all' and homepage) {% endcomment %}
+      {% comment %} Note: has_products_without_collection is already calculated above {% endcomment %}
+      
+          {% if has_products_without_collection %}
+            {% liquid
+              assign collection_counter_index = collection_counter_index | plus: 1
+              assign collection_counter = collection_counter_index | prepend: '0' | slice: -2, 2
+            %}
+            <div class="collection-group" style="grid-column: var(--full-width); margin-top: 48px; margin-bottom: 24px; padding-inline: calc(var(--page-margin) * 2); position: relative; z-index: 1;">
+              {% comment %} Section header group with text and section number {% endcomment %}
+              <div class="collection-group__header" style="display: flex; flex-direction: row; align-items: center; gap: 12px; margin-bottom: 24px; width: fit-content;">
+                <p style="font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); margin: 0; text-transform: uppercase;">
+                  OUR SELECTIONS
+                </p>
+                <div class="collection-group__section-number" style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 0;">
+                  <div style="position: relative; width: 80px; height: 1px; background-color: transparent; border-radius: 2px; overflow: hidden;">
+                    <div style="position: absolute; top: 0; left: 0; height: 100%; background-color: #b0b0b0; width: 100%; border-radius: 2px;"></div>
+                  </div>
+                  <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: #b0b0b0;">{{ collection_counter }}/{{ total_counter }}</span>
+                </div>
+              </div>
+              
+              {% comment %} "Explore more" title instead of collection title {% endcomment %}
+              {% liquid
+                assign explore_more_text = '<h2>explore more</h2>'
+              %}
+              <div class="collection-title-wrapper collection-title-lowercase text-block spacing-style" style="width: fit-content; max-width: normal; margin-bottom: 24px; text-align: right; margin-left: auto; font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); background-color: #1e1e20; padding: max(var(--padding-2xs), calc((0 + var(--padding-xs)) * (1 - cos(45deg))));">
+                {{ explore_more_text }}
+              </div>
+          
+          {% comment %} Products without collection using product-list grid format {% endcomment %}
+          {% liquid
+            assign columns_gap = section.settings.columns_gap_horizontal
+            assign rows_gap = section.settings.columns_gap_vertical
+            assign columns = 4
+            assign mobile_columns = 2
+          %}
+          
+          {% capture no_collection_products %}
+            {% for product in collection.products %}
+              {% liquid
+                assign product_in_collection = false
+                for product_collection in product.collections
+                  unless product_collection.handle == 'all'
+                    assign product_in_collection = true
+                    break
+                  endunless
+                endfor
+              %}
+              {% unless product_in_collection %}
+                <div class="resource-list__item">
+                  {% # theme-check-disable %}
+                  {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
+                  {% # theme-check-enable %}
+                </div>
+                {% unless forloop.last %}
+                  <!--@list/split-->
+                {% endunless %}
+              {% endunless %}
+            {% endfor %}
+          {% endcapture %}
+          
+          {% comment %} Output using product-list grid structure {% endcomment %}
+          <div class="resource-list resource-list--grid" style="--resource-list-column-gap-desktop: {{ columns_gap }}px; --resource-list-row-gap-desktop: {{ rows_gap }}px; --resource-list-columns: repeat({{ columns }}, 1fr); --resource-list-columns-mobile: repeat({{ mobile_columns }}, 1fr);">
+            {{ no_collection_products }}
+          </div>
+        </div>
+      {% endif %}
+    {% else %}
+      {% paginate collection.products by 24 %}
+        {% liquid
+          assign custom_product = blank
+          if section.settings.custom_product_card_product != blank
+            assign custom_product = all_products[section.settings.custom_product_card_product]
+          endif
+          assign total_products = collection.products.size
+          assign initial_insert = 4
+          assign repeat_interval = 12
+        %}
+        {% capture children %}
+          {% for product in collection.products %}
           <li
             id="{{ section.id }}-{{ product.id }}"
             class="product-grid__item product-grid__item--{{ forloop.index0 }}"
             data-page="{{ paginate.current_page }}"
             data-product-id="{{ product.id }}"
+            data-product-handle="{{ product.handle }}"
+            data-collection-id="{{ collection.id }}"
+            data-collection-handle="{{ collection.handle }}"
             ref="cards[]"
           >
             {% # theme-check-disable %}
             {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
             {% # theme-check-enable %}
           </li>
+          {% comment %} Insert custom product card at position 4, then every 12 products after that (4, 16, 28, 40...) {% endcomment %}
+          {% comment %} Skip custom product card for leather care collection {% endcomment %}
+          {% liquid
+            assign should_insert = false
+            assign is_leather_care = false
+            if collection.handle == 'leather-care'
+              assign is_leather_care = true
+            endif
+            
+            if custom_product != blank and custom_product.id != blank and is_leather_care == false
+              # Show at position 4 initially
+              if forloop.index == initial_insert
+                assign should_insert = true
+              # Then show every 12 products after position 4 (16, 28, 40, 52...)
+              elsif forloop.index > initial_insert
+                assign position_after_initial = forloop.index | minus: initial_insert
+                assign remainder = position_after_initial | modulo: repeat_interval
+                if remainder == 0
+                  assign should_insert = true
+                endif
+              # For collections with fewer than 4 products, show after last product
+              elsif total_products < initial_insert and forloop.index == total_products
+                assign should_insert = true
+              endif
+            endif
+          %}
+          {% if should_insert %}
+            <li
+              id="{{ section.id }}-custom-{{ custom_product.id }}"
+              class="product-grid__item product-grid__item--custom product-grid__item--with-overlay"
+              data-page="{{ paginate.current_page }}"
+              data-product-id="{{ custom_product.id }}"
+              ref="cards[]"
+            >
+              {% # theme-check-disable %}
+              {% capture product_card_content %}
+                {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: custom_product %}
+              {% endcapture %}
+              <div class="custom-product-card__container">
+                <div class="custom-product-card__product-card">
+                  {{ product_card_content }}
+                  {% comment %} Always render quick-add manually to ensure it's visible and accessible {% endcomment %}
+                  {% if settings.quick_add or settings.mobile_quick_add %}
+                    {% if custom_product != blank and custom_product.available %}
+                      {% comment %} Create a unique block ID for the quick-add form {% endcomment %}
+                      {% assign quick_add_block_id = section.id | append: '-custom-quick-add-' | append: custom_product.id %}
+                      {% comment %} Render quick-add manually with proper structure matching the snippet exactly {% endcomment %}
+                      {% liquid
+                        assign product_form_id = 'QuickAdd-ProductForm-' | append: custom_product.id | append: '-' | append: quick_add_block_id
+                        assign add_to_cart_text = 'actions.add' | t
+                        if custom_product.selected_or_first_available_variant.available
+                          assign can_add_to_cart = true
+                        else
+                          assign can_add_to_cart = false
+                        endif
+                      %}
+                      {% comment %} Position quick-add relative to card-gallery (product image) {% endcomment %}
+                      <div class="custom-quick-add-container">
+                        <div class="custom-quick-add-wrapper">
+                          <quick-add-component
+                            class="quick-add color-{{ settings.quick_add_color_scheme }}"
+                            ref="quickAdd"
+                            data-product-title="{{ custom_product.title }}"
+                          >
+                            <product-form-component
+                              data-section-id="{{ section.id }}"
+                              data-product-id="{{ custom_product.id }}"
+                              on:submit="/handleSubmit"
+                              class="quick-add__product-form-component {% if custom_product.options.size == 1 %}quick-add__product-form-component--single-option{% else %}quick-add__product-form-component--multi-option{% endif %} {% if custom_product.variants.size == 1 %}quick-add__product-form-component--single-variant{% else %}quick-add__product-form-component--multi-variant{% endif %}"
+                            >
+                              <div class="visually-hidden" aria-live="assertive" role="status" aria-atomic="true" ref="liveRegion"></div>
+                              {%- form 'product', custom_product, id: product_form_id, novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+                                <input type="hidden" name="id" ref="variantId" value="{{ custom_product.selected_or_first_available_variant.id }}" {% if custom_product.selected_or_first_available_variant.available == false %}disabled{% endif %}>
+                                <input type="hidden" name="quantity" value="{% if custom_product.selected_or_first_available_variant.quantity_rule.min %}{{ custom_product.selected_or_first_available_variant.quantity_rule.min }}{% else %}1{% endif %}">
+                                {%- if custom_product.variants.size == 1 or custom_product.options.size == 1 -%}
+                                  {% render 'add-to-cart-button',
+                                    add_to_cart_text: add_to_cart_text,
+                                    class: 'button quick-add__button quick-add__button--add',
+                                    can_add_to_cart: can_add_to_cart,
+                                    icon_only_on_mobile: true,
+                                    product: custom_product
+                                  %}
+                                {%- endif -%}
+                                {%- if custom_product.variants.size > 1 -%}
+                                  <button type="button" class="button quick-add__button quick-add__button--choose" name="add" on:click="quick-add-component/handleClick">
+                                    <span class="add-to-cart-text">
+                                      <span class="svg-wrapper add-to-cart-icon">
+                                        {{- 'icon-plus.svg' | inline_asset_content -}}
+                                      </span>
+                                      <span class="add-to-cart-text__content is-visually-hidden-mobile">
+                                        {{ add_to_cart_text }}
+                                      </span>
+                                    </span>
+                                  </button>
+                                {%- endif -%}
+                              {%- endform -%}
+                            </product-form-component>
+                          </quick-add-component>
+                        </div>
+                      </div>
+                    {% endif %}
+                  {% endif %}
+                </div>
+                <div class="custom-product-card__gold-card">
+                  <svg class="custom-product-card__grid" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                    <defs>
+                      <pattern id="grid-pattern-{{ section.id }}-{{ custom_product.id }}" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1"/>
+                      </pattern>
+                    </defs>
+                    <rect width="100%" height="100%" fill="url(#grid-pattern-{{ section.id }}-{{ custom_product.id }})"/>
+                  </svg>
+                  <div class="custom-product-card__sparkles">
+                    <span class="sparkle sparkle-1"></span>
+                    <span class="sparkle sparkle-2"></span>
+                    <span class="sparkle sparkle-3"></span>
+                    <span class="sparkle sparkle-4"></span>
+                    <span class="sparkle sparkle-5"></span>
+                    <span class="sparkle sparkle-6"></span>
+                  </div>
+                  <div class="custom-product-card__gold-content">
+                    <div class="custom-product-card__text-bg"></div>
+                    <p class="custom-product-card__gold-text">keep your bags<br>looking new</p>
+                  </div>
+                </div>
+              </div>
+              {% # theme-check-enable %}
+            </li>
+          {% endif %}
         {% endfor %}
-      {% endcapture %}
-
-      {% render 'product-grid',
-        section: section,
-        children: children,
-        products: collection.products,
-        paginate: paginate,
-        enable_infinite_scroll: section.settings.enable_infinite_scroll
-      %}
-    {% endpaginate %}
+        {% endcapture %}
+        {% render 'product-grid',
+          section: section,
+          children: children,
+          products: collection.products,
+          paginate: paginate
+        %}
+      {% endpaginate %}
+    {% endif %}
   </div>
 </results-list>
 
 {% stylesheet %}
+  .collection-group {
+    grid-column: var(--full-width);
+    margin-top: 48px;
+    margin-bottom: 24px;
+    padding-inline: calc(var(--page-margin) * 2);
+    position: relative;
+    z-index: 1;
+  }
+  
+  .collection-group:first-of-type {
+    margin-top: 0;
+  }
+  
+  .collection-group__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+  
+  .collection-group__button {
+    position: relative;
+    z-index: 2;
+  }
+  
+  /* Force lowercase for collection title in collection groups */
+  .collection-group .collection-title-wrapper,
+  .collection-group .collection-title-wrapper *,
+  .collection-group .collection-title-wrapper h1,
+  .collection-group .collection-title-wrapper h2,
+  .collection-group .collection-title-wrapper h3,
+  .collection-group .collection-title-wrapper h4,
+  .collection-group .collection-title-wrapper h5,
+  .collection-group .collection-title-wrapper h6 {
+    text-transform: lowercase !important;
+  }
+  
   .main-collection-grid {
     grid-column: var(--grid-column--mobile);
-
     @media screen and (min-width: 750px) {
       grid-column: var(--grid-column--desktop);
     }
@@ -122,7 +750,8 @@
 
   :is(.collection-wrapper--full-width, .collection-wrapper--full-width-on-mobile)
     [product-grid-view='default']
-    .product-grid__card {
+    .product-grid__item
+    .group-block {
     @media screen and (max-width: 749px) {
       padding-inline-start: max(var(--padding-xs), var(--padding-inline-start));
       padding-inline-end: max(var(--padding-xs), var(--padding-inline-end));
@@ -131,19 +760,400 @@
 
   :is(.collection-wrapper--full-width, .collection-wrapper--full-width-on-mobile)
     [product-grid-view='mobile-single']
-    .product-grid__card {
+    .product-grid__item
+    .group-block {
     @media screen and (max-width: 749px) {
       padding-inline-start: max(var(--padding-xs), var(--padding-inline-start));
       padding-inline-end: max(var(--padding-xs), var(--padding-inline-end));
     }
   }
+  /* View more button padding inline */
+  .collection-group__button .button,
+  .collection-group__button .button-secondary,
+  .collection-group__button a[class*="button"] {
+    padding-inline: calc(var(--page-margin) * 2) !important;
+  }
 
-  /* Make product media go edge-to-edge by using negative margins */
-  :is(.collection-wrapper--full-width) .card-gallery,
-  :is(.collection-wrapper--full-width-on-mobile) .card-gallery {
-    @media screen and (max-width: 749px) {
-      margin-inline-start: calc(-1 * max(var(--padding-xs), var(--padding-inline-start)));
-      margin-inline-end: calc(-1 * max(var(--padding-xs), var(--padding-inline-end)));
+  /* Custom product card with two containers - product card and gold card */
+  .product-grid__item--with-overlay {
+    position: relative;
+  }
+
+  .custom-product-card__container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+  }
+
+  /* Product card - initially visible, fades in and out in infinite loop */
+  .custom-product-card__product-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    animation: fadeProductCardLoop 6s ease-in-out infinite;
+    z-index: 2;
+    pointer-events: auto;
+  }
+
+  /* Ensure product card wrapper doesn't block hover events */
+  .custom-product-card__product-card .product-card {
+    pointer-events: auto;
+  }
+
+  /* Gold card - fades in and out in infinite loop */
+  .custom-product-card__gold-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(202, 160, 85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeGoldCardLoop 6s ease-in-out infinite;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* On hover, pause animation, bring product card to front and ensure quick add is accessible */
+  .custom-product-card__container:hover .custom-product-card__product-card {
+    z-index: 3;
+    opacity: 1 !important;
+    animation-play-state: paused;
+  }
+
+  .custom-product-card__container:hover .custom-product-card__gold-card {
+    z-index: 2;
+    pointer-events: none;
+    animation-play-state: paused;
+    opacity: 0 !important;
+  }
+
+  /* Ensure quick-add container is accessible on hover */
+  .custom-product-card__container:hover .custom-quick-add-container {
+    z-index: 11;
+    pointer-events: none;
+  }
+
+  .custom-product-card__container:hover .custom-quick-add-container > div {
+    pointer-events: auto;
+    z-index: 12;
+  }
+
+  /* Ensure product card content is interactive */
+  .custom-product-card__product-card * {
+    pointer-events: auto;
+  }
+
+  /* Make card-gallery receive hover events properly */
+  .custom-product-card__product-card .card-gallery {
+    pointer-events: auto;
+  }
+
+  /* Ensure quick add component is accessible and has high z-index */
+  .custom-product-card__product-card .quick-add,
+  .custom-product-card__product-card [class*="quick-add"],
+  .product-grid__item--with-overlay .quick-add {
+    z-index: 10;
+    pointer-events: auto;
+    position: relative;
+  }
+
+  /* Ensure quick add button itself is accessible */
+  .custom-product-card__product-card .quick-add__button,
+  .product-grid__item--with-overlay .quick-add__button {
+    z-index: 11;
+    pointer-events: auto;
+  }
+
+  /* Quick add button visibility - hide by default on desktop, show on hover */
+  @media screen and (min-width: 750px) {
+    /* Hide by default on desktop (matching normal product cards) */
+    .custom-quick-add-container .quick-add__button,
+    .custom-quick-add-container quick-add-component .quick-add__button,
+    .custom-quick-add-container .quick-add .quick-add__button {
+      display: none;
+    }
+    
+    /* Show on hover */
+    .custom-product-card__container:hover .custom-quick-add-container .quick-add__button,
+    .custom-product-card__container:hover .custom-quick-add-container quick-add-component .quick-add__button,
+    .custom-product-card__container:hover .custom-quick-add-wrapper .quick-add__button,
+    .product-grid__item--with-overlay:hover .custom-quick-add-container .quick-add__button,
+    .product-grid__item--with-overlay:hover .custom-quick-add-container quick-add-component .quick-add__button,
+    .product-grid__item--with-overlay:hover .custom-quick-add-wrapper .quick-add__button {
+      display: grid !important;
+      will-change: margin, opacity;
+      animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
+    }
+    
+    /* Also show when card-gallery is hovered (if it exists in the product card) */
+    .custom-product-card__product-card .card-gallery:hover .quick-add__button,
+    .product-grid__item--with-overlay .card-gallery:hover .quick-add__button {
+      display: grid !important;
+      will-change: margin, opacity;
+      animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
+    }
+  }
+  
+  /* Position quick-add relative to card-gallery (product image), not the entire product card */
+  /* The card-gallery already has position: relative from the snippet */
+  .custom-product-card__product-card .card-gallery {
+    position: relative;
+  }
+  
+  /* Position quick-add container to match ONLY the card-gallery's dimensions (image area) */
+  /* The container should only cover the image, not the product details below */
+  .custom-quick-add-container {
+    position: absolute;
+    /* Position it to align with the card-gallery - match its top and left */
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Use aspect-ratio to match card-gallery's image area height only */
+    aspect-ratio: var(--gallery-aspect-ratio, 1);
+    pointer-events: none;
+    z-index: 10;
+    /* Ensure it doesn't extend beyond the image area */
+    max-height: fit-content;
+  }
+  
+  /* Ensure the container matches card-gallery dimensions exactly */
+  .custom-product-card__product-card .card-gallery ~ .custom-quick-add-container {
+    /* Position to align with card-gallery */
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Match the aspect ratio of the card-gallery */
+    aspect-ratio: var(--gallery-aspect-ratio, 1);
+  }
+  
+  .custom-quick-add-wrapper {
+    position: absolute;
+    bottom: calc(var(--quick-add-offset, var(--padding-sm)) * 9.5);
+    right: var(--quick-add-offset, var(--padding-sm));
+    pointer-events: auto;
+    z-index: 11;
+  }
+  
+  /* Ensure quick-add component itself is visible */
+  .custom-quick-add-container quick-add-component {
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* On hover, ensure quick-add container stays on top */
+  .custom-product-card__container:hover .custom-quick-add-container {
+    z-index: 15 !important;
+  }
+  
+  .custom-product-card__container:hover .custom-quick-add-wrapper {
+    z-index: 16 !important;
+  }
+
+  /* Show quick add button on hover - override default hiding on desktop */
+  /* Use very specific selectors to ensure it works */
+  @media screen and (min-width: 750px) {
+    /* When container or product grid item is hovered, show quick add button */
+    .product-grid__item--with-overlay:hover .quick-add__button,
+    .custom-product-card__container:hover .quick-add__button,
+    .product-grid__item--with-overlay:hover .card-gallery .quick-add__button,
+    .custom-product-card__container:hover .card-gallery .quick-add__button,
+    .custom-product-card__container:hover .quick-add .quick-add__button,
+    .custom-product-card__container:hover .custom-product-card__product-card .quick-add__button,
+    .custom-product-card__container:hover .custom-product-card__product-card .card-gallery .quick-add__button,
+    .custom-product-card__container:hover .custom-product-card__product-card product-card .quick-add__button {
+      display: grid !important;
+      will-change: margin, opacity;
+      animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
+    }
+    
+    /* Also handle direct card-gallery hover (in case hover reaches it) */
+    .custom-product-card__product-card .card-gallery:hover .quick-add__button,
+    .product-grid__item--with-overlay .card-gallery:hover .quick-add__button {
+      display: grid !important;
+      will-change: margin, opacity;
+      animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
+    }
+    
+    /* Ensure quick add button is visible when product card is focused */
+    .custom-product-card__product-card product-card:focus-within .quick-add__button,
+    .product-grid__item--with-overlay product-card:focus-within .quick-add__button {
+      display: grid !important;
+      will-change: margin, opacity;
+      animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
+    }
+  }
+
+  /* Grid SVG pattern */
+  .custom-product-card__grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Sparkles container */
+  .custom-product-card__sparkles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Individual sparkle */
+  .custom-product-card__sparkles .sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.9), 0 0 12px rgba(255, 255, 255, 0.6);
+    animation: sparkleGlow 2s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+
+  /* Position sparkles randomly across the card */
+  .custom-product-card__sparkles .sparkle-1 {
+    top: 15%;
+    left: 20%;
+    animation-delay: 0s;
+  }
+
+  .custom-product-card__sparkles .sparkle-2 {
+    top: 35%;
+    left: 75%;
+    animation-delay: 0.3s;
+  }
+
+  .custom-product-card__sparkles .sparkle-3 {
+    top: 60%;
+    left: 15%;
+    animation-delay: 0.6s;
+  }
+
+  .custom-product-card__sparkles .sparkle-4 {
+    top: 80%;
+    left: 60%;
+    animation-delay: 0.9s;
+  }
+
+  .custom-product-card__sparkles .sparkle-5 {
+    top: 25%;
+    left: 50%;
+    animation-delay: 1.2s;
+  }
+
+  .custom-product-card__sparkles .sparkle-6 {
+    top: 70%;
+    left: 85%;
+    animation-delay: 1.5s;
+  }
+
+  /* Sparkle glow animation - optimized using transform and opacity */
+  @keyframes sparkleGlow {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+
+  .custom-product-card__gold-content {
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Blurred background for text with solid base - circular shape with soft edges */
+  .custom-product-card__text-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(202, 160, 85, 0.9) 0%, rgba(202, 160, 85, 0.9) 70%, rgba(202, 160, 85, 0.3) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 50%;
+    z-index: 0;
+    box-shadow: 0 0 30px rgba(202, 160, 85, 0.2);
+  }
+
+  .custom-product-card__gold-text {
+    position: relative;
+    z-index: 1;
+    font-family: 'Sacramento', cursive;
+    font-weight: 400;
+    font-style: normal;
+    font-size: var(--font-h3--size);
+    line-height: var(--font-h3--line-height);
+    letter-spacing: var(--font-h3--letter-spacing);
+    color: #ffffff;
+    margin: 0;
+    text-transform: lowercase;
+  }
+
+  /* Infinite loop animation: product card visible for 2.5s, fade out 0.8s, hidden for 2.5s, fade in 0.8s */
+  @keyframes fadeProductCardLoop {
+    0%, 41.67% {
+      opacity: 1;
+    }
+    50%, 91.67% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  /* Infinite loop animation: gold card hidden for 2.5s, fade in 0.8s, visible for 2.5s, fade out 0.8s */
+  @keyframes fadeGoldCardLoop {
+    0%, 41.67% {
+      opacity: 0;
+    }
+    50%, 91.67% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @media screen and (max-width: 749px) {
+    .custom-product-card__gold-content {
+      padding: 12px;
+    }
+
+    .custom-product-card__text-bg {
+      width: 150px;
+      height: 150px;
+    }
+
+    .custom-product-card__gold-text {
+      font-size: 0.875rem;
     }
   }
 {% endstylesheet %}
@@ -213,22 +1223,6 @@
       "default": "small"
     },
     {
-      "type": "checkbox",
-      "id": "enable_infinite_scroll",
-      "label": "t:settings.auto_load_products",
-      "default": true
-    },
-    {
-      "type": "range",
-      "id": "products_per_page",
-      "label": "t:settings.products_per_page",
-      "min": 8,
-      "max": 36,
-      "step": 4,
-      "default": 24,
-      "visible_if": "{{ section.settings.enable_infinite_scroll == false }}"
-    },
-    {
       "type": "header",
       "content": "t:content.layout"
     },
@@ -260,20 +1254,20 @@
       "id": "columns_gap_horizontal",
       "label": "t:settings.horizontal_gap",
       "min": 0,
-      "max": 50,
+      "max": 100,
       "step": 1,
       "unit": "px",
-      "default": 16
+      "default": 12
     },
     {
       "type": "range",
       "id": "columns_gap_vertical",
       "label": "t:settings.vertical_gap",
       "min": 0,
-      "max": 50,
+      "max": 100,
       "step": 1,
       "unit": "px",
-      "default": 16
+      "default": 60
     },
     {
       "type": "range",
@@ -313,7 +1307,7 @@
       "max": 100,
       "step": 1,
       "unit": "px",
-      "default": 8
+      "default": 48
     },
     {
       "type": "range",
@@ -323,9 +1317,20 @@
       "max": 100,
       "step": 1,
       "unit": "px",
-      "default": 8
+      "default": 48
+    },
+    {
+      "type": "header",
+      "content": "Custom Product Card"
+    },
+    {
+      "type": "product",
+      "id": "custom_product_card_product",
+      "label": "Product for Custom Card",
+      "info": "This product will be displayed as an image-only card in the second row of the collection grid"
     }
   ],
   "presets": []
 }
 {% endschema %}
+

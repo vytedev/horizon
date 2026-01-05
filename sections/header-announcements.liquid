@@ -1,8 +1,9 @@
+{% # import schema from '../schemas/sections/header-announcements.js' %}
+
 {% if section.blocks.size > 1 %}
   <script
     src="{{ 'announcement-bar.js' | asset_url }}"
     type="module"
-    fetchpriority="low"
   ></script>
 {% endif %}
 
@@ -75,10 +76,13 @@
 
   .announcement-bar__slider slideshow-arrows {
     padding: 0;
+  }
+
+  .announcement-bar__slider slideshow-arrows[shape='none'] {
     mix-blend-mode: normal;
   }
 
-  .announcement-bar__slider slideshow-arrows .slideshow-control {
+  .announcement-bar__slider slideshow-arrows .slideshow-control--shape-none {
     color: var(--color-foreground);
   }
 
@@ -135,7 +139,7 @@
     {
       "type": "range",
       "id": "speed",
-      "label": "t:settings.scroll_speed",
+      "label": "t:settings.speed",
       "min": 2,
       "max": 10,
       "default": 5,

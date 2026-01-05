@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Załaduj film: {{ description }}",
@@ -37,7 +46,7 @@
     "search_results_count": "Znaleziono wyniki wyszukiwania ({{ count }}) dla „{{ query }}”",
     "search_results_no_results": "Nie znaleziono wyników dla „{{ query }}”",
     "filters": "Filtry",
-    "account": "Konto",
+    "account": "Otwórz menu konta",
     "cart": "Koszyk",
     "cart_count": "Łączna liczba pozycji w koszyku",
     "filter_count": {
@@ -52,17 +61,17 @@
     "scroll_to": "Przewiń do {{ title }}",
     "loading_product_recommendations": "Wczytywanie polecanych produktów",
     "discount": "Zastosuj kod rabatowy",
-    "discount_menu": "Kody rabatowe",
     "discount_applied": "Zastosowany kod rabatowy: {{ code }}",
+    "open_cart_drawer": "Otwórz koszyk",
     "pause_video": "Zatrzymaj film",
     "inventory_status": "Stan zapasów",
     "find_country": "Znajdź kraj",
-    "localization_region_and_language": "Selektor regionu i języka",
+    "localization_region_and_language": "Otwórz region i selektor języka",
+    "open_search_modal": "Otwórz wyszukiwanie",
     "decrease_quantity": "Zmniejsz ilość",
     "increase_quantity": "Zwiększ ilość",
     "rating": "Ocena tego produktu to: {{ rating }} na 5",
-    "quantity": "Ilość",
-    "nested_product": "{{ product_title }}: {{ parent_title }}"
+    "quantity": "Ilość"
   },
   "actions": {
     "add_to_cart": "Dodaj do koszyka",
@@ -103,8 +112,7 @@
     "sign_in_options": "Inne opcje logowania",
     "sign_up": "Zarejestruj się",
     "sort": "Sortuj",
-    "show_all_options": "Pokaż wszystkie opcje",
-    "open": "Otwórz"
+    "show_all_options": "Pokaż wszystkie opcje"
   },
   "content": {
     "reviews": "recenzje",
@@ -223,26 +231,6 @@
       "other": "Pozostało: {{ count }}",
       "few": "Pozostało: {{ count }}",
       "many": "Pozostało: {{ count }}"
-    },
-    "recipient_form_send_to": "Wyślij do",
-    "recipient_form_email_label": "Adres e-mail odbiorcy",
-    "recipient_form_email_label_my_email": "Mój adres e-mail",
-    "recipient_form_email_address": "Adres e-mail odbiorcy",
-    "recipient_form_name_label": "Nazwa odbiorcy (opcjonalnie)",
-    "recipient_form_characters_used": "Użyte znaki: {{ used_chars }}/{{ max_chars }}",
-    "recipient_form_send_on": "RRRR-MM-DD",
-    "recipient_form_send_on_label": "Wyślij dnia (opcjonalnie)",
-    "recipient_form_message": "Wiadomość (opcjonalnie)",
-    "recipient_form_fields_visible": "Pola formularza odbiorcy są teraz widoczne",
-    "recipient_form_fields_hidden": "Pola formularza odbiorcy są teraz ukryte",
-    "recipient_form_error": "Wystąpił błąd podczas przesyłania formularza",
-    "product_custom_property_character_count": "Użyte znaki: {{ used_chars }}/{{ max_chars }}",
-    "terms_and_policies": "Warunki i polityki",
-    "pagination": {
-      "nav_label": "Nawigacja po paginacji",
-      "previous": "Wstecz",
-      "next": "Dalej",
-      "page": "Strona {{ page }}"
     }
   },
   "gift_cards": {
@@ -266,25 +254,14 @@
       "added_to_cart": "Dodano do koszyka",
       "add_to_cart_error": "Błąd podczas dodawania do koszyka",
       "sold_out": "Wyprzedane",
-      "unavailable": "Niedostępny",
-      "quantity_error_max": "Ten produkt ma maksimum {{ maximum }}",
-      "quantity": "Ilość",
-      "quantity_increments": "Przyrosty o {{ increment }}",
-      "quantity_minimum": "Minimum {{ minimum }}",
-      "quantity_maximum": "Maksimum {{ maximum }}",
-      "in_cart": "w koszyku"
+      "unavailable": "Niedostępny"
     }
   },
   "placeholders": {
     "password": "Hasło",
     "search": "Szukaj",
     "product_title": "Tytuł produktu",
-    "collection_title": "Tytuł kolekcji",
-    "blog_posts": "Posty na blogu",
-    "blog_post_title": "Tytuł",
-    "blog_post_author": "Autor",
-    "blog_post_date": "Data",
-    "blog_post_description": "Fragment Twojego posta na blogu"
+    "collection_title": "Tytuł kolekcji"
   },
   "fields": {
     "separator": "do"

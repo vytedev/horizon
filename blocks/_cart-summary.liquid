@@ -1,26 +1,27 @@
-{% assign block_settings = block.settings %}
+{% # import schema from '../schemas/blocks/_cart-summary.js' %}
+
 {%- capture cart_summary_inner_class -%}
   cart__summary-inner
-  {% if block_settings.extend_summary == false and block_settings.inherit_color_scheme == false -%}
-    color-{{ block_settings.color_scheme }} inherit-parent-scheme--mobile
+  {% if block.settings.extend_summary == false and block.settings.inherit_color_scheme == false -%}
+    color-{{ block.settings.color_scheme }} inherit-parent-scheme--mobile
   {%- endif %}
-  {% if block_settings.extend_summary == false and block_settings.border_radius > 0 -%}
+  {% if block.settings.extend_summary == false and block.settings.border_radius > 0 -%}
     has-border-radius
   {%- endif -%}
 {%- endcapture -%}
 
-{% if block_settings.extend_summary %}
+{% if block.settings.extend_summary %}
   <div
-    class="section-background {% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }} inherit-parent-scheme--mobile{% endif %}"
+    class="section-background {% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }} inherit-parent-scheme--mobile{% endif %}"
   ></div>
 {% endif %}
 <div
-  class="cart__summary-container border-style{% if block_settings.extend_summary == true %} cart__container--extend {% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }} inherit-parent-scheme--mobile{% endif %}{% endif %}{% if block_settings.border_radius > 0 %} has-border-radius{% endif %}"
-  style="{% render 'border-override', settings: block_settings %}"
+  class="cart__summary-container border-style{% if block.settings.extend_summary == true %} cart__container--extend {% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }} inherit-parent-scheme--mobile{% endif %}{% endif %}{% if block.settings.border_radius > 0 %} has-border-radius{% endif %}"
+  style="{% render 'border-override', settings: block.settings %}"
   {{ block.shopify_attributes }}
 >
   <div class="{{ cart_summary_inner_class }}">
-    {% render 'cart-summary', accelerated_checkout_buttons_layout: 'vertical' %}
+    {% render 'cart-summary' %}
   </div>
 </div>
 
@@ -47,7 +48,7 @@
   }
 
   .cart__tax-note {
-    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+    color: rgb(from var(--color-foreground) r g b / var(--opacity-subdued-text));
   }
 
   .cart__discount-label svg {
@@ -131,17 +132,11 @@
   @media screen and (max-width: 749px) {
     .inherit-parent-scheme--mobile {
       --color-background: inherit;
-      --color-background-rgb: inherit;
       --color-foreground: inherit;
-      --color-foreground-rgb: inherit;
       --color-primary: inherit;
-      --color-primary-rgb: inherit;
       --color-primary-hover: inherit;
-      --color-primary-hover-rgb: inherit;
       --color-border: inherit;
-      --color-border-rgb: inherit;
       --color-shadow: inherit;
-      --color-shadow-rgb: inherit;
       --color-foreground-heading: inherit;
       --color-primary-button-text: inherit;
       --color-primary-button-background: inherit;
@@ -156,7 +151,6 @@
       --color-secondary-button-hover-background: inherit;
       --color-secondary-button-hover-border: inherit;
       --color-input-text: inherit;
-      --color-input-text-rgb: inherit;
       --color-input-background: inherit;
     }
   }

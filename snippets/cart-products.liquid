@@ -1,14 +1,6 @@
-{% assign block_settings = block.settings %}
-
 <script
   src="{{ 'component-cart-items.js' | asset_url }}"
   type="module"
-  fetchpriority="low"
-></script>
-<script
-  src="{{ 'component-cart-quantity-selector.js' | asset_url }}"
-  type="module"
-  fetchpriority="low"
 ></script>
 
 <div
@@ -27,7 +19,7 @@
 
     <a
       class="button cart-items__empty-button"
-      href="{{ settings.empty_cart_button_link | default: routes.all_products_collection_url }}"
+      href="{{ routes.all_products_collection_url }}"
     >
       {{ 'actions.continue_shopping' | t }}
     </a>
@@ -46,8 +38,8 @@
       method="post"
     >
       <div
-        class="cart-items spacing-style{% if block_settings.dividers %} cart-items--dividers{% endif %}"
-        style="{%  render 'spacing-style', settings: block_settings %} --cart-items-gap:{{ block_settings.gap | append: "px" }};"
+        class="cart-items spacing-style{% if block.settings.dividers %} cart-items--dividers{% endif %}"
+        style="{%  render 'spacing-style', settings: block.settings %} --cart-items-gap:{{ block.settings.gap | append: "px" }};"
       >
         <table
           class="cart-items__table"
@@ -62,40 +54,60 @@
           </caption>
 
           <thead
-            class="visually-hidden"
+            class="cart-items__table-head"
             role="rowgroup"
           >
             <tr
               role="row"
-              class="cart-items__table-row"
+              class="cart-items__table-row cart-items__table-row--header"
             >
               <th
                 id="productImage"
                 scope="col"
                 role="columnheader"
+                class="cart-items__table-header cart-items__table-header--image"
               >
-                {{ 'content.product_image' | t }}
+                <p></p>
               </th>
               <th
                 id="productInformation"
                 scope="col"
                 role="columnheader"
+                class="cart-items__table-header cart-items__table-header--product-name"
               >
-                {{ 'content.product_information' | t }}
+                <p>PRODUCT NAME</p>
+              </th>
+              <th
+                id="unitPrice"
+                scope="col"
+                role="columnheader"
+                class="cart-items__table-header cart-items__table-header--unit-price"
+              >
+                <p>UNIT PRICE</p>
               </th>
               <th
                 id="quantity"
                 scope="col"
                 role="columnheader"
+                class="cart-items__table-header cart-items__table-header--quantity"
               >
-                {{ 'content.quantity' | t }}
+                <p>QUANTITY</p>
               </th>
               <th
                 id="productTotal"
                 scope="col"
                 role="columnheader"
+                class="cart-items__table-header cart-items__table-header--total"
               >
-                {{ 'content.product_total' | t }}
+                <p>TOTAL</p>
+              </th>
+              <th
+                id="removeItem"
+                scope="col"
+                role="columnheader"
+                class="cart-items__table-header cart-items__table-header--remove"
+              >
+                <p></p>
               </th>
             </tr>
           </thead>
@@ -104,10 +116,8 @@
             {% for item in cart.items %}
               <tr
                 role="row"
-                class="cart-items__table-row{% if item.parent_relationship.parent != null %} cart-items__nested-line{% endif %}"
+                class="cart-items__table-row"
                 ref="cartItemRows[]"
-                data-parent-key="{{ item.parent_relationship.parent.key }}"
-                data-key="{{ item.key }}"
               >
                 <td
                   class="cart-items__media"
@@ -117,15 +127,9 @@
                   {% if item.image -%}
                     {% liquid
                       assign ratio = 1
-                      assign border_opacity = settings.cart_thumbnail_border_opacity | divided_by: 100.0
-                      assign border_override = '--border-width: [cart_thumbnail_border_width]px; --border-style: [cart_thumbnail_border_style]; --border-color: rgb(var(--color-border-rgb) / [cart_thumbnail_border_opacity]); --border-radius: [cart_thumbnail_border_radius]px;' | replace: '[cart_thumbnail_border_width]', settings.cart_thumbnail_border_width | replace: '[cart_thumbnail_border_style]', settings.cart_thumbnail_border | replace: '[cart_thumbnail_border_opacity]', border_opacity | replace: '[cart_thumbnail_border_radius]', settings.cart_thumbnail_border_radius
-
-                      if settings.cart_thumbnail_border_radius > 0
-                        assign border_override = border_override | append: ' overflow: hidden;'
-                      endif
-                      if block_settings.image_ratio == 'portrait'
+                      if block.settings.image_ratio == 'portrait'
                         assign ratio = 0.8
-                      elsif block_settings.image_ratio == 'adapt'
+                      elsif block.settings.image_ratio == 'adapt'
                         assign ratio = item.image.aspect_ratio
                       endif
                     %}
@@ -135,7 +139,7 @@
                       style="--ratio:{{ ratio }};"
                     >
                       {%- liquid
-                        echo item.image | image_url: width: 250 | image_tag: class: 'cart-items__media-image border-style', style: border_override
+                        echo item.image | image_url: width: 250 | image_tag: class: 'cart-items__media-image'
                       -%}
                     </a>
                   {%- endif %}
@@ -145,18 +149,40 @@
                   role="cell"
                   headers="productInformation"
                 >
-                  <p>
-                    <a
-                      href="{{ item.url }}"
-                      class="cart-items__title"
-                      {% if item.parent_relationship.parent != null %}
-                        aria-label="{{ 'accessibility.nested_product' | t: product_title: item.product.title, parent_title: item.parent_relationship.parent.title | escape }}"
+                  {% comment %} Group product name and price for cart drawer {% endcomment %}
+                  <div class="cart-items__details-content">
+                    <p>
+                      <a
+                        href="{{ item.url }}"
+                        class="cart-items__title"
+                      >
+                        {{- item.product.title -}}
+                      </a>
+                    </p>
+                    {% comment %} Total price - only show in cart drawer, grouped with product name {% endcomment %}
+                    {%- liquid
+                      if settings.currency_code_enabled_cart_items
+                        assign price = item.final_line_price | money_with_currency
+                      else
+                        assign price = item.final_line_price | money
+                      endif
+                    -%}
+                    <div class="cart-items__price-group--drawer">
+                      <div class="cart-items__price--drawer cart-secondary-typography">
+                        <text-component value="{{ price | strip_html }}">{{ price }}</text-component>
+                      </div>
+                      {% if item.line_level_discount_allocations.size > 0 %}
+                        <span class="cart-items__voucher-check">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#ff6b35">
+                            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82Z"/>
+                            <path d="M7 7h.01" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                            <path d="M9 12l2 2 4-4" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                          </svg>
+                        </span>
                       {% endif %}
-                    >
-                      {{- item.product.title -}}
-                    </a>
-                  </p>
-                  {% if item.product.vendor and block_settings.vendor %}
+                    </div>
+                  </div>
+                  {% if item.product.vendor and block.settings.vendor %}
                     <p>
                       {{ item.product.vendor }}
                     </p>
@@ -214,18 +240,43 @@
                     {% endif %}
                   {%- endif -%}
 
-                  {% if item.line_level_discount_allocations.size > 0 %}
-                    <ul
-                      class="list-unstyled"
-                      role="list"
-                    >
-                      {%- for discount in item.line_level_discount_allocations -%}
-                        <li>{{ discount.discount_application.title | escape }}</li>
-                      {%- endfor -%}
-                    </ul>
-                  {% endif %}
+                  {% comment %} Unit price - only show in cart drawer, hidden in cart page {% endcomment %}
+                  <div class="cart-items__unit-price--drawer">
+                    {% if item.original_price != item.final_price %}
+                      <span class="visually-hidden">{{ 'content.price_sale' | t }}</span>
+                      <span>{{ item.final_price | money }}</span>
+                      <span class="visually-hidden">{{ 'content.price_regular' | t }}</span>
+                      <s class="compare-at-price">
+                        {% if item.variant.compare_at_price > item.original_price %}
+                          {{ item.variant.compare_at_price | money }}
+                        {% else %}
+                          {{ item.original_price | money }}
+                        {% endif %}
+                      </s>
+                    {% else %}
+                      {% if item.variant.compare_at_price > item.original_price %}
+                        <span class="visually-hidden">{{ 'content.price_sale' | t }}</span>
+                      {% else %}
+                        <span class="visually-hidden">{{ 'content.price' | t }}</span>
+                      {% endif %}
 
-                  <div>
+                      <span>{{ item.original_price | money }}</span>
+
+                      {% if item.variant.compare_at_price > item.original_price %}
+                        <span class="visually-hidden">{{ 'content.price_regular' | t }}</span>
+                        <s class="compare-at-price">{{ item.variant.compare_at_price | money }}</s>
+                      {% endif %}
+                    {% endif %}
+                  </div>
+
+                </td>
+                <td
+                  class="cart-items__unit-price-cell"
+                  role="cell"
+                  headers="unitPrice"
+                >
+                  {% comment %} Unit price - only show in cart page {% endcomment %}
+                  <div class="cart-items__unit-price--page">
                     {% if item.original_price != item.final_price %}
                       <span class="visually-hidden">{{ 'content.price_sale' | t }}</span>
                       <span>{{ item.final_price | money }}</span>
@@ -259,31 +310,13 @@
                   headers="quantity"
                 >
                   {% # Here I want to pass some arguments to the quantity block so it knows which value should the input be set to. Though quantity block could be a snippet instead %}
-                  {% assign can_update_quantity = item.instructions.can_update_quantity
-                    | default: true, allow_false: true
-                  %}
                   {% render 'quantity-selector',
                     product: item.product,
-                    variant: item.variant,
                     in_cart_quantity: item.quantity,
                     line_index: item.index,
-                    class: 'cart-primary-typography',
-                    can_update_quantity: can_update_quantity
+                    min: 0,
+                    class: 'cart-primary-typography'
                   %}
-
-                  <button
-                    class="button button--tertiary cart-items__remove"
-                    type="button"
-                    aria-label="{{ 'accessibility.remove_item' | t: title: item.title | escape }}"
-                    on:click="/onLineItemRemove/{{ item.index | plus: 1 }}"
-                    {% assign can_remove = item.instructions.can_remove | default: true, allow_false: true %}
-                    {% if can_remove == false %}
-                      hidden
-                    {% endif %}
-                  >
-                    {{- 'icon-delete.svg' | inline_asset_content -}}
-                    <span class="visually-hidden">Remove</span>
-                  </button>
                 </td>
                 <td
                   class="cart-items__error hidden"
@@ -325,20 +358,135 @@
                     </div>
                   {%- endif -%}
                 </td>
+                <td
+                  class="cart-items__remove-cell"
+                  role="cell"
+                  headers="removeItem"
+                >
+                  <button
+                    class="button button--tertiary cart-items__remove"
+                    type="button"
+                    aria-label="{{ 'accessibility.remove_item' | t: title: item.title | escape }}"
+                    on:click="/onLineItemRemove/{{ item.index | plus: 1 }}"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 6h18"/>
+                      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                      <line x1="10" y1="11" x2="10" y2="17"/>
+                      <line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
+                    <span class="visually-hidden">Remove</span>
+                  </button>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
+
+      {% comment %} Upsell Section {% endcomment %}
+      {%- liquid
+        assign cart_variant_ids_array = ''
+        for item in cart.items
+          assign cart_variant_ids_array = cart_variant_ids_array | append: item.variant_id | append: ','
+        endfor
+        
+        assign available_upsell_products = ''
+        assign cleaner_kit_products = ''
+        
+        for product in collections.all.products
+          assign product_variant_id = product.selected_or_first_available_variant.id
+          assign variant_id_string = product_variant_id | append: ''
+          assign variant_id_with_comma = variant_id_string | append: ','
+          assign variant_in_cart = false
+          
+          # More accurate check: look for variant_id followed by comma to avoid substring matches
+          if cart_variant_ids_array contains variant_id_with_comma
+            assign variant_in_cart = true
+          endif
+          
+          unless variant_in_cart
+            if product.tags contains 'cleaner kit'
+              assign cleaner_kit_products = cleaner_kit_products | append: product.handle | append: ','
+            endif
+            assign available_upsell_products = available_upsell_products | append: product.handle | append: ','
+          endunless
+        endfor
+        
+        assign cleaner_kit_handles = cleaner_kit_products | split: ','
+        assign available_upsell_handles = available_upsell_products | split: ','
+        
+        if cleaner_kit_handles[0] != blank
+          assign first_upsell_handle = cleaner_kit_handles[0]
+        elsif available_upsell_handles[0] != blank
+          assign first_upsell_handle = available_upsell_handles[0]
+        else
+          assign first_upsell_handle = blank
+        endif
+      -%}
+      
+      {% if first_upsell_handle != blank %}
+        {% assign initial_upsell_product = all_products[first_upsell_handle] %}
+        {% if initial_upsell_product != blank %}
+          {%- liquid
+            assign upsell_variant_id = initial_upsell_product.selected_or_first_available_variant.id
+          -%}
+          <div class="cart-upsell-divider"></div>
+          <div class="cart-upsell-container">
+            <div class="cart-upsell-header">
+              <p class="cart-upsell-header-title">You might also like</p>
+              <button type="button" class="cart-upsell-refresh-button" aria-label="Refresh upsell products">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                  <path d="M3 21v-5h5"/>
+                </svg>
+              </button>
+            </div>
+            <div class="cart-upsell-item" data-upsell-product-id="{{ upsell_variant_id }}" data-initial-product-id="{{ initial_upsell_product.id }}">
+              <label class="cart-upsell-checkbox-label">
+                <div class="cart-upsell-content">
+                  <div class="cart-upsell-image">
+                    {% if initial_upsell_product.featured_image %}
+                      <img 
+                        src="{{ initial_upsell_product.featured_image | image_url: width: 100 }}" 
+                        alt="{{ initial_upsell_product.title }}"
+                        width="100"
+                        height="100"
+                        loading="lazy"
+                        class="cart-upsell-product-image"
+                      >
+                    {% endif %}
+                  </div>
+                  <div class="cart-upsell-details">
+                    <p class="cart-upsell-title">{{ initial_upsell_product.title }}</p>
+                    <p class="cart-upsell-price">
+                      {{ initial_upsell_product.selected_or_first_available_variant.price | money }}
+                    </p>
+                  </div>
+                </div>
+                <input 
+                  type="checkbox" 
+                  class="cart-upsell-checkbox" 
+                  data-variant-id="{{ upsell_variant_id }}"
+                  data-product-id="{{ initial_upsell_product.id }}"
+                >
+              </label>
+              <div class="cart-upsell-loading" style="display: none;">
+                <span class="cart-upsell-loading-text">Adding to cart...</span>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+      {% endif %}
     </form>
   {%- endif -%}
 </div>
 
 {% stylesheet %}
   .cart-items {
-    --cart-item-media-width-min: 2.5rem;
-    --cart-item-media-width-max: 7.5rem;
-
     container-name: cart-items;
     container-type: inline-size;
     width: 100%;
@@ -356,11 +504,15 @@
     margin: 0;
   }
 
+  .cart-page .cart-items__table tbody tr:first-child {
+    margin-top: var(--margin-lg);
+  }
+
   .cart-items__table-row {
     --cart-item-price-width: 6rem;
 
     display: grid;
-    grid-template-columns: clamp(2.5rem, 15cqi, 7.5rem) minmax(0, 1fr) minmax(var(--cart-item-price-width), auto);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(var(--cart-item-price-width), auto);
     grid-template-areas:
       'media details price'
       'media quantity price'
@@ -371,13 +523,105 @@
     margin-bottom: var(--margin-lg);
   }
 
-  .cart-items__table-row.cart-items__nested-line td:first-child {
-    width: 60%;
-    justify-self: right;
+  /* Cart drawer: remove price area from grid since it's now in details */
+  .cart-drawer .cart-items__table-row {
+    --cart-item-remove-width: var(--minimum-touch-target);
+    grid-template-columns: 80px minmax(0, 1fr) var(--cart-item-remove-width);
+    grid-template-areas:
+      'media details remove'
+      'media quantity remove'
+      'media error remove';
+  }
+
+  /* Cart page specific styles - not for cart drawer */
+  .cart-page .cart-items__table-row {
+    --cart-item-price-width: 6rem;
+    --cart-item-remove-width: var(--minimum-touch-target);
+    --cart-item-media-width-min: 2rem;
+    --cart-item-media-width-max: 5rem;
+
+    grid-template-columns: clamp(2rem, 10cqi, 5rem) minmax(0, 1fr) minmax(var(--cart-item-price-width), auto) minmax(var(--cart-item-price-width), auto) var(--cart-item-remove-width);
+    grid-template-areas:
+      'media details unit-price price remove'
+      'media quantity unit-price price remove'
+      'media error error error remove';
+    align-items: start;
+  }
+
+  .cart-page .cart-items__table-row--header {
+    padding-bottom: var(--padding-md);
+    margin-bottom: var(--margin-md);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border) !important;
+  }
+
+  /* Hide table headers in cart drawer */
+  .cart-drawer .cart-items__table-head {
+    display: none !important;
+  }
+
+  /* Show table headers on cart page */
+  .cart-page .cart-items__table-head {
+    display: table-header-group !important;
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--margin-md);
+  }
+
+  .cart-page .cart-items__table-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    padding-top: var(--padding-sm);
+    padding-bottom: var(--padding-sm);
+    text-align: center;
+  }
+
+  .cart-page .cart-items__table-header p {
+    font-family: var(--font-body--family);
+    font-size: var(--font-body--size);
+    font-weight: var(--font-body--weight);
+    line-height: var(--font-body--line-height);
+    letter-spacing: var(--font-body--letter-spacing);
+    color: var(--color-foreground);
+    margin: 0;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .cart-page .cart-items__table-header--image {
+    grid-area: media;
+  }
+
+  .cart-page .cart-items__table-header--product-name {
+    grid-area: details;
+  }
+
+  .cart-page .cart-items__table-header--total {
+    grid-area: price;
+  }
+
+  .cart-page .cart-items__table-header--remove {
+    grid-area: remove;
+  }
+
+  .cart-drawer .cart-items__remove-cell {
+    grid-area: remove;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cart-page .cart-items__table-header--unit-price {
+    display: flex;
+    grid-area: unit-price;
+  }
+
+  .cart-page .cart-items__table-header--quantity {
+    display: none;
   }
 
   html:active-view-transition-type(page-navigation) .cart-items__table-row {
-    /* stylelint-disable-next-line declaration-no-important */
     view-transition-name: none !important;
   }
 
@@ -410,11 +654,6 @@
     margin-bottom: var(--cart-items-gap);
   }
 
-  .cart-items--dividers .cart-items__table-row:has(+ .cart-items__nested-line) {
-    border-bottom: none;
-    margin-bottom: 0;
-  }
-
   .cart-items--dividers .cart-items__table-row:last-child {
     border-block-end: none;
     padding-block-end: 0;
@@ -423,7 +662,89 @@
 
   .cart-items__details {
     grid-area: details;
-    color: rgb(var(--color-foreground-rgb) / var(--opacity-70));
+    color: rgb(from var(--color-foreground) r g b / 70%);
+  }
+
+  /* Cart drawer: group product name and price in flex column */
+  .cart-drawer .cart-items__details {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-2xs);
+  }
+
+  /* Hide price cell in cart drawer since it's now in details */
+  .cart-drawer .cart-items__price {
+    display: none !important;
+  }
+
+  /* Style the price in cart drawer details */
+  .cart-drawer .cart-items__price--drawer {
+    font-size: var(--cart-font-size--md);
+    margin-top: var(--margin-2xs);
+  }
+
+  /* Group product name and price in cart drawer */
+  .cart-drawer .cart-items__details-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-2xs);
+  }
+
+  /* Hide price in details content on cart page */
+  .cart-page .cart-items__price--drawer {
+    display: none;
+  }
+
+  .cart-page .cart-items__details {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hide unit price in details column on cart page */
+  .cart-page .cart-items__unit-price--drawer {
+    display: none;
+  }
+
+  /* Hide unit price in details column in cart drawer */
+  .cart-drawer .cart-items__unit-price--drawer {
+    display: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide unit price column in cart drawer */
+  .cart-items__unit-price-cell {
+    display: none;
+  }
+
+  .cart-drawer .cart-items__unit-price-cell {
+    display: none !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    grid-area: unset !important;
+    grid-column: unset !important;
+    grid-row: unset !important;
+  }
+
+  /* Show unit price column on cart page */
+  .cart-page .cart-items__unit-price-cell {
+    grid-area: unit-price;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .cart-page .cart-items__unit-price--page {
+    text-align: center;
   }
 
   .cart-items__details > * + *,
@@ -459,6 +780,22 @@
     width: fit-content;
   }
 
+  .cart-drawer .cart-items__quantity {
+    margin-block-start: 0;
+  }
+
+  .cart-drawer .cart-items__details-content {
+    gap: 0;
+  }
+
+  .cart-drawer .cart-items__price--drawer {
+    margin-top: 0 !important;
+  }
+
+  .cart-drawer .cart-items__price--drawer text-component {
+    color: #fff5d1 !important;
+  }
+
   .cart-items__quantity .quantity-selector {
     display: inline-flex;
     flex: 0 1 var(--quantity-selector-width);
@@ -466,19 +803,110 @@
     height: auto;
   }
 
-  .cart-items__remove {
+  .cart-page .cart-items__quantity {
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    text-align: center;
+  }
+
+  .cart-page .cart-items__quantity .quantity-selector {
+    margin: 0 auto;
+    color: var(--color-foreground);
+    line-height: 0;
+  }
+
+  .cart-page .cart-items__quantity .quantity-selector input[type='number'] {
+    color: var(--color-foreground);
+    line-height: 0;
+  }
+
+  .cart-page .cart-items__quantity .quantity-selector :is(.quantity-minus, .quantity-plus) {
+    color: var(--color-foreground);
+  }
+
+  .cart-items__remove-cell {
+    display: none;
+  }
+
+  .cart-drawer .cart-items__remove-cell {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .cart-page .cart-items__remove-cell {
+    grid-area: remove;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .cart-drawer .cart-items__remove {
     background-color: transparent;
     color: var(--color-foreground);
-    width: var(--minimum-touch-target);
-    height: var(--minimum-touch-target);
+    width: 2rem;
+    height: 2rem;
     justify-content: center;
     box-shadow: none;
     padding: 0;
+    display: flex !important;
+    align-items: center;
+    border: none;
+  }
+
+  .cart-drawer .cart-items__remove svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .cart-page .cart-items__remove {
+    background-color: transparent;
+    color: var(--color-foreground);
+    width: 2rem;
+    height: 2rem;
+    justify-content: center;
+    box-shadow: none;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: 0;
+    min-width: auto;
+    min-height: auto;
+  }
+
+  .cart-page .cart-items__remove svg {
+    width: 0.75rem;
+    height: 0.75rem;
   }
 
   .cart-items__media {
     grid-area: media;
     padding: 0;
+  }
+
+  /* Cart drawer: add max-width to product image */
+  .cart-drawer .cart-items__media {
+    max-width: 80px;
+  }
+
+  .cart-drawer .cart-items__media-container {
+    max-width: 100%;
+  }
+
+  .cart-drawer .cart-items__media-image {
+    max-width: 100%;
+  }
+
+  .cart-page .cart-items__media {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cart-page .cart-items__media-container {
+    aspect-ratio: 1 !important;
   }
 
   .cart-items__price {
@@ -488,6 +916,19 @@
     text-align: end;
     display: block;
     font-size: var(--cart-font-size--md);
+  }
+
+  .cart-page .cart-items__price {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cart-page .cart-items__price text-component {
+    text-align: center;
+    width: 100%;
   }
 
   .cart-items__price-unit {
@@ -555,7 +996,7 @@
     .cart-items__table-row {
       --cart-item-price-width: 6rem;
 
-      grid-template-columns: 7.5rem 1fr 1fr minmax(var(--cart-item-price-width), auto);
+      grid-template-columns: 5rem 1fr 1fr minmax(var(--cart-item-price-width), auto);
       grid-template-rows: min-content 1fr;
       grid-template-areas:
         'media details quantity price'
@@ -577,6 +1018,43 @@
       flex-direction: column;
       align-items: flex-end;
       justify-content: center;
+    }
+
+    /* Cart page specific desktop styles */
+    .cart-page .cart-items__table-row {
+      --cart-item-price-width: 6rem;
+      --cart-item-remove-width: var(--minimum-touch-target);
+
+      grid-template-columns: 5rem 1fr minmax(var(--cart-item-price-width), auto) 1fr minmax(var(--cart-item-price-width), auto) var(--cart-item-remove-width);
+      grid-template-areas:
+        'media details unit-price quantity price remove'
+        'media details unit-price error error remove';
+    }
+
+    .cart-page .cart-items__table-row--header {
+      grid-template-columns: 5rem 1fr minmax(var(--cart-item-price-width), auto) 1fr minmax(var(--cart-item-price-width), auto) var(--cart-item-remove-width);
+      grid-template-areas: 'media details unit-price quantity price remove';
+    }
+
+    .cart-page .cart-items__table-header--quantity {
+      display: flex;
+      grid-area: quantity;
+    }
+
+    .cart-page .cart-items__table-header--unit-price {
+      display: flex;
+      grid-area: unit-price;
+    }
+
+    .cart-page .cart-items__quantity {
+      margin-top: 0;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .cart-page .cart-items__price {
+      align-items: center;
+      justify-content: flex-start;
     }
   }
 
@@ -665,19 +1143,10 @@
   shopify-accelerated-checkout-cart {
     --shopify-accelerated-checkout-inline-alignment: center;
     --shopify-accelerated-checkout-button-border-radius: var(--style-border-radius-buttons-primary);
-    --shopify-accelerated-checkout-row-gap: var(--checkout-button-gap, 10px);
   }
 
   .cart-note {
     width: 100%;
-  }
-
-  @starting-style {
-    .cart-note[open-by-default-on-desktop][open-by-default-on-mobile] .details-content {
-      block-size: auto;
-      opacity: 1;
-      overflow-y: visible;
-    }
   }
 
   .cart-note__inner {
@@ -691,7 +1160,7 @@
   }
 
   .cart-note__summary:hover {
-    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+    color: rgb(from var(--color-foreground) r g b / var(--opacity-subdued-text));
   }
 
   .cart-note__label {
@@ -767,4 +1236,992 @@
   .cart-items__properties dd {
     display: inline;
   }
+
+  /* Line-level discount percentage badge with red text, white with hint of red background, and circular pseudo-elements */
+  .cart-items__line-discounts {
+    margin-block-start: var(--margin-2xs);
+  }
+
+  .cart-items__discount-percentage {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--gap-2xs);
+    position: relative;
+    padding: 2px 8px;
+    font-size: var(--font-size--xs);
+    font-weight: var(--font-body--weight);
+    width: fit-content;
+    color: #ff0000 !important;
+    background-color: #fff5f5;
+  }
+
+  .cart-items__discount-percentage::before,
+  .cart-items__discount-percentage::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--color-background);
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .cart-items__discount-percentage::before {
+    left: -8px;
+  }
+
+  .cart-items__discount-percentage::after {
+    right: -8px;
+  }
+
+  /* Cart drawer: Group price and discount percentage side by side */
+  .cart-drawer .cart-items__price-group--drawer {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
+    flex-wrap: wrap;
+  }
+
+  .cart-drawer .cart-items__voucher-check {
+    display: inline-flex;
+    align-items: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .cart-drawer .cart-items__voucher-check svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .cart-items__discount-icon {
+    display: inline-flex;
+    align-items: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .cart-items__discount-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Scale down quantity selector in cart drawer */
+  .cart-drawer .cart-items__quantity .quantity-selector {
+    transform: scale(0.85);
+    transform-origin: left center;
+  }
+
+  /* Upsell Section Styles */
+  .cart-upsell-divider {
+    width: 100%;
+    height: 1px;
+    background-color: var(--color-border, #e0e0e0);
+    margin: var(--margin-lg) 0;
+  }
+
+  .cart-upsell-container {
+    margin-bottom: var(--margin-md);
+    display: block;
+    visibility: visible;
+  }
+
+  .cart-upsell-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--margin-md);
+  }
+
+  .cart-upsell-header-title {
+    font-size: var(--cart-font-size--md);
+    font-weight: 500;
+    margin: 0;
+    color: var(--color-foreground);
+  }
+
+  .cart-upsell-refresh-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-border, #e0e0e0);
+    border-radius: var(--border-radius, 4px);
+    background: transparent;
+    cursor: pointer;
+    color: var(--color-foreground);
+    transition: all 0.2s ease;
+  }
+
+  .cart-upsell-refresh-button:hover {
+    background-color: var(--color-background, #f5f5f5);
+    border-color: var(--color-foreground, #000);
+  }
+
+  .cart-upsell-refresh-button:active {
+    transform: rotate(180deg);
+  }
+
+  .cart-upsell-refresh-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .cart-upsell-refresh-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .cart-upsell-item {
+    display: block;
+    visibility: visible;
+    position: relative;
+  }
+
+  .cart-upsell-checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    width: 100%;
+    padding-right: calc(20px + var(--margin-md));
+    position: relative;
+  }
+
+  .cart-upsell-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(30, 30, 32, 0.95);
+    z-index: 10;
+    border-radius: var(--border-radius, 4px);
+  }
+
+  .cart-drawer .cart-upsell-loading {
+    background-color: rgba(30, 30, 32, 0.95);
+  }
+
+  .cart-upsell-loading-text {
+    font-size: var(--cart-font-size--sm);
+    color: var(--color-foreground);
+    opacity: 0.8;
+  }
+
+  .cart-upsell-item.cart-upsell-item--loading .cart-upsell-checkbox-label {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .cart-upsell-checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    margin: 0;
+    pointer-events: none;
+  }
+
+  .cart-upsell-checkbox-label {
+    position: relative;
+  }
+
+  .cart-upsell-checkbox-label::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border, #e0e0e0);
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+
+  .cart-upsell-checkbox-label:has(.cart-upsell-checkbox:checked)::after {
+    background-color: var(--color-background);
+    border-color: var(--color-foreground);
+  }
+
+  .cart-upsell-checkbox-label:has(.cart-upsell-checkbox:checked)::before {
+    content: '';
+    position: absolute;
+    right: 7px;
+    top: 50%;
+    transform: translateY(-50%) translateX(0) rotate(45deg);
+    width: 5px;
+    height: 10px;
+    border: solid var(--color-foreground);
+    border-width: 0 2px 2px 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .cart-upsell-content {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-md);
+    flex: 1;
+  }
+
+  .cart-upsell-image {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    border-radius: var(--border-radius, 4px);
+    overflow: hidden;
+  }
+
+  .cart-upsell-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .cart-upsell-details {
+    flex: 1;
+  }
+
+  .cart-upsell-title {
+    font-size: var(--cart-font-size--md);
+    font-weight: 500;
+    margin: 0 0 var(--margin-2xs) 0;
+    color: var(--color-foreground);
+  }
+
+  .cart-upsell-price {
+    font-size: var(--cart-font-size--sm);
+    margin: 0;
+    color: var(--color-foreground);
+    opacity: 0.8;
+  }
+
+  /* Hide upsell item when it's moved to cart items */
+  .cart-upsell-item.cart-upsell-item--added {
+    display: none;
+  }
+
 {% endstylesheet %}
+
+{% javascript %}
+  (function() {
+    // Store the click handler function reference to allow removal
+    let refreshButtonClickHandler = null;
+    let isRefreshing = false;
+
+    // Helper function to extract URL from image (object or string)
+    function getImageUrl(image) {
+      if (!image) return null;
+      if (typeof image === 'string') return image;
+      if (typeof image === 'object' && image.src) return image.src;
+      return null;
+    }
+
+    // Reusable function to refresh upsell item with a new product
+    async function refreshUpsellItem(upsellItem) {
+      // Prevent concurrent refresh operations
+      if (isRefreshing) return;
+      
+      if (!upsellItem) {
+        upsellItem = document.querySelector('.cart-upsell-item');
+      }
+      if (!upsellItem) return;
+      
+      isRefreshing = true;
+
+      try {
+        // Get current cart items to exclude
+        const cartResponse = await fetch('/cart.js');
+        const cart = await cartResponse.json();
+        // Convert to numbers for accurate comparison
+        const cartVariantIds = cart.items.map(item => parseInt(item.variant_id, 10));
+        
+        // Fetch all products
+        const response = await fetch('/collections/all/products.json?limit=250');
+        const data = await response.json();
+        
+        // Filter out products already in cart - compare as numbers for accuracy
+        const availableProducts = data.products.filter(product => {
+          const variantId = product.variants[0]?.id;
+          if (!variantId) return false;
+          const variantIdNum = parseInt(variantId, 10);
+          return !cartVariantIds.includes(variantIdNum);
+        });
+        
+        if (availableProducts.length > 0) {
+          // Get random product
+          const randomIndex = Math.floor(Math.random() * availableProducts.length);
+          const randomProduct = availableProducts[randomIndex];
+          const variant = randomProduct.variants[0];
+          
+          // Get product image URL
+          let productImageUrl = null;
+          if (randomProduct.featured_image) {
+            productImageUrl = getImageUrl(randomProduct.featured_image);
+          } else if (randomProduct.images && randomProduct.images.length > 0) {
+            productImageUrl = getImageUrl(randomProduct.images[0]);
+          } else if (variant && variant.featured_image) {
+            productImageUrl = getImageUrl(variant.featured_image);
+          }
+          
+          // Update checkbox data
+          const checkbox = upsellItem.querySelector('.cart-upsell-checkbox');
+          if (checkbox) {
+            checkbox.dataset.variantId = variant.id;
+            checkbox.dataset.productId = randomProduct.id;
+            checkbox.checked = false;
+            checkbox.disabled = false;
+          }
+          
+          // Update product image
+          const image = upsellItem.querySelector('.cart-upsell-product-image');
+          if (image && productImageUrl) {
+            let imageUrl = productImageUrl;
+            
+            // Convert to 100x100 size if Shopify CDN URL
+            if (imageUrl && typeof imageUrl === 'string' && imageUrl.includes('cdn.shopify.com')) {
+              const urlParts = imageUrl.split('?');
+              let baseUrl = urlParts[0];
+              const queryString = urlParts[1] || '';
+              
+              baseUrl = baseUrl.replace(/_(\d+)x(\d+)?\./g, '.');
+              const extensionMatch = baseUrl.match(/\.(jpg|jpeg|png|webp|gif)$/i);
+              if (extensionMatch) {
+                baseUrl = baseUrl.replace(/\.(jpg|jpeg|png|webp|gif)$/i, '_100x100.$1');
+              }
+              imageUrl = queryString ? baseUrl + '?' + queryString : baseUrl;
+            }
+            
+            image.alt = randomProduct.title || '';
+            image.setAttribute('width', '100');
+            image.setAttribute('height', '100');
+            
+            const oldSrc = image.src;
+            if (oldSrc && oldSrc.split('?')[0] === imageUrl.split('?')[0]) {
+              image.src = imageUrl + (imageUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
+              setTimeout(() => {
+                image.src = imageUrl;
+              }, 100);
+            } else {
+              image.src = imageUrl;
+            }
+            
+            image.onerror = function() {
+              if (productImageUrl && productImageUrl !== imageUrl) {
+                this.src = productImageUrl;
+                this.onerror = null;
+              } else if (randomProduct.images && randomProduct.images.length > 0) {
+                const firstImage = getImageUrl(randomProduct.images[0]);
+                if (firstImage) {
+                  this.src = firstImage;
+                  this.onerror = null;
+                }
+              }
+            };
+          }
+          
+          // Update product title
+          const title = upsellItem.querySelector('.cart-upsell-title');
+          if (title) {
+            title.textContent = randomProduct.title;
+          }
+          
+          // Update product price
+          const price = upsellItem.querySelector('.cart-upsell-price');
+          if (price && variant.price !== undefined && variant.price !== null) {
+            let priceValue = variant.price;
+            
+            // Handle string prices (remove any formatting)
+            if (typeof priceValue === 'string') {
+              // Remove currency symbols and commas, keep numbers and decimal
+              priceValue = priceValue.replace(/[^0-9.]/g, '');
+              priceValue = parseFloat(priceValue);
+            }
+            
+            priceValue = Number(priceValue);
+            
+            if (!isNaN(priceValue) && priceValue > 0) {
+              // Check if price has decimal point
+              const priceString = String(priceValue);
+              const hasDecimal = priceString.includes('.');
+              
+              let priceInDollars;
+              
+              // If price has no decimal and is a reasonable dollar amount (< 10000), it's likely already in dollars
+              // If price is >= 10000 or has no decimal and is large, it's likely in cents
+              if (!hasDecimal && priceValue < 10000) {
+                // Already in dollars, no conversion needed
+                priceInDollars = priceValue;
+              } else {
+                // Likely in cents, divide by 100
+                priceInDollars = priceValue / 100;
+              }
+              
+              // Format as currency - always show 2 decimal places
+              const formattedPrice = new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              }).format(priceInDollars);
+              
+              price.textContent = formattedPrice;
+            }
+          }
+          
+          // Update data attributes
+          upsellItem.dataset.upsellProductId = variant.id;
+          upsellItem.dataset.initialProductId = randomProduct.id;
+        } else {
+          // No available products - hide the upsell section only if it was visible
+          // Don't hide on initial load if server-side already rendered it
+          const upsellContainer = document.querySelector('.cart-upsell-container');
+          if (upsellContainer && upsellContainer.style.display !== 'none') {
+            hideUpsellSection();
+          }
+        }
+      } catch (error) {
+        // Silently handle errors
+      } finally {
+        // Reset refreshing flag
+        isRefreshing = false;
+      }
+    }
+
+    // Wait for DOM to be ready
+    function initRefreshButton() {
+      // Refresh button functionality
+      const refreshButton = document.querySelector('.cart-upsell-refresh-button');
+      
+      if (!refreshButton) return;
+      
+      // Remove existing listener if it exists
+      if (refreshButtonClickHandler) {
+        refreshButton.removeEventListener('click', refreshButtonClickHandler);
+        refreshButtonClickHandler = null;
+      }
+      
+      // Create new click handler
+      refreshButtonClickHandler = async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Prevent concurrent refresh operations
+        if (isRefreshing) return;
+        
+        // Disable button while loading
+        this.disabled = true;
+        const svg = this.querySelector('svg');
+        if (svg) {
+          svg.style.animation = 'spin 1s linear infinite';
+        }
+        
+        try {
+          const upsellItem = document.querySelector('.cart-upsell-item');
+          if (upsellItem) {
+            await refreshUpsellItem(upsellItem);
+          }
+        } catch (error) {
+          // Silently handle errors
+        } finally {
+          // Re-enable button
+          this.disabled = false;
+          if (svg) {
+            svg.style.animation = '';
+          }
+        }
+      };
+      
+      // Attach the listener
+      refreshButton.addEventListener('click', refreshButtonClickHandler);
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initRefreshButton);
+    } else {
+      initRefreshButton();
+    }
+    
+    // Also try after a short delay in case the cart drawer loads dynamically
+    setTimeout(initRefreshButton, 500);
+    setTimeout(initRefreshButton, 1000);
+    
+    // Function to setup checkbox event listeners
+    function setupUpsellCheckboxes() {
+      const upsellCheckboxes = document.querySelectorAll('.cart-upsell-checkbox');
+      
+      upsellCheckboxes.forEach(checkbox => {
+        // Skip if listener already attached
+        if (checkbox.dataset.listenerAttached === 'true') return;
+        checkbox.dataset.listenerAttached = 'true';
+        
+        // Prevent label click from closing drawer
+        const label = checkbox.closest('.cart-upsell-checkbox-label');
+        if (label && !label.dataset.clickHandlerAttached) {
+          label.dataset.clickHandlerAttached = 'true';
+          label.addEventListener('click', function(e) {
+            // Only prevent if clicking on the label itself, not the checkbox
+            if (e.target === label || label.contains(e.target)) {
+              e.stopPropagation();
+            }
+          });
+        }
+        
+        checkbox.addEventListener('change', async function(e) {
+        // Prevent event from bubbling up (might close drawer)
+        e.stopPropagation();
+        e.preventDefault();
+        
+        if (this.checked) {
+          const variantId = this.dataset.variantId;
+          const productId = this.dataset.productId;
+          const upsellItem = this.closest('.cart-upsell-item');
+          const divider = document.querySelector('.cart-upsell-divider');
+          const tbody = document.querySelector('.cart-items__table tbody');
+          
+          if (!variantId) {
+            this.checked = false;
+            return;
+          }
+          
+          // Show loading state
+          upsellItem.classList.add('cart-upsell-item--loading');
+          const loadingElement = upsellItem.querySelector('.cart-upsell-loading');
+          if (loadingElement) {
+            loadingElement.style.display = 'flex';
+          }
+          
+          // Disable checkbox while processing
+          this.disabled = true;
+          
+          try {
+            // Get the cart section ID for updating (same pattern as deletion)
+            const cartItemsComponent = document.querySelector('cart-items-component');
+            if (!cartItemsComponent) {
+              this.checked = false;
+              return;
+            }
+            
+            const sectionId = cartItemsComponent.getAttribute('section-id') || 
+                             cartItemsComponent.sectionId || 
+                             'cart-items';
+            
+            // Get all cart items components to update all sections (same as deletion)
+            const cartItemsComponents = document.querySelectorAll('cart-items-component');
+            const sectionsToUpdate = new Set([sectionId]);
+            cartItemsComponents.forEach((item) => {
+              if (item instanceof HTMLElement && item.dataset.sectionId) {
+                sectionsToUpdate.add(item.dataset.sectionId);
+              }
+            });
+            
+            // Disable cart items (same as deletion)
+            if (cartItemsComponent.classList) {
+              cartItemsComponent.classList.add('cart-items-disabled');
+            }
+            
+            // Show shimmer on cart total (same as deletion)
+            const cartTotal = cartItemsComponent.querySelector('[ref="cartTotal"]') || 
+                             cartItemsComponent.querySelector('[data-cart-subtotal]');
+            if (cartTotal && cartTotal.shimmer) {
+              cartTotal.shimmer();
+            }
+            
+            // Check if variant already exists in cart
+            const currentCartResponse = await fetch('/cart.js');
+            const currentCart = await currentCartResponse.json();
+            const variantIdNum = parseInt(variantId, 10);
+            const existingItem = currentCart.items.find(item => {
+              // Compare both as numbers to ensure proper matching
+              return parseInt(item.variant_id, 10) === variantIdNum;
+            });
+            
+            let response;
+            let addResponse;
+            
+            // If item exists, update it to quantity 1 directly (more reliable than remove + add)
+            // If item doesn't exist, add it with quantity 1
+            if (existingItem) {
+              // Update existing item to quantity 1
+              const updateFormData = new FormData();
+              updateFormData.append('updates[' + existingItem.key + ']', '1');
+              updateFormData.append('sections', Array.from(sectionsToUpdate).join(','));
+              updateFormData.append('sections_url', window.location.pathname);
+              
+              response = await fetch('/cart/update.js', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                },
+                body: updateFormData
+              });
+            } else {
+              // Item doesn't exist, add it with quantity 1
+              const formData = new FormData();
+              formData.append('id', variantId);
+              formData.append('quantity', '1');
+              formData.append('sections', Array.from(sectionsToUpdate).join(','));
+              formData.append('sections_url', window.location.pathname);
+              
+              response = await fetch('/cart/add.js', {
+                method: 'POST',
+                headers: {
+                  'Accept': 'application/json',
+                },
+                body: formData
+              });
+            }
+            
+            if (response && response.ok) {
+              addResponse = await response.json();
+              
+              // Check for errors (same as deletion)
+              if (addResponse && addResponse.status) {
+                // Error occurred
+                this.checked = false;
+                if (cartTotal && cartTotal.resetShimmer) {
+                  cartTotal.resetShimmer();
+                }
+                return;
+              }
+              
+              // Get sections from response (works for both add.js and update.js)
+              let sections = {};
+              if (addResponse && addResponse.sections) {
+                sections = addResponse.sections;
+              } else {
+                // Fallback: fetch sections if not in response
+                try {
+                  const sectionsResponse = await fetch(`/cart?section_id=${Array.from(sectionsToUpdate).join(',')}`);
+                  if (sectionsResponse.ok) {
+                    const sectionsText = await sectionsResponse.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(sectionsText, 'text/html');
+                    sectionsToUpdate.forEach(sid => {
+                      const section = doc.querySelector(`#shopify-section-${sid}`) || 
+                                     doc.querySelector(`[id*="${sid}"]`);
+                      if (section) {
+                        sections[sid] = section.outerHTML;
+                      }
+                    });
+                  }
+                } catch (e) {
+                  // Ignore section fetch errors
+                }
+              }
+              
+              // Get updated cart data to verify quantity
+              const cartResponse = await fetch('/cart.js');
+              const cart = await cartResponse.json();
+              
+              // Verify and ensure quantity is 1 for the upsell item
+              const addedItem = cart.items.find(item => {
+                return parseInt(item.variant_id, 10) === variantIdNum;
+              });
+              
+              // Double-check: if quantity is not 1, fix it (shouldn't happen with new logic, but safety check)
+              if (addedItem && addedItem.quantity !== 1) {
+                // If quantity is not 1, update it to 1
+                const quantityFixFormData = new FormData();
+                quantityFixFormData.append('updates[' + addedItem.key + ']', '1');
+                quantityFixFormData.append('sections', Array.from(sectionsToUpdate).join(','));
+                quantityFixFormData.append('sections_url', window.location.pathname);
+                
+                const quantityFixResponse = await fetch('/cart/update.js', {
+                  method: 'POST',
+                  headers: {
+                    'Accept': 'application/json',
+                  },
+                  body: quantityFixFormData
+                });
+                
+                if (quantityFixResponse.ok) {
+                  const quantityFixResponseData = await quantityFixResponse.json();
+                  // Update cart data with fixed quantity
+                  if (quantityFixResponseData && quantityFixResponseData.items) {
+                    cart.items = quantityFixResponseData.items;
+                  }
+                  // Update sections if provided - this is critical for UI update
+                  if (quantityFixResponseData && quantityFixResponseData.sections) {
+                    Object.assign(sections, quantityFixResponseData.sections);
+                  } else {
+                    // Fallback: fetch sections if not in response
+                    try {
+                      const sectionsResponse = await fetch(`/cart?section_id=${Array.from(sectionsToUpdate).join(',')}`);
+                      if (sectionsResponse.ok) {
+                        const sectionsText = await sectionsResponse.text();
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(sectionsText, 'text/html');
+                        sectionsToUpdate.forEach(sid => {
+                          const section = doc.querySelector(`#shopify-section-${sid}`) || 
+                                         doc.querySelector(`[id*="${sid}"]`);
+                          if (section) {
+                            sections[sid] = section.outerHTML;
+                          }
+                        });
+                      }
+                    } catch (e) {
+                      // Ignore section fetch errors
+                    }
+                  }
+                }
+              }
+              
+              // Reset shimmer (same as deletion)
+              if (cartTotal && cartTotal.resetShimmer) {
+                cartTotal.resetShimmer();
+              }
+              
+              // Parse section HTML to get item count (same as deletion)
+              let newCartItemCount = cart.item_count || 0;
+              if (sections[sectionId]) {
+                const newSectionHTML = new DOMParser().parseFromString(
+                  sections[sectionId],
+                  'text/html'
+                );
+                const newCartHiddenItemCount = newSectionHTML.querySelector('[ref="cartItemCount"]')?.textContent;
+                if (newCartHiddenItemCount) {
+                  newCartItemCount = parseInt(newCartHiddenItemCount, 10) || newCartItemCount;
+                }
+              }
+              
+              // Use morphSection to update (same as deletion)
+              if (sections[sectionId] && typeof window.morphSection === 'function') {
+                window.morphSection(sectionId, sections[sectionId]);
+              }
+              
+              // Dispatch CartUpdateEvent (same format as deletion)
+              if (typeof CartUpdateEvent !== 'undefined') {
+                cartItemsComponent.dispatchEvent(
+                  new CartUpdateEvent({}, sectionId, {
+                    itemCount: newCartItemCount,
+                    source: 'upsell-checkbox',
+                    sections: sections,
+                  })
+                );
+              } else {
+                // Fallback: use CustomEvent
+                document.dispatchEvent(new CustomEvent('cart:update', {
+                  bubbles: true,
+                  detail: {
+                    resource: cart,
+                    sourceId: sectionId,
+                    data: {
+                      itemCount: newCartItemCount,
+                      source: 'upsell-checkbox',
+                      sections: sections,
+                    }
+                  }
+                }));
+              }
+              
+              // Hide upsell section when item is added (per session)
+              sessionStorage.setItem('upsellItemAdded', 'true');
+              hideUpsellSection();
+            } else {
+              this.checked = false;
+              if (cartTotal && cartTotal.resetShimmer) {
+                cartTotal.resetShimmer();
+              }
+            }
+          } catch (error) {
+            this.checked = false;
+            const cartItemsComponent = document.querySelector('cart-items-component');
+            const cartTotal = cartItemsComponent?.querySelector('[ref="cartTotal"]') || 
+                             cartItemsComponent?.querySelector('[data-cart-subtotal]');
+            if (cartTotal && cartTotal.resetShimmer) {
+              cartTotal.resetShimmer();
+            }
+          } finally {
+            // Re-enable cart items (same as deletion)
+            const cartItemsComponent = document.querySelector('cart-items-component');
+            if (cartItemsComponent && cartItemsComponent.classList) {
+              cartItemsComponent.classList.remove('cart-items-disabled');
+            }
+            
+            // Hide loading state
+            upsellItem.classList.remove('cart-upsell-item--loading');
+            const loadingElement = upsellItem.querySelector('.cart-upsell-loading');
+            if (loadingElement) {
+              loadingElement.style.display = 'none';
+            }
+            this.disabled = false;
+          }
+        }
+        });
+      });
+    }
+    
+    // Function to hide upsell section
+    function hideUpsellSection() {
+      const upsellDivider = document.querySelector('.cart-upsell-divider');
+      const upsellContainer = document.querySelector('.cart-upsell-container');
+      if (upsellDivider) {
+        upsellDivider.style.display = 'none';
+      }
+      if (upsellContainer) {
+        upsellContainer.style.display = 'none';
+      }
+    }
+    
+    // Function to show upsell section
+    function showUpsellSection() {
+      const upsellDivider = document.querySelector('.cart-upsell-divider');
+      const upsellContainer = document.querySelector('.cart-upsell-container');
+      if (upsellDivider) {
+        upsellDivider.style.display = '';
+      }
+      if (upsellContainer) {
+        upsellContainer.style.display = '';
+      }
+    }
+    
+    // Check sessionStorage on load and hide if upsell was added
+    // Keep it hidden for the session after an item is added
+    async function checkUpsellSession() {
+      const upsellItemAdded = sessionStorage.getItem('upsellItemAdded');
+      if (upsellItemAdded === 'true') {
+        // Hide the upsell section if flag is set (item was added from upsell)
+        hideUpsellSection();
+        
+        // Optionally: Clear the flag if cart is empty (so upsell can show again on fresh cart)
+        try {
+          const cartResponse = await fetch('/cart.js');
+          const cart = await cartResponse.json();
+          
+          // If cart is empty, clear the flag so upsell can show again
+          if (!cart.items || cart.items.length === 0) {
+            sessionStorage.removeItem('upsellItemAdded');
+            showUpsellSection();
+          }
+        } catch (error) {
+          // If check fails, keep it hidden (safer default)
+        }
+      } else {
+        // No flag set, make sure upsell is visible
+        showUpsellSection();
+      }
+    }
+    
+    // Setup checkboxes on page load
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        setupUpsellCheckboxes();
+        checkUpsellSession();
+      });
+    } else {
+      setupUpsellCheckboxes();
+      checkUpsellSession();
+    }
+    
+    // Also setup after delays in case cart drawer loads dynamically
+    setTimeout(function() {
+      setupUpsellCheckboxes();
+      checkUpsellSession();
+    }, 500);
+    setTimeout(function() {
+      setupUpsellCheckboxes();
+      checkUpsellSession();
+    }, 1000);
+    
+    // Function to check if current upsell item is in cart and refresh if needed
+    async function checkAndRefreshUpsellIfInCart() {
+      const upsellItem = document.querySelector('.cart-upsell-item');
+      if (!upsellItem) return;
+      
+      const checkbox = upsellItem.querySelector('.cart-upsell-checkbox');
+      if (!checkbox || !checkbox.dataset.variantId) return;
+      
+      // Check if upsell section is hidden - if so, don't refresh
+      const upsellContainer = document.querySelector('.cart-upsell-container');
+      if (upsellContainer && upsellContainer.style.display === 'none') {
+        return;
+      }
+      
+      try {
+        const cartResponse = await fetch('/cart.js');
+        const cart = await cartResponse.json();
+        const cartVariantIds = cart.items.map(item => parseInt(item.variant_id, 10));
+        const upsellVariantId = parseInt(checkbox.dataset.variantId, 10);
+        
+        // If the current upsell item is in cart, refresh to show a different product
+        if (cartVariantIds.includes(upsellVariantId)) {
+          await refreshUpsellItem(upsellItem);
+        }
+      } catch (error) {
+        // Silently handle errors
+      }
+    }
+    
+    // Re-initialize upsell functionality when cart updates (especially when cart goes from empty to having items)
+    document.addEventListener('cart:update', function() {
+      checkUpsellSession();
+      // Check if current upsell item is in cart and refresh if needed
+      checkAndRefreshUpsellIfInCart();
+      // Re-initialize checkboxes and refresh button after cart section is updated
+      setTimeout(function() {
+        setupUpsellCheckboxes();
+        initRefreshButton();
+      }, 100);
+      setTimeout(function() {
+        setupUpsellCheckboxes();
+        initRefreshButton();
+      }, 500);
+    });
+    
+    document.addEventListener('cart:updated', function() {
+      checkUpsellSession();
+      // Check if current upsell item is in cart and refresh if needed
+      checkAndRefreshUpsellIfInCart();
+      // Re-initialize checkboxes and refresh button after cart section is updated
+      setTimeout(function() {
+        setupUpsellCheckboxes();
+        initRefreshButton();
+      }, 100);
+      setTimeout(function() {
+        setupUpsellCheckboxes();
+        initRefreshButton();
+      }, 500);
+    });
+    
+    // Re-setup checkboxes after upsell refresh (reset the flag so listener can be re-attached)
+    const originalRefreshUpsellItem = refreshUpsellItem;
+    refreshUpsellItem = async function(upsellItem) {
+      await originalRefreshUpsellItem(upsellItem);
+      // Reset listener flag so it can be re-attached
+      const checkbox = upsellItem?.querySelector('.cart-upsell-checkbox');
+      if (checkbox) {
+        checkbox.dataset.listenerAttached = 'false';
+      }
+      setTimeout(() => {
+        setupUpsellCheckboxes();
+      }, 100);
+    };
+    
+  })();
+{% endjavascript %}
+

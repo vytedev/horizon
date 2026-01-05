@@ -1,3 +1,22 @@
+{%- comment -%} Custom Sacramento font {%- endcomment -%}
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
+
+{%- comment -%} Custom Gruppo font for accent {%- endcomment -%}
+<link href="https://fonts.googleapis.com/css2?family=Gruppo&display=swap" rel="stylesheet">
+
+{%- unless settings.type_body_font.system?
+  and settings.type_subheading_font.system?
+  and settings.type_heading_font.system?
+-%}
+  <link
+    rel="preconnect"
+    href="https://fonts.shopifycdn.com"
+    crossorigin
+  >
+{%- endunless -%}
+
 {% # theme-check-disable %}
 {%- unless settings.type_body_font.system? -%}
   <link
@@ -6,7 +25,6 @@
     href="{{ settings.type_body_font | font_url }}"
     type="font/woff2"
     crossorigin
-    fetchpriority="low"
   >
 {%- endunless -%}
 {%- unless settings.type_subheading_font.system? -%}
@@ -16,7 +34,6 @@
     href="{{ settings.type_subheading_font | font_url }}"
     type="font/woff2"
     crossorigin
-    fetchpriority="low"
   >
 {%- endunless -%}
 {%- unless settings.type_heading_font.system? -%}
@@ -26,7 +43,6 @@
     href="{{ settings.type_heading_font | font_url }}"
     type="font/woff2"
     crossorigin
-    fetchpriority="low"
   >
 {%- endunless -%}
 {%- unless settings.type_accent_font.system? -%}
@@ -36,7 +52,6 @@
     href="{{ settings.type_accent_font | font_url }}"
     type="font/woff2"
     crossorigin
-    fetchpriority="low"
   >
 {%- endunless -%}
 {% # theme-check-enable %}

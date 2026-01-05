@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/sections/main-blog-post.js' %}
+
 <div class="section-background color-{{ section.settings.color_scheme }}"></div>
 <div class="section color-{{ section.settings.color_scheme }}">
   <div
@@ -18,13 +20,8 @@
       {%- content_for 'block', id: 'blog-post-details', type: '_blog-post-info-text' %}
     </header>
 
-    {%- if article.image -%}
-      {%- content_for 'block', id: 'blog-post-image', type: '_blog-post-featured-image' %}
-    {%- endif -%}
+    {%- content_for 'block', id: 'blog-post-image', type: 'image' %}
     {%- content_for 'block', id: 'blog-post-content', type: '_blog-post-content' %}
-
-    {% comment %} Dynamic area for @app blocks only, at the bottom {% endcomment %}
-    {% content_for 'blocks' %}
 
     {% if blog.comments_enabled? %}
       <div class="blog-post-comments-container">
@@ -80,7 +77,7 @@
     gap: var(--gap-2xs);
     margin-top: var(--margin-md);
     font-size: var(--font-size--body-sm);
-    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+    color: rgb(from var(--color-foreground) r g b / var(--opacity-subdued-text));
   }
 
   .blog-post-comments-pagination {
@@ -113,14 +110,6 @@
 {% schema %}
 {
   "name": "t:names.blog_post",
-  "blocks": [
-    {
-      "type": "@theme"
-    },
-    {
-      "type": "@app"
-    }
-  ],
   "class": "section-wrapper",
   "settings": [
     {

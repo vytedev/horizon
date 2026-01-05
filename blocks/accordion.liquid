@@ -1,48 +1,85 @@
-{% assign block_settings = block.settings %}
+{% # import schema from '../schemas/blocks/accordion' %}
+
+{% liquid
+  # Check if this is the payment options accordion and if there are payment methods
+  assign show_accordion = true
+  
+  # Check if any nested block is product-custom-prices (payment options)
+  # Accordion contains _accordion-row blocks, which may contain product-custom-prices
+  for accordion_row in block.blocks
+    if accordion_row.type == '_accordion-row'
+      # Check if this accordion row contains product-custom-prices block
+      for nested_block in accordion_row.blocks
+        if nested_block.type == 'product-custom-prices'
+          # Check if product has payment method metafields
+          assign product = closest.product
+          if request.visual_preview_mode and product == blank
+            assign product = collections.all.products.first
+          endif
+          
+          assign venmo_price = product.metafields.custom.venmo_zelle_price
+          assign paypal_price = product.metafields.custom.paypal_invioce_price
+          
+          # Only show accordion if at least one payment method exists
+          if venmo_price == blank or venmo_price.value == blank
+            if paypal_price == blank or paypal_price.value == blank
+              assign show_accordion = false
+            endif
+          endif
+          break
+        endif
+      endfor
+      if show_accordion == false
+        break
+      endif
+    endif
+  endfor
+%}
+
+{% if show_accordion %}
 <div
-  class="accordion accordion--{{ block.id }} accordion--{{ block_settings.icon }} border-style spacing-style{% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }}{% endif %}{% if block_settings.dividers %} accordion--dividers{% endif %}"
+  class="accordion accordion--{{ block.id }} accordion--{{ block.settings.icon }} border-style spacing-style{% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }}{% endif %}{% if block.settings.dividers %} accordion--dividers{% endif %}"
   style="
-    --summary-font-family: var(--font-{{ block_settings.type_preset }}--family);
-     --summary-font-style: var(--font-{{ block_settings.type_preset }}--style);
-     --summary-font-weight: var(--font-{{ block_settings.type_preset }}--weight);
-     --summary-font-size: var(--font-{{ block_settings.type_preset }}--size);
-     --summary-font-line-height: var(--font-{{ block_settings.type_preset }}--line-height);
-     --summary-font-case: var(--font-{{ block_settings.type_preset }}--case);
-    {% render 'spacing-style', settings: block_settings %}
-    {% render 'border-override', settings: block_settings %}
+    --summary-font-family: var(--font-{{ block.settings.type_preset }}--family);
+     --summary-font-style: var(--font-{{ block.settings.type_preset }}--style);
+     --summary-font-weight: var(--font-{{ block.settings.type_preset }}--weight);
+     --summary-font-size: var(--font-{{ block.settings.type_preset }}--size);
+     --summary-font-line-height: var(--font-{{ block.settings.type_preset }}--line-height);
+     --summary-font-case: var(--font-{{ block.settings.type_preset }}--case);
+    {% render 'spacing-style', settings: block.settings %}
+    {% render 'border-override', settings: block.settings %}
   "
   {{ block.shopify_attributes }}
 >
   {% content_for 'blocks' %}
 </div>
+{% endif %}
 
 {% stylesheet %}
   .accordion {
     flex: 1;
     width: 100%;
+    position: relative;
+    z-index: 1;
+    background-color: var(--color-background);
+  }
+  @container style(--border-width: 0) or style(--border-style: none) {
+    .accordion--dividers:not([class*='color-']) accordion-custom:first-child .details {
+      border-block-start: var(--style-border-width) solid var(--color-border);
+    }
+
+    .accordion--dividers:not([class*='color-']) accordion-custom:last-child .details {
+      border-block-end: var(--style-border-width) solid var(--color-border);
+    }
   }
 
   .accordion--dividers accordion-custom:not(:first-child) .details {
     border-block-start: var(--style-border-width) solid var(--color-border);
   }
 
-  /* When accordion borders are not set, show fallback borders */
-  .accordion--dividers {
-    /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-    --show-fallback-borders: 0;
-  }
-
-  .accordion--dividers:not([class*='color-'])[style*='--border-width: 0'],
-  .accordion--dividers:not([class*='color-'])[style*='--border-style: none'] {
-    --show-fallback-borders: 1;
-  }
-
-  .accordion--dividers accordion-custom:first-child .details {
-    border-block-start: calc(var(--style-border-width) * var(--show-fallback-borders)) solid var(--color-border);
-  }
-
-  .accordion--dividers accordion-custom:last-child .details {
-    border-block-end: calc(var(--style-border-width) * var(--show-fallback-borders)) solid var(--color-border);
+  /* Remove top border from first accordion row when accordion comes after product-metafields-accordion */
+  .product-metafields-accordion + .accordion.accordion--dividers accordion-custom:first-child .details {
+    border-block-start: none !important;
   }
 
   .accordion--dividers .details-content {
@@ -65,6 +102,94 @@
     min-height: var(--minimum-touch-target);
   }
 {% endstylesheet %}
+
+<script>
+  (function() {
+    const accordion = document.querySelector('.accordion--{{ block.id }}');
+    if (!accordion) return;
+
+    // Hide accordion if it contains "No other payment methods" text
+    const checkPaymentMethods = () => {
+      // Check if product-custom-prices block exists and has payment methods
+      const customPricesBlock = accordion.querySelector('.product-custom-prices-block');
+      if (customPricesBlock) {
+        const blockText = customPricesBlock.textContent || '';
+        const hasVenmo = blockText.includes('Venmo/Zelle');
+        const hasPaypal = blockText.includes('PayPal Invoice');
+        const hasNoPaymentMethods = blockText.includes('No other payment methods');
+        
+        // Hide accordion if no payment methods are found
+        if (hasNoPaymentMethods || (!hasVenmo && !hasPaypal)) {
+          accordion.style.display = 'none';
+          return;
+        }
+      }
+      
+      // Also check for the no-payment-methods class
+      const noPaymentText = accordion.querySelector('.no-payment-methods');
+      if (noPaymentText) {
+        accordion.style.display = 'none';
+        return;
+      }
+      
+      // Final check: if accordion text contains "No other payment methods"
+      const accordionText = accordion.textContent || '';
+      if (accordionText.includes('No other payment methods')) {
+        accordion.style.display = 'none';
+        return;
+      }
+    };
+
+    // Check immediately and after DOM is ready
+    checkPaymentMethods();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', checkPaymentMethods);
+    }
+
+    // Find the product form or product information section to scope all accordions
+    const productSection = accordion.closest('[data-section-id], .product-form, [class*="product"]') || 
+                           document.querySelector('main[data-template="product"]') ||
+                           document.body;
+
+    // Function to close other accordions when one opens
+    function handleAccordionToggle(event) {
+      const details = event.target;
+      
+      // Only proceed if this is a details element and it's opening
+      if (details.tagName !== 'DETAILS' || !details.open) return;
+
+      // Check if this details element is within our product section
+      if (!productSection.contains(details)) return;
+      
+      // Find all details elements within the product section
+      const allDetails = productSection.querySelectorAll('details');
+      
+      // Close all other details except the one being opened
+      allDetails.forEach(function(otherDetails) {
+        if (otherDetails !== details && otherDetails.open) {
+          otherDetails.open = false;
+        }
+      });
+    }
+
+    // Listen for toggle events on the document (capture phase) to catch all accordions
+    document.addEventListener('toggle', handleAccordionToggle, true);
+    
+    // Also listen for click events on summary elements as a fallback
+    const summaries = accordion.querySelectorAll('summary');
+    summaries.forEach(function(summary) {
+      summary.addEventListener('click', function() {
+        // Use setTimeout to ensure the toggle event has fired
+        setTimeout(function() {
+          const details = summary.closest('details');
+          if (details && details.open && productSection.contains(details)) {
+            handleAccordionToggle({ target: details });
+          }
+        }, 0);
+      });
+    });
+  })();
+</script>
 
 {% schema %}
 {
@@ -258,13 +383,13 @@
           "type": "_accordion-row",
           "settings": {
             "open_by_default": true,
-            "heading": "t:text_defaults.return_policy"
+            "heading": "Return policy"
           },
           "blocks": {
             "text-1": {
               "type": "text",
               "settings": {
-                "text": "t:html_defaults.goal_for_every_customer",
+                "text": "<p>Our goal is for every customer to be totally satisfied with their purchase. If this isn't the case, let us know and we'll do our best to work with you to make it right.</p>",
                 "width": "100%"
               }
             }
@@ -274,13 +399,13 @@
         "row-2": {
           "type": "_accordion-row",
           "settings": {
-            "heading": "t:text_defaults.shipping"
+            "heading": "Shipping"
           },
           "blocks": {
             "text-1": {
               "type": "text",
               "settings": {
-                "text": "t:html_defaults.work_quickly_to_ship",
+                "text": "<p>We will work quickly to ship your order as soon as possible. Once your order has shipped, you will receive an email with further information. Delivery times vary depending on your location.</p>",
                 "width": "100%"
               }
             }
@@ -290,13 +415,13 @@
         "row-3": {
           "type": "_accordion-row",
           "settings": {
-            "heading": "t:text_defaults.manufacturing"
+            "heading": "Manufacturing"
           },
           "blocks": {
             "text-1": {
               "type": "text",
               "settings": {
-                "text": "t:html_defaults.made_local_and_global",
+                "text": "<p>Our products are manufactured both locally and globally. We carefully select our manufacturing partners to ensure our products are high quality and a fair value.</p>",
                 "width": "100%"
               }
             }

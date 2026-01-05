@@ -4,6 +4,8 @@
   lang="{{ request.locale.iso_code }}"
 >
   <head>
+    {%- render 'stylesheets' -%}
+
     {%- if settings.favicon != blank -%}
       <link
         rel="icon"
@@ -21,7 +23,6 @@
     >
 
     {%- render 'meta-tags' -%}
-    {%- render 'stylesheets' -%}
     {%- render 'fonts' -%}
     {%- render 'scripts' -%}
     {%- render 'theme-styles-variables' -%}
@@ -31,6 +32,23 @@
       {%- render 'theme-editor' -%}
     {% endif %}
 
+    <style>
+      /* Vertical lines background for all pages except product pages and cart page - creates columns */
+      body:not(:has(main[data-template="product"])):not(:has(main[data-template="cart"]))::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image: 
+          repeating-linear-gradient(to right, var(--color-foreground) 0px, var(--color-foreground) 1px, transparent 1px, transparent 25%);
+        pointer-events: none;
+        z-index: var(--layer-base);
+        opacity: 0.15;
+      }
+    </style>
+
     {{ content_for_header }}
   </head>
 
@@ -39,13 +57,6 @@
     <div id="header-group">
       {% sections 'header-group' %}
     </div>
-
-    <script
-      src="{{ 'critical.js' | asset_url }}"
-      type="module"
-      async
-      blocking="render"
-    ></script>
 
     <main
       id="MainContent"
@@ -61,6 +72,10 @@
     {% sections 'footer-group' %}
 
     {% render 'search-modal' %}
+
+    {% # theme-check-disable ParserBlockingScript %}
+    <script src="{{ 'critical.js' | asset_url }}"></script>
+    {% # theme-check-enable ParserBlockingScript %}
 
     {% if settings.quick_add or settings.mobile_quick_add %}
       {% render 'quick-add-modal' %}

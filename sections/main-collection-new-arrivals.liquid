@@ -1,0 +1,1066 @@
+{% # import schema from '../schemas/sections/main-collection' %}
+
+{% liquid
+  # Filter products by creation date - works like collections/all but filtered by date
+  assign days_back = section.settings.days_back | default: 30
+  assign seconds_back = days_back | times: 86400
+  assign now_timestamp = 'now' | date: '%s' | plus: 0
+  assign cutoff_timestamp = now_timestamp | minus: seconds_back
+  
+  # Target: Always show exactly 12 products
+  assign target_product_count = 12
+  
+  # Excluded brand collections (handles)
+  assign excluded_collections = 'gucci,louis-vuitton,chanel,dior,fendi,prada,leather-care' | split: ','
+  
+  # Excluded vendor name (Saint Laurent is filtered by vendor, not collection)
+  assign excluded_vendor = 'Saint Laurent'
+  
+  # Step 1: Collect products from last 30 days (excluding brand collections)
+  assign filtered_products_handles = ''
+  assign filtered_products_count = 0
+  
+  for product in collections.all.products
+    assign product_created = product.created_at | date: '%s'
+    assign product_timestamp = product_created | plus: 0
+    if product_timestamp >= cutoff_timestamp
+      # Check if product is in any excluded collection or has excluded vendor
+      assign is_excluded = false
+      for product_collection in product.collections
+        for excluded_handle in excluded_collections
+          if product_collection.handle == excluded_handle
+            assign is_excluded = true
+            break
+          endif
+        endfor
+        if is_excluded
+          break
+        endif
+      endfor
+      
+      # Check if vendor is excluded (Saint Laurent)
+      if product.vendor == excluded_vendor
+        assign is_excluded = true
+      endif
+      
+      # Only include if not excluded and we still need products
+      unless is_excluded
+      if filtered_products_count < target_product_count
+        assign filtered_products_handles = filtered_products_handles | append: product.handle | append: ','
+        assign filtered_products_count = filtered_products_count | plus: 1
+      endif
+      endunless
+    endif
+  endfor
+  
+  # Step 2: If we have fewer than 12 products from last 30 days, fill remaining slots with most recent products
+  assign final_products_handles = filtered_products_handles
+  assign remaining_slots = target_product_count | minus: filtered_products_count
+  
+  if remaining_slots > 0
+    # Collect handles we already have to avoid duplicates
+    assign existing_handles = filtered_products_handles | split: ','
+    
+    # Get additional products that are NOT in the last 30 days (excluding brand collections)
+    assign added_count = 0
+    for product in collections.all.products
+      # Only process if we still need more products
+      if added_count < remaining_slots
+        assign product_created = product.created_at | date: '%s'
+        assign product_timestamp = product_created | plus: 0
+        
+        # Only include products outside the 30-day window
+        if product_timestamp < cutoff_timestamp
+          # Check if product is in any excluded collection or has excluded vendor
+          assign is_excluded = false
+          for product_collection in product.collections
+            for excluded_handle in excluded_collections
+              if product_collection.handle == excluded_handle
+                assign is_excluded = true
+                break
+              endif
+            endfor
+            if is_excluded
+              break
+            endif
+          endfor
+          
+          # Check if vendor is excluded (Saint Laurent)
+          if product.vendor == excluded_vendor
+            assign is_excluded = true
+          endif
+          
+          # Check if already included
+          assign product_already_included = false
+          for existing_handle in existing_handles
+            if existing_handle == product.handle
+              assign product_already_included = true
+            endif
+          endfor
+          
+          # Only include if not excluded and not already included
+          unless is_excluded or product_already_included
+            assign final_products_handles = final_products_handles | append: product.handle | append: ','
+            assign added_count = added_count | plus: 1
+          endunless
+        endif
+      endif
+    endfor
+  endif
+  
+  # If still no products (edge case), get first 12 from all products (excluding brand collections)
+  assign final_handles_array = final_products_handles | split: ','
+  if final_handles_array.size == 0 or final_handles_array[0] == blank
+    assign final_products_handles = ''
+    assign fallback_count = 0
+    for product in collections.all.products
+      if fallback_count < target_product_count
+        # Check if product is in any excluded collection or has excluded vendor
+        assign is_excluded = false
+        for product_collection in product.collections
+          for excluded_handle in excluded_collections
+            if product_collection.handle == excluded_handle
+              assign is_excluded = true
+              break
+            endif
+          endfor
+          if is_excluded
+            break
+          endif
+        endfor
+        
+        # Check if vendor is excluded (Saint Laurent)
+        if product.vendor == excluded_vendor
+          assign is_excluded = true
+        endif
+        
+        unless is_excluded
+      assign final_products_handles = final_products_handles | append: product.handle | append: ','
+          assign fallback_count = fallback_count | plus: 1
+        endunless
+      endif
+    endfor
+    assign final_handles_array = final_products_handles | split: ','
+  endif
+  
+  # Ensure we only have exactly 12 products (or fewer if store has less)
+  assign limited_handles_array = ''
+  assign display_count = 0
+  for handle in final_handles_array
+    if handle != blank and display_count < target_product_count
+      assign limited_handles_array = limited_handles_array | append: handle | append: ','
+      assign display_count = display_count | plus: 1
+    endif
+  endfor
+  assign final_products_handles = limited_handles_array
+  
+  # Onboarding: When no products are available, we show placeholder items
+  assign products = ''
+  if request.design_mode and shop.products_count == 0
+    for i in (1..16)
+      assign products = products | append: ' ,'
+    endfor
+    assign products = products | split: ','
+  endif
+%}
+
+<script
+  src="{{ 'results-list.js' | asset_url }}"
+  type="module"
+></script>
+
+{% javascript %}
+  const url = new URL(window.location.href);
+  if (url.hash) {
+    document.addEventListener(
+      'DOMContentLoaded',
+      () => {
+        const card = document.getElementById(url.hash.slice(1));
+        if (card) {
+          card.scrollIntoView({ behavior: 'instant' });
+        }
+      },
+      { once: true }
+    );
+  }
+  
+  // Disable infinite scroll for other brands - force last-page to 1
+  document.addEventListener('DOMContentLoaded', function() {
+    const newArrivalsGrid = document.querySelector('.main-collection-new-arrivals .product-grid');
+    if (newArrivalsGrid) {
+      newArrivalsGrid.setAttribute('last-page', '1');
+    }
+  });
+{% endjavascript %}
+
+<script>
+  // Provide collection and product data for Shopify analytics script
+  (function() {
+    // Get collection data if available (for "Other Brands" page)
+    const collectionData = {
+      id: {{ collection.id | default: '' | json }},
+      handle: {{ collection.handle | default: 'other-brands' | json }},
+      title: {{ collection.title | default: 'Other Brands' | json }},
+      products: []
+    };
+
+    // Store collection data globally for analytics script
+    window.__collectionData = collectionData;
+    
+    // Dispatch event when collection data is ready
+    const event = new CustomEvent('collectionDataReady', { 
+      detail: collectionData 
+    });
+    
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.dispatchEvent(event);
+      });
+    } else {
+      document.dispatchEvent(event);
+    }
+
+    // Suppress Shopify analytics error until collection data is ready
+    window.addEventListener('error', function(event) {
+      if (event.message && event.message.includes('trackViewedProductVariant') && 
+          event.message.includes('Cannot destructure property')) {
+        if (!window.__collectionData) {
+          event.preventDefault();
+          setTimeout(() => {
+            if (window.__collectionData) {
+              console.log('Collection data now available for analytics');
+            }
+          }, 100);
+          return true;
+        }
+      }
+    }, true);
+  })();
+</script>
+
+{% comment %} Other Brands: Shows products from collections/all filtered by creation date, excluding products from Gucci, Louis Vuitton, Chanel, Dior, Fendi, Prada, and Leather Care collections, and products with vendor "Saint Laurent" {% endcomment %}
+
+{% comment %} We always render this full-width, as the child blocks have width: page/full settings {% endcomment %}
+<div class="section-background color-{{ section.settings.color_scheme }}"></div>
+<results-list
+  class="section product-grid-container main-collection-new-arrivals color-{{ section.settings.color_scheme }}"
+  style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
+  section-id="{{ section.id }}"
+>
+  {% render 'skip-to-content-link', href: '#ResultsList', text: 'accessibility.skip_to_results_list' %}
+
+  <div
+    class="collection-wrapper grid gap-style"
+  >
+
+    {% if request.design_mode and shop.products_count == 0 %}
+      {% paginate products by 24 %}
+        {% capture children %}
+          {% for product in products %}
+            <li
+              class="product-grid__item product-grid__item--{{ forloop.index0 }}"
+              data-page="{{ paginate.current_page }}"
+              data-product-id="{{ product.id }}"
+              data-view-transition-id="{{ product.id }}"
+              ref="cards[]"
+            >
+              {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
+            </li>
+          {% endfor %}
+        {% endcapture %}
+        {% render 'product-grid', section: section, children: children, products: products, paginate: paginate %}
+      {% endpaginate %}
+    {% else %}
+      {% comment %} Display up to 12 products: products from last 30 days first, then fill with most recent products {% endcomment %}
+      {% comment %} TEMPORARILY COMMENTED OUT - No products shown for now {% endcomment %}
+      {% if false and final_products_handles != blank %}
+        {% assign final_handles_array = final_products_handles | split: ',' %}
+        {% capture children %}
+          {% liquid
+            assign custom_product = blank
+            if section.settings.custom_product_card_product != blank
+              assign custom_product = all_products[section.settings.custom_product_card_product]
+            endif
+            assign initial_insert = 4
+            assign repeat_interval = 12
+          %}
+          {% assign product_index = 0 %}
+          {% assign rendered_count = 0 %}
+          {% for handle in final_handles_array %}
+            {% if handle != blank and rendered_count < 12 %}
+              {% assign product = all_products[handle] %}
+              {% if product != blank %}
+                <li
+                  id="{{ section.id }}-{{ product.id }}"
+                  class="product-grid__item product-grid__item--{{ product_index }}"
+                  data-page="1"
+                  data-product-id="{{ product.id }}"
+                  ref="cards[]"
+                >
+                  {% # theme-check-disable %}
+                  {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
+                  {% # theme-check-enable %}
+                </li>
+                {% assign product_index = product_index | plus: 1 %}
+                {% assign rendered_count = rendered_count | plus: 1 %}
+                {% comment %} Insert custom product card at position 4, then every 12 products after that (4, 16, 28, 40...) {% endcomment %}
+                {% liquid
+                  assign should_insert = false
+                  if custom_product != blank and custom_product.id != blank
+                    # Show at position 4 initially
+                    if rendered_count == initial_insert
+                      assign should_insert = true
+                    # Then show every 12 products after position 4 (16, 28, 40, 52...)
+                    elsif rendered_count > initial_insert
+                      assign position_after_initial = rendered_count | minus: initial_insert
+                      assign remainder = position_after_initial | modulo: repeat_interval
+                      if remainder == 0
+                        assign should_insert = true
+                      endif
+                    # For collections with fewer than 4 products, show after last product
+                    elsif rendered_count < initial_insert and forloop.last
+                      assign should_insert = true
+                    endif
+                  endif
+                %}
+                {% if should_insert %}
+                  <li
+                    id="{{ section.id }}-custom-{{ custom_product.id }}"
+                    class="product-grid__item product-grid__item--custom product-grid__item--with-overlay"
+                    data-page="1"
+                    data-product-id="{{ custom_product.id }}"
+                    ref="cards[]"
+                  >
+                    {% # theme-check-disable %}
+                    {% capture product_card_content %}
+                      {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: custom_product %}
+                    {% endcapture %}
+                    <div class="custom-product-card__container">
+                      <div class="custom-product-card__product-card">
+                        {{ product_card_content }}
+                        {% comment %} Always render quick-add manually to ensure it's visible and accessible {% endcomment %}
+                        {% if settings.quick_add or settings.mobile_quick_add %}
+                          {% if custom_product != blank and custom_product.available %}
+                            {% comment %} Create a unique block ID for the quick-add form {% endcomment %}
+                            {% assign quick_add_block_id = section.id | append: '-custom-quick-add-' | append: custom_product.id %}
+                            {% comment %} Render quick-add manually with proper structure matching the snippet exactly {% endcomment %}
+                            {% liquid
+                              assign product_form_id = 'QuickAdd-ProductForm-' | append: custom_product.id | append: '-' | append: quick_add_block_id
+                              assign add_to_cart_text = 'actions.add' | t
+                              if custom_product.selected_or_first_available_variant.available
+                                assign can_add_to_cart = true
+                              else
+                                assign can_add_to_cart = false
+                              endif
+                            %}
+                            {% comment %} Position quick-add relative to card-gallery (product image) {% endcomment %}
+                            <div class="custom-quick-add-container">
+                              <div class="custom-quick-add-wrapper">
+                                <quick-add-component
+                                  class="quick-add color-{{ settings.quick_add_color_scheme }}"
+                                  ref="quickAdd"
+                                  data-product-title="{{ custom_product.title }}"
+                                >
+                                  <product-form-component
+                                    data-section-id="{{ section.id }}"
+                                    data-product-id="{{ custom_product.id }}"
+                                    on:submit="/handleSubmit"
+                                    class="quick-add__product-form-component {% if custom_product.options.size == 1 %}quick-add__product-form-component--single-option{% else %}quick-add__product-form-component--multi-option{% endif %} {% if custom_product.variants.size == 1 %}quick-add__product-form-component--single-variant{% else %}quick-add__product-form-component--multi-variant{% endif %}"
+                                  >
+                                    <div class="visually-hidden" aria-live="assertive" role="status" aria-atomic="true" ref="liveRegion"></div>
+                                    {%- form 'product', custom_product, id: product_form_id, novalidate: 'novalidate', data-type: 'add-to-cart-form' -%}
+                                      <input type="hidden" name="id" ref="variantId" value="{{ custom_product.selected_or_first_available_variant.id }}" {% if custom_product.selected_or_first_available_variant.available == false %}disabled{% endif %}>
+                                      <input type="hidden" name="quantity" value="{% if custom_product.selected_or_first_available_variant.quantity_rule.min %}{{ custom_product.selected_or_first_available_variant.quantity_rule.min }}{% else %}1{% endif %}">
+                                      {%- if custom_product.variants.size == 1 or custom_product.options.size == 1 -%}
+                                        {% render 'add-to-cart-button',
+                                          add_to_cart_text: add_to_cart_text,
+                                          class: 'button quick-add__button quick-add__button--add',
+                                          can_add_to_cart: can_add_to_cart,
+                                          icon_only_on_mobile: true,
+                                          product: custom_product
+                                        %}
+                                      {%- endif -%}
+                                      {%- if custom_product.variants.size > 1 -%}
+                                        <button type="button" class="button quick-add__button quick-add__button--choose" name="add" on:click="quick-add-component/handleClick">
+                                          <span class="add-to-cart-text">
+                                            <span class="svg-wrapper add-to-cart-icon">
+                                              {{- 'icon-plus.svg' | inline_asset_content -}}
+                                            </span>
+                                            <span class="add-to-cart-text__content is-visually-hidden-mobile">
+                                              {{ add_to_cart_text }}
+                                            </span>
+                                          </span>
+                                        </button>
+                                      {%- endif -%}
+                                    {%- endform -%}
+                                  </product-form-component>
+                                </quick-add-component>
+                              </div>
+                            </div>
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                      <div class="custom-product-card__gold-card">
+                        <svg class="custom-product-card__grid" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                          <defs>
+                            <pattern id="grid-pattern-{{ section.id }}-{{ custom_product.id }}" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+                              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255, 255, 255, 0.3)" stroke-width="1"/>
+                            </pattern>
+                          </defs>
+                          <rect width="100%" height="100%" fill="url(#grid-pattern-{{ section.id }}-{{ custom_product.id }})"/>
+                        </svg>
+                        <div class="custom-product-card__sparkles">
+                          <span class="sparkle sparkle-1"></span>
+                          <span class="sparkle sparkle-2"></span>
+                          <span class="sparkle sparkle-3"></span>
+                          <span class="sparkle sparkle-4"></span>
+                          <span class="sparkle sparkle-5"></span>
+                          <span class="sparkle sparkle-6"></span>
+                        </div>
+                        <div class="custom-product-card__gold-content">
+                          <div class="custom-product-card__text-bg"></div>
+                          <p class="custom-product-card__gold-text">keep your bags<br>looking new</p>
+                        </div>
+                      </div>
+                    </div>
+                    {% # theme-check-enable %}
+                  </li>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endcapture %}
+        {% # Render product grid without pagination (single page of exactly 12 products) %}
+        {% # Use paginate but limit to 1 page to prevent infinite scroll from loading more %}
+        {% paginate collections.all.products by 24 %}
+          {% render 'product-grid',
+            section: section,
+            children: children,
+            products: final_handles_array,
+            paginate: paginate
+          %}
+        {% endpaginate %}
+      {% else %}
+        <div class="new-arrivals-empty" style="grid-column: 1 / -1; text-align: center; padding: 48px;">
+          <p>No products available.</p>
+          {% if request.design_mode %}
+            <p style="font-size: 0.875rem; color: #999; margin-top: 12px;">
+              Debug: Total products in store: {{ shop.products_count }} | 
+              Filtered count (last 30 days): {{ filtered_products_count }} | 
+              Days back: {{ days_back }} | 
+              Now timestamp: {{ now_timestamp }} | 
+              Cutoff timestamp: {{ cutoff_timestamp }}
+            </p>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</results-list>
+
+{% stylesheet %}
+  /* Disable infinite scroll for other brands - only show 12 products */
+  .main-collection-new-arrivals [ref="viewMoreNext"],
+  .main-collection-new-arrivals [ref="viewMorePrevious"] {
+    display: none !important;
+  }
+  
+  .main-collection-grid {
+    grid-column: var(--grid-column--mobile);
+    @media screen and (min-width: 750px) {
+      grid-column: var(--grid-column--desktop);
+    }
+  }
+
+  .collection-wrapper {
+    @media screen and (min-width: 750px) {
+      grid-template-columns:
+        1fr repeat(
+          var(--centered-column-number),
+          minmax(0, calc((var(--page-width) - var(--page-margin) * 2) / var(--centered-column-number)))
+        )
+        1fr;
+    }
+  }
+
+  .collection-wrapper:has(.facets-block-wrapper--full-width),
+  .collection-wrapper:has(.collection-wrapper--full-width) {
+    @media screen and (min-width: 750px) {
+      grid-column: 1 / -1;
+      grid-template-columns:
+        minmax(var(--page-margin), 1fr) repeat(
+          var(--centered-column-number),
+          minmax(0, calc((var(--page-width) - var(--page-margin) * 2) / var(--centered-column-number)))
+        )
+        minmax(var(--page-margin), 1fr);
+    }
+  }
+
+  .collection-wrapper:has(.facets--vertical) .facets-block-wrapper--vertical:not(.hidden) ~ .main-collection-grid {
+    @media screen and (min-width: 750px) {
+      grid-column: var(--facets-vertical-col-width) / var(--full-width-column-number);
+    }
+  }
+
+  .collection-wrapper:has(.facets-block-wrapper--vertical:not(#filters-drawer)):has(.collection-wrapper--full-width) {
+    @media screen and (min-width: 750px) {
+      grid-column: 1 / -1;
+      grid-template-columns: 0fr repeat(var(--centered-column-number), minmax(0, 1fr)) 0fr;
+    }
+  }
+
+  :is(.collection-wrapper--full-width, .collection-wrapper--full-width-on-mobile)
+    [product-grid-view='default']
+    .product-grid__item
+    .group-block {
+    @media screen and (max-width: 749px) {
+      padding-inline-start: max(var(--padding-xs), var(--padding-inline-start));
+      padding-inline-end: max(var(--padding-xs), var(--padding-inline-end));
+    }
+  }
+
+  :is(.collection-wrapper--full-width, .collection-wrapper--full-width-on-mobile)
+    [product-grid-view='mobile-single']
+    .product-grid__item
+    .group-block {
+    @media screen and (max-width: 749px) {
+      padding-inline-start: max(var(--padding-xs), var(--padding-inline-start));
+      padding-inline-end: max(var(--padding-xs), var(--padding-inline-end));
+    }
+  }
+
+  /* Custom product card with two containers - product card and gold card */
+  .product-grid__item--with-overlay {
+    position: relative;
+  }
+
+  .custom-product-card__container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+  }
+
+  /* Product card - initially visible, fades in and out in infinite loop */
+  .custom-product-card__product-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 1;
+    animation: fadeProductCardLoop 6s ease-in-out infinite;
+    z-index: 2;
+    pointer-events: auto;
+  }
+
+  /* Ensure product card wrapper doesn't block hover events */
+  .custom-product-card__product-card .product-card {
+    pointer-events: auto;
+  }
+
+  /* Gold card - fades in and out in infinite loop */
+  .custom-product-card__gold-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(202, 160, 85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    animation: fadeGoldCardLoop 6s ease-in-out infinite;
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  /* On hover, pause animation, bring product card to front and ensure quick add is accessible */
+  .custom-product-card__container:hover .custom-product-card__product-card {
+    z-index: 3;
+    opacity: 1 !important;
+    animation-play-state: paused;
+  }
+
+  .custom-product-card__container:hover .custom-product-card__gold-card {
+    z-index: 2;
+    pointer-events: none;
+    animation-play-state: paused;
+    opacity: 0 !important;
+  }
+
+  /* Ensure quick-add container is accessible on hover */
+  .custom-product-card__container:hover .custom-quick-add-container {
+    z-index: 11;
+    pointer-events: none;
+  }
+
+  .custom-product-card__container:hover .custom-quick-add-wrapper {
+    pointer-events: auto;
+    z-index: 12;
+  }
+
+  /* Ensure product card content is interactive */
+  .custom-product-card__product-card * {
+    pointer-events: auto;
+  }
+
+  /* Make card-gallery receive hover events properly */
+  .custom-product-card__product-card .card-gallery {
+    pointer-events: auto;
+  }
+
+  /* Ensure quick add component is accessible and has high z-index */
+  .custom-product-card__product-card .quick-add,
+  .custom-product-card__product-card [class*="quick-add"],
+  .product-grid__item--with-overlay .quick-add {
+    z-index: 10;
+    pointer-events: auto;
+    position: relative;
+  }
+
+  /* Ensure quick add button itself is accessible */
+  .custom-product-card__product-card .quick-add__button,
+  .product-grid__item--with-overlay .quick-add__button {
+    z-index: 11;
+    pointer-events: auto;
+  }
+
+  /* Quick add button visibility - hide by default on desktop, show on hover */
+  @media screen and (min-width: 750px) {
+    /* Hide by default on desktop (matching normal product cards) */
+    .custom-quick-add-container .quick-add__button,
+    .custom-quick-add-container quick-add-component .quick-add__button,
+    .custom-quick-add-container .quick-add .quick-add__button {
+      display: none;
+    }
+    
+    /* Show on hover */
+    .custom-product-card__container:hover .custom-quick-add-container .quick-add__button,
+    .custom-product-card__container:hover .custom-quick-add-container quick-add-component .quick-add__button,
+    .custom-product-card__container:hover .custom-quick-add-wrapper .quick-add__button,
+    .product-grid__item--with-overlay:hover .custom-quick-add-container .quick-add__button,
+    .product-grid__item--with-overlay:hover .custom-quick-add-container quick-add-component .quick-add__button,
+    .product-grid__item--with-overlay:hover .custom-quick-add-wrapper .quick-add__button {
+      display: grid !important;
+      will-change: margin, opacity;
+      animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
+    }
+    
+    /* Also show when card-gallery is hovered (if it exists in the product card) */
+    .custom-product-card__product-card .card-gallery:hover .quick-add__button,
+    .product-grid__item--with-overlay .card-gallery:hover .quick-add__button {
+      display: grid !important;
+      will-change: margin, opacity;
+      animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
+    }
+  }
+  
+  /* Position quick-add relative to card-gallery (product image), not the entire product card */
+  /* The card-gallery already has position: relative from the snippet */
+  .custom-product-card__product-card .card-gallery {
+    position: relative;
+  }
+  
+  /* Position quick-add container to match ONLY the card-gallery's dimensions (image area) */
+  /* The container should only cover the image, not the product details below */
+  .custom-quick-add-container {
+    position: absolute;
+    /* Position it to align with the card-gallery - match its top and left */
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Use aspect-ratio to match card-gallery's image area height only */
+    aspect-ratio: var(--gallery-aspect-ratio, 1);
+    pointer-events: none;
+    z-index: 10;
+    /* Ensure it doesn't extend beyond the image area */
+    max-height: fit-content;
+  }
+  
+  /* Ensure the container matches card-gallery dimensions exactly */
+  .custom-product-card__product-card .card-gallery ~ .custom-quick-add-container {
+    /* Position to align with card-gallery */
+    top: 0;
+    left: 0;
+    width: 100%;
+    /* Match the aspect ratio of the card-gallery */
+    aspect-ratio: var(--gallery-aspect-ratio, 1);
+  }
+  
+  .custom-quick-add-wrapper {
+    position: absolute;
+    bottom: calc(var(--quick-add-offset, var(--padding-sm)) * 9.5);
+    right: var(--quick-add-offset, var(--padding-sm));
+    pointer-events: auto;
+    z-index: 11;
+  }
+  
+  /* Ensure quick-add component itself is visible */
+  .custom-quick-add-container quick-add-component {
+    display: block !important;
+    visibility: visible !important;
+  }
+  
+  /* On hover, ensure quick-add container stays on top */
+  .custom-product-card__container:hover .custom-quick-add-container {
+    z-index: 15 !important;
+  }
+  
+  .custom-product-card__container:hover .custom-quick-add-wrapper {
+    z-index: 16 !important;
+  }
+
+  /* Grid SVG pattern */
+  .custom-product-card__grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Sparkles container */
+  .custom-product-card__sparkles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Individual sparkle */
+  .custom-product-card__sparkles .sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.9), 0 0 12px rgba(255, 255, 255, 0.6);
+    animation: sparkleGlow 2s ease-in-out infinite;
+    will-change: opacity, transform;
+  }
+
+  /* Position sparkles randomly across the card */
+  .custom-product-card__sparkles .sparkle-1 {
+    top: 15%;
+    left: 20%;
+    animation-delay: 0s;
+  }
+
+  .custom-product-card__sparkles .sparkle-2 {
+    top: 35%;
+    left: 75%;
+    animation-delay: 0.3s;
+  }
+
+  .custom-product-card__sparkles .sparkle-3 {
+    top: 60%;
+    left: 15%;
+    animation-delay: 0.6s;
+  }
+
+  .custom-product-card__sparkles .sparkle-4 {
+    top: 80%;
+    left: 60%;
+    animation-delay: 0.9s;
+  }
+
+  .custom-product-card__sparkles .sparkle-5 {
+    top: 25%;
+    left: 50%;
+    animation-delay: 1.2s;
+  }
+
+  .custom-product-card__sparkles .sparkle-6 {
+    top: 70%;
+    left: 85%;
+    animation-delay: 1.5s;
+  }
+
+  /* Sparkle glow animation - optimized using transform and opacity */
+  @keyframes sparkleGlow {
+    0%, 100% {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.2);
+    }
+  }
+
+  .custom-product-card__gold-content {
+    position: relative;
+    z-index: 1;
+    padding: 20px;
+    text-align: center;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Blurred background for text with solid base - circular shape with soft edges */
+  .custom-product-card__text-bg {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(202, 160, 85, 0.9) 0%, rgba(202, 160, 85, 0.9) 70%, rgba(202, 160, 85, 0.3) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 50%;
+    z-index: 0;
+    box-shadow: 0 0 30px rgba(202, 160, 85, 0.2);
+  }
+
+  .custom-product-card__gold-text {
+    position: relative;
+    z-index: 1;
+    font-family: 'Sacramento', cursive;
+    font-weight: 400;
+    font-style: normal;
+    font-size: var(--font-h3--size);
+    line-height: var(--font-h3--line-height);
+    letter-spacing: var(--font-h3--letter-spacing);
+    color: #ffffff;
+    margin: 0;
+    text-transform: lowercase;
+  }
+
+  /* Infinite loop animation: product card visible for 2.5s, fade out 0.8s, hidden for 2.5s, fade in 0.8s */
+  @keyframes fadeProductCardLoop {
+    0%, 41.67% {
+      opacity: 1;
+    }
+    50%, 91.67% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  /* Infinite loop animation: gold card hidden for 2.5s, fade in 0.8s, visible for 2.5s, fade out 0.8s */
+  @keyframes fadeGoldCardLoop {
+    0%, 41.67% {
+      opacity: 0;
+    }
+    50%, 91.67% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @media screen and (max-width: 749px) {
+    .custom-product-card__gold-content {
+      padding: 12px;
+    }
+
+    .custom-product-card__text-bg {
+      width: 150px;
+      height: 150px;
+    }
+
+    .custom-product-card__gold-text {
+      font-size: 0.875rem;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+      "name": "Other Brands Collection",
+  "enabled_on": {
+    "templates": ["collection"]
+  },
+  "settings": [
+    {
+      "type": "range",
+      "id": "days_back",
+      "label": "Days to look back",
+      "min": 5,
+      "max": 365,
+      "step": 5,
+      "default": 30,
+      "info": "Show products created within this many days"
+    },
+    {
+      "type": "select",
+      "id": "layout_type",
+      "label": "t:settings.type",
+      "options": [
+        {
+          "value": "grid",
+          "label": "t:options.grid"
+        },
+        {
+          "value": "organic",
+          "label": "t:options.editorial"
+        }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "select",
+      "id": "product_card_size",
+      "label": "t:settings.card_size",
+      "options": [
+        {
+          "value": "small",
+          "label": "t:options.small"
+        },
+        {
+          "value": "medium",
+          "label": "t:options.medium"
+        },
+        {
+          "value": "large",
+          "label": "t:options.large"
+        },
+        {
+          "value": "extra-large",
+          "label": "t:options.extra_large"
+        }
+      ],
+      "default": "medium",
+      "visible_if": "{{ section.settings.layout_type == 'grid' }}"
+    },
+    {
+      "type": "select",
+      "id": "mobile_product_card_size",
+      "label": "t:settings.mobile_card_size",
+      "options": [
+        {
+          "value": "small",
+          "label": "t:options.small"
+        },
+        {
+          "value": "large",
+          "label": "t:options.large"
+        }
+      ],
+      "default": "small"
+    },
+    {
+      "type": "header",
+      "content": "t:content.layout"
+    },
+    {
+      "type": "select",
+      "id": "product_grid_width",
+      "label": "t:settings.width",
+      "options": [
+        {
+          "value": "centered",
+          "label": "t:options.page"
+        },
+        {
+          "value": "full-width",
+          "label": "t:options.full"
+        }
+      ],
+      "default": "centered"
+    },
+    {
+      "type": "checkbox",
+      "id": "full_width_on_mobile",
+      "label": "t:settings.full_width_on_mobile",
+      "default": true,
+      "visible_if": "{{ section.settings.product_grid_width != 'full-width' }}"
+    },
+    {
+      "type": "range",
+      "id": "columns_gap_horizontal",
+      "label": "t:settings.horizontal_gap",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "columns_gap_vertical",
+      "label": "t:settings.vertical_gap",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left_padding",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right_padding",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "header",
+      "content": "t:content.section_layout"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top_padding",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom_padding",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 48
+    },
+    {
+      "type": "header",
+      "content": "Custom Product Card"
+    },
+    {
+      "type": "product",
+      "id": "custom_product_card_product",
+      "label": "Custom Product Card Product",
+      "info": "Product to display in the custom card that appears at position 4, then every 12 products after that"
+    }
+  ],
+  "presets": []
+}
+{% endschema %}

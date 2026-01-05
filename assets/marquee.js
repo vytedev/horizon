@@ -11,18 +11,17 @@ const ANIMATION_OPTIONS = {
  * @typedef {object} Refs
  * @property {HTMLElement} wrapper - The wrapper element.
  * @property {HTMLElement} content - The content element.
- * @property {HTMLElement[]} marqueeItems - The marquee items collection.
  *
  * @extends Component<Refs>
  */
 class MarqueeComponent extends Component {
-  requiredRefs = ['wrapper', 'content', 'marqueeItems'];
+  requiredRefs = ['wrapper', 'content'];
 
   connectedCallback() {
     super.connectedCallback();
 
-    const { marqueeItems } = this.refs;
-    if (marqueeItems.length === 0) return;
+    const { content } = this.refs;
+    if (content.firstElementChild?.children.length === 0) return;
 
     this.#addRepeatedItems();
     this.#duplicateContent();
@@ -97,20 +96,15 @@ class MarqueeComponent extends Component {
 
   #calculateSpeed() {
     const speedFactor = Number(this.getAttribute('data-speed-factor'));
-    const { marqueeItems } = this.refs;
     const marqueeWidth = this.offsetWidth;
-
-    const marqueeRepeatedItemWidth = marqueeItems[0]?.offsetWidth ?? 1;
-    const count = marqueeRepeatedItemWidth === 0 ? 1 : Math.ceil(marqueeWidth / marqueeRepeatedItemWidth);
-    const speed = Math.sqrt(count) * speedFactor;
-
+    const speed = Math.ceil(marqueeWidth / speedFactor / 2);
     return speed;
   }
 
   #handleResize = debounce(() => {
-    const { marqueeItems } = this.refs;
+    const { content } = this.refs;
     const newNumberOfCopies = this.#calculateNumberOfCopies();
-    const currentNumberOfCopies = marqueeItems.length;
+    const currentNumberOfCopies = content.children.length;
 
     if (newNumberOfCopies > currentNumberOfCopies) {
       this.#addRepeatedItems(newNumberOfCopies - currentNumberOfCopies);
@@ -145,31 +139,30 @@ class MarqueeComponent extends Component {
   }
 
   #addRepeatedItems(numberOfCopies = this.#calculateNumberOfCopies()) {
-    const { content, marqueeItems } = this.refs;
+    const { content } = this.refs;
+    const wrapper = content.firstElementChild;
 
-    if (!marqueeItems[0]) return;
+    if (!wrapper) return;
 
     for (let i = 0; i < numberOfCopies - 1; i++) {
-      const clone = marqueeItems[0].cloneNode(true);
+      const clone = wrapper.cloneNode(true);
       content.appendChild(clone);
     }
   }
 
   #removeRepeatedItems(numberOfCopies = this.#calculateNumberOfCopies()) {
     const { content } = this.refs;
-    const children = Array.from(content.children);
 
-    const itemsToRemove = Math.min(numberOfCopies, children.length - 1);
-
-    for (let i = 0; i < itemsToRemove; i++) {
+    for (let i = 0; i < numberOfCopies; i++) {
       content.lastElementChild?.remove();
     }
   }
 
   #calculateNumberOfCopies() {
-    const { marqueeItems } = this.refs;
+    const { content } = this.refs;
     const marqueeWidth = this.offsetWidth;
-    const marqueeRepeatedItemWidth = marqueeItems[0]?.offsetWidth ?? 1;
+    const marqueeRepeatedItemWidth =
+      content.firstElementChild instanceof HTMLElement ? content.firstElementChild.offsetWidth : 1;
 
     return marqueeRepeatedItemWidth === 0 ? 1 : Math.ceil(marqueeWidth / marqueeRepeatedItemWidth);
   }

@@ -10,48 +10,7 @@
   assign product_form_id = 'QuickAdd-ProductForm-' | append: product.id | append: '-' | append: block.id
   assign add_to_cart_text = 'actions.add' | t
 
-  # Logic to determine which variant to use (matching swatch selection logic from product-card)
-  assign variant_to_use = product.selected_or_first_available_variant
-  assign combined_listing_count = product.options_with_values | map: 'values' | map: 'product_url' | compact | size
-
-  unless combined_listing_count > 0
-    assign first_image = product.media.first
-    assign variant_images = product.images | where: 'attached_to_variant?', true
-    # Get swatchable options (options that have swatch values)
-    assign swatch_variant_picker = null
-    for option in product.options_with_values
-      assign swatch_count = option.values | map: 'swatch' | compact | size
-      if swatch_count > 0
-        assign swatch_variant_picker = option
-        break
-      endif
-    endfor
-
-    if swatch_variant_picker
-      assign swatch_count = swatch_variant_picker.values | map: 'swatch' | compact | size
-
-      if swatch_count == 1
-        # Single swatch: use that variant
-        assign variant_to_use = swatch_variant_picker.values.first.variant
-      elsif swatch_count > 1
-        if first_image and variant_images contains first_image
-          # First image is a variant image - find which variant it belongs to
-          for option_value in swatch_variant_picker.values
-            if option_value.variant.featured_media.id == first_image.id
-              assign variant_to_use = option_value.variant
-              break
-            endif
-          endfor
-        elsif variant_images.size == 0
-          # No variants have images - use first swatch variant
-          assign variant_to_use = swatch_variant_picker.values.first.variant
-        endif
-        # else: First image is NOT a variant image - keep default (selected_or_first_available_variant)
-      endif
-    endif
-  endunless
-
-  if variant_to_use.available
+  if closest.product.selected_or_first_available_variant.available
     assign can_add_to_cart = true
   else
     assign can_add_to_cart = false
@@ -85,15 +44,15 @@
         type="hidden"
         name="id"
         ref="variantId"
-        value="{{ variant_to_use.id }}"
-        {% if variant_to_use.available == false %}
+        value="{{ product.selected_or_first_available_variant.id }}"
+        {% if product.selected_or_first_available_variant.available == false %}
           disabled
         {% endif %}
       >
       <input
         type="hidden"
         name="quantity"
-        value="{% if variant_to_use.quantity_rule.min %}{{ variant_to_use.quantity_rule.min }}{% else %}1{% endif %}"
+        value="{% if product.selected_or_first_available_variant.quantity_rule.min %}{{ product.selected_or_first_available_variant.quantity_rule.min }}{% else %}1{% endif %}"
       >
       {% comment %} If there is one variant option but it's swatches or if it's a single variant product, then use add to cart button {% endcomment %}
       {%- if product.variants.size == 1 or product.options.size == 1 -%}
@@ -119,7 +78,7 @@
             <span
               class="svg-wrapper add-to-cart-icon"
             >
-              {{- 'icon-add-to-cart.svg' | inline_asset_content -}}
+              {{- 'icon-plus.svg' | inline_asset_content -}}
             </span>
             <span class="add-to-cart-text__content is-visually-hidden-mobile">
               {{ add_to_cart_text }}
@@ -171,25 +130,47 @@
 
   .quick-add__button {
     display: grid;
-    padding: var(--padding-xs);
+    padding: calc(var(--padding-xs) * 0.85);
     align-items: center;
-    background-color: var(--color-background);
+    justify-items: center;
+    background-color: rgba(255, 255, 255, 0.7);
     color: var(--color-foreground);
     border-color: transparent;
-    box-shadow: var(--shadow-popover);
+    box-shadow: none;
     pointer-events: all;
     position: relative;
     overflow: hidden;
-    border-radius: 100px;
+    border-radius: 50%;
+    aspect-ratio: 1;
+    width: fit-content;
+    height: fit-content;
 
     @media screen and (min-width: 750px) {
       display: none;
-      padding: var(--padding-xs) var(--padding-sm);
+      padding: calc(var(--padding-xs) * 0.85) calc(var(--padding-sm) * 0.85);
     }
 
     .quick-add[stay-visible] & {
       display: grid;
     }
+  }
+
+  .quick-add__button .add-to-cart-icon {
+    width: 1em;
+    height: 1em;
+    color: #333333;
+  }
+
+  .quick-add__button .add-to-cart-icon svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .quick-add__button .add-to-cart-icon svg path,
+  .quick-add__button .add-to-cart-icon svg line,
+  .quick-add__button .add-to-cart-icon svg circle,
+  .quick-add__button .add-to-cart-icon svg rect {
+    stroke-width: 1.5;
   }
 
   .quick-add__button .add-to-cart-text {
@@ -229,8 +210,7 @@
   }
 
   @container (min-width: 99px) {
-    .quick-add[stay-visible] .add-to-cart-text,
-    .quick-add__button:is(:focus, :hover) .add-to-cart-text {
+    .quick-add[stay-visible] .add-to-cart-text {
       gap: var(--gap-2xs);
 
       @media screen and (min-width: 750px) {
@@ -240,8 +220,7 @@
       }
     }
 
-    .quick-add[stay-visible] .add-to-cart-text__content,
-    .quick-add__button:is(:focus, :hover) .add-to-cart-text__content {
+    .quick-add[stay-visible] .add-to-cart-text__content {
       width: fit-content;
       opacity: 1;
       transform: translateX(0);
@@ -249,7 +228,12 @@
   }
 
   .quick-add__button.atc-added .add-to-cart-text {
-    opacity: 0;
+    opacity: 1;
+  }
+
+  .quick-add__button.atc-added .add-to-cart-icon {
+    opacity: 1;
+    display: block;
   }
 
   .quick-add__button.atc-added .add-to-cart-text--added {

@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/blocks/_collection-link' %}
+
 {%- doc -%}
   Renders a collection link block.
 
@@ -10,20 +12,13 @@
   {% assign loading = 'lazy' %}
 {% endunless %}
 
-{% liquid
-  assign onboarding = false
-  if closest.collection == empty
-    assign onboarding = true
-  endif
-%}
-
 {% if block.settings.show_count %}
   {% assign count = closest.collection.all_products_count %}
   {%- capture count -%}
     &nbsp;<sup class="collection-links__count">{{ count }}</sup>
   {%- endcapture -%}
 
-  {% if onboarding %}
+  {% if closest.collection == empty %}
     {%- capture count -%}
       &nbsp;<sup class="collection-links__count">5</sup>
     {%- endcapture -%}
@@ -35,11 +30,7 @@
 {% endcapture %}
 
 {% capture image_block %}
-  {%- liquid
-    assign placeholder_variant = index | modulo: 4 | plus: 1
-    assign placeholder_name = 'collection-apparel-' | append: placeholder_variant
-  -%}
-  {% content_for 'block', type: '_image', id: 'image', loading: loading, placeholder: placeholder_name %}
+  {% content_for 'block', type: '_image', id: 'image', loading: loading %}
 {% endcapture %}
 
 {% if image_only %}
@@ -47,9 +38,6 @@
     href="{{ closest.collection.url }}"
     class="collection-links__image"
     size="{{ section.settings.image_height }}"
-    {% if onboarding %}
-      data-placeholder="true"
-    {% endif %}
   >
     {{ image_block }}
   </a>
@@ -61,9 +49,6 @@
     on:pointerenter="/select/{{ index }}"
     on:focus="/select/{{ index }}"
     aria-current="{{ current }}"
-    {% if onboarding %}
-      data-placeholder="true"
-    {% endif %}
     {{ block.shopify_attributes }}
   >
     {{ title_block }}
@@ -112,12 +97,11 @@
       --max-font-size: var(--font-size--5xl);
 
       [layout='spotlight'] & {
-        white-space: normal;
+        white-space: nowrap;
         scroll-snap-align: start;
-        text-wrap: pretty;
 
         span {
-          text-wrap: pretty;
+          text-wrap: nowrap;
         }
       }
     }
@@ -151,7 +135,6 @@
 
       image-block {
         --image-height-basis: 5rem;
-
         height: var(--image-height);
       }
     }

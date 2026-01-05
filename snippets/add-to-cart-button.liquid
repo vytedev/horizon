@@ -20,7 +20,6 @@
 <add-to-cart-component
   ref="addToCartButtonContainer"
   data-product-variant-media="{{ product_variant_media }}"
-  data-add-to-cart-animation="{{ settings.add_to_cart_animation }}"
 >
   <button
     id="{{ id }}"
@@ -36,24 +35,11 @@
     <span
       class="add-to-cart-text"
     >
-      {% if can_add_to_cart %}
-        <span class="svg-wrapper add-to-cart-icon">
-          {{- 'icon-add-to-cart.svg' | inline_asset_content -}}
-        </span>
-      {% endif %}
+      <span class="svg-wrapper add-to-cart-icon">
+        {{- 'icon-plus.svg' | inline_asset_content -}}
+      </span>
       <span class="add-to-cart-text__content{% if icon_only_on_mobile %} is-visually-hidden-mobile{% endif %}">
         {{- add_to_cart_text | default: default_add_to_cart_text -}}
-      </span>
-    </span>
-    <span
-      aria-hidden="true"
-      class="add-to-cart-text--added"
-    >
-      <span class="svg-wrapper add-to-cart-icon--added">
-        {{- 'icon-checkmark.svg' | inline_asset_content -}}
-      </span>
-      <span class="{% if icon_only_on_mobile %}is-visually-hidden-mobile{% endif %}">
-        {{- 'actions.added' | t -}}
       </span>
     </span>
   </button>
@@ -72,48 +58,12 @@
   }
 
   .atc-added .add-to-cart-text {
-    animation-name: atc-slide-out;
+    opacity: 1;
   }
 
-  .add-to-cart-text--added {
-    position: absolute;
-    inset: 0;
-    animation-duration: var(--animation-speed);
-    animation-timing-function: var(--animation-easing);
-    animation-fill-mode: forwards;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: width var(--animation-speed) var(--animation-easing),
-      opacity var(--animation-speed) var(--animation-easing);
+  .atc-added .add-to-cart-icon {
+    opacity: 1;
+    display: block;
   }
 
-  .atc-added .add-to-cart-text--added {
-    animation-name: atc-slide-in;
-  }
-
-  @keyframes atc-slide-in {
-    from {
-      opacity: 0;
-      transform: translateY(0.5em);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes atc-slide-out {
-    from {
-      transform: translateY(0);
-      opacity: 1;
-    }
-
-    to {
-      transform: translateY(-1em);
-      opacity: 0;
-    }
-  }
 {% endstylesheet %}

@@ -28,6 +28,16 @@ slot[name='more']:not([hidden]) {
   display: block;
 }
 
+/* Hide the "more" button in facets overflow list */
+:host(.facets__overflow-list) slot[name='more'],
+:host(.facets__overflow-list) [part='more'] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
 slot[name='more'] .button {
   cursor: pointer;
   border: none;

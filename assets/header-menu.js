@@ -1,8 +1,9 @@
 import { Component } from '@theme/component';
-import { debounce, onDocumentLoaded } from '@theme/utilities';
+import { debounce, onDocumentReady } from '@theme/utilities';
 import { MegaMenuHoverEvent } from '@theme/events';
 
-const ACTIVATE_DELAY = 0;
+const SHORT_ACTIVATE_DELAY = 0;
+const LONG_ACTIVATE_DELAY = 250;
 const DEACTIVATE_DELAY = 350;
 
 /**
@@ -29,7 +30,7 @@ class HeaderMenu extends Component {
       signal: this.#abortController.signal,
     });
 
-    onDocumentLoaded(this.#preloadImages);
+    onDocumentReady(this.#preloadImages);
   }
 
   disconnectedCallback() {
@@ -74,9 +75,14 @@ class HeaderMenu extends Component {
    */
   activate = (event) => {
     this.#debouncedDeactivate.cancel();
-    this.#debouncedActivateHandler.cancel();
+    this.#shortDebouncedActivateHandler.cancel();
+    this.#longDebouncedActivateHandler.cancel();
 
-    this.#debouncedActivateHandler(event);
+    if (this.#state.activeItem) {
+      this.#shortDebouncedActivateHandler(event);
+    } else {
+      this.#longDebouncedActivateHandler(event);
+    }
   };
 
   /**
@@ -120,17 +126,18 @@ class HeaderMenu extends Component {
     const submenuHeight = submenu ? Math.max(submenu.offsetHeight, overflowMenuHeight) : 0;
 
     this.style.setProperty('--submenu-height', `${submenuHeight}px`);
-    this.style.setProperty('--submenu-opacity', '1');
   };
 
-  #debouncedActivateHandler = debounce(this.#activateHandler, ACTIVATE_DELAY);
+  #shortDebouncedActivateHandler = debounce(this.#activateHandler, SHORT_ACTIVATE_DELAY);
+  #longDebouncedActivateHandler = debounce(this.#activateHandler, LONG_ACTIVATE_DELAY);
 
   /**
    * Deactivate the active item after a delay
    * @param {PointerEvent | FocusEvent} event
    */
   deactivate(event) {
-    this.#debouncedActivateHandler.cancel();
+    this.#shortDebouncedActivateHandler.cancel();
+    this.#longDebouncedActivateHandler.cancel();
 
     if (!(event.target instanceof Element)) return;
 
@@ -152,7 +159,6 @@ class HeaderMenu extends Component {
     if (this.overflowHovered) return;
 
     this.style.setProperty('--submenu-height', '0px');
-    this.style.setProperty('--submenu-opacity', '0');
     this.dataset.overflowExpanded = 'false';
 
     this.#state.activeItem = null;
@@ -162,7 +168,7 @@ class HeaderMenu extends Component {
 
     setTimeout(() => {
       item.removeAttribute('data-animating');
-    }, Math.max(0, this.animationDelay - 150)); // Start header transition 150ms before submenu finishes
+    }, this.animationDelay);
   };
 
   /**

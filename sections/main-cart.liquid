@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/sections/main-cart.js' %}
+
 <cart-items-component
   class="cart-items-component"
   data-section-id="{{ section.id }}"
@@ -10,13 +12,33 @@
       class="cart-page spacing-style{% if cart.empty? %} cart-page--empty{% endif %}"
       style="{% render 'spacing-style', settings: section.settings %}"
     >
-      <div class="cart-page__title">
-        {%- content_for 'block', id: 'cart-page-title', type: '_cart-title' %}
-      </div>
+      {%- if cart.empty? -%}
+        <div class="cart-page__empty">
+          <div class="cart-page__empty-image">
+            <img src="{{ 'empty_shop_bag.svg' | asset_url }}" alt="" width="300" height="300">
+          </div>
+          <p class="cart-page__empty-text">
+            No items in your cart
+          </p>
+          <a
+            class="button cart-page__empty-button"
+            href="{{ routes.all_products_collection_url }}"
+          >
+            {{ 'actions.continue_shopping' | t }}
+          </a>
+        </div>
+      {%- else -%}
+        <div class="cart-page__title">
+          <div class="cart-page__title-group">
+            {%- content_for 'block', id: 'cart-page-title', type: '_cart-title' %}
+            {%- content_for 'block', id: 'group_cart_header', type: 'group' %}
+          </div>
+        </div>
 
-      <div class="cart-page__items">
-        {%- content_for 'block', id: 'cart-page-items', type: '_cart-products' %}
-      </div>
+        <div class="cart-page__items">
+          {%- content_for 'block', id: 'cart-page-items', type: '_cart-products' %}
+        </div>
+      {%- endif -%}
 
       {%- unless cart.empty? -%}
         <div class="cart-page__summary">
@@ -30,6 +52,7 @@
     </div>
   </div>
 </cart-items-component>
+
 
 {% stylesheet %}
   .cart-page {
@@ -64,6 +87,46 @@
     text-align: center;
   }
 
+  .cart-page__title-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .cart-page__title .text-block {
+    margin-bottom: var(--margin-md);
+  }
+
+  /* Empty cart state */
+  .cart-page__empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--padding-5xl) 0;
+  }
+
+  .cart-page__empty-image {
+    margin-bottom: var(--padding-md);
+  }
+
+  .cart-page__empty-image img {
+    max-width: 300px;
+    height: auto;
+  }
+
+  .cart-page__empty-text {
+    font-size: var(--font-size--md);
+    color: var(--color-foreground);
+    margin: 0;
+  }
+
+  .cart-page__empty-button {
+    margin-top: var(--padding-sm);
+  }
+
   .cart-page__main {
     grid-column: 1;
   }
@@ -86,7 +149,6 @@
       align-self: stretch;
       grid-template-rows: subgrid;
       padding-top: 0;
-
       /* needed to support blurred effect from hero section */
       position: relative;
     }

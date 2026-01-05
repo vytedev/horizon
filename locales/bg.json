@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Зареждане на видео: {{ description }}",
@@ -41,7 +50,7 @@
       "one": "Приложен е {{ count }} филтър",
       "other": "Приложени са {{ count }} филтъра"
     },
-    "account": "Профил",
+    "account": "Отваряне на менюто на профила",
     "cart": "Количка",
     "cart_count": "Общо артикули в количката",
     "menu": "Меню",
@@ -51,16 +60,16 @@
     "loading_product_recommendations": "Зареждане на препоръчани продукти.",
     "discount": "Прилагане на код за отстъпка",
     "discount_applied": "Приложен код за отстъпка: {{ code }}",
+    "open_cart_drawer": "Отваряне на количката",
     "inventory_status": "Статус на стоковите запаси",
     "pause_video": "Пауза на видеоклипа",
     "find_country": "Търсене на държава",
-    "localization_region_and_language": "Инструмент за избор на регион и език",
+    "localization_region_and_language": "Отваряне на диалогов прозорец за избор на регион и език",
+    "open_search_modal": "Отваряне на търсенето",
     "decrease_quantity": "Намаляване на количеството",
     "increase_quantity": "Увеличаване на количеството",
     "quantity": "Количество",
-    "rating": "Оценката за този продукт е {{ rating }} от 5",
-    "nested_product": "{{ product_title }} за {{ parent_title }}",
-    "discount_menu": "Кодове за отстъпка"
+    "rating": "Оценката за този продукт е {{ rating }} от 5"
   },
   "actions": {
     "add_to_cart": "Добавяне към количката",
@@ -99,8 +108,7 @@
     "sign_in_options": "Други опции за влизане",
     "open_image_in_full_screen": "Отваряне на изображението на цял екран",
     "sort": "Сортиране",
-    "show_all_options": "Показване на всички опции",
-    "open": "Отваряне"
+    "show_all_options": "Показване на всички опции"
   },
   "content": {
     "reviews": "мнения",
@@ -213,27 +221,7 @@
     "discount_code_error": "Кодът за отстъпка не може да бъде приложен към вашата количка",
     "shipping_discount_error": "Отстъпките от доставката се показват при преминаването към плащане след добавяне на адрес",
     "powered_by": "Този магазин ще се поддържа от",
-    "store_owner_link_html": "Вие ли сте собственикът на магазина? <a href=\"{{ link }}\">Влезте тук</a>",
-    "recipient_form_send_to": "Изпращане до",
-    "recipient_form_email_label": "Имейл на получателя",
-    "recipient_form_email_label_my_email": "Моят имейл",
-    "recipient_form_email_address": "Имейл адрес на получателя",
-    "recipient_form_name_label": "Име на получателя (незадължително)",
-    "recipient_form_message": "Съобщение (незадължително)",
-    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} използвани знака",
-    "recipient_form_send_on": "ГГГГ-ММ-ДД",
-    "recipient_form_send_on_label": "Дата на изпращане (незадължително)",
-    "recipient_form_fields_visible": "Полетата във формуляра за получателя вече са видими",
-    "recipient_form_fields_hidden": "Полетата във формуляра за получателя вече са скрити",
-    "recipient_form_error": "Възникна грешка при подаването на формуляра",
-    "product_custom_property_character_count": "Използвани знаци: {{ used_chars }}/{{ max_chars }}",
-    "terms_and_policies": "Правила и условия",
-    "pagination": {
-      "nav_label": "Навигиране в странирането",
-      "previous": "Предишна",
-      "next": "Следваща",
-      "page": "Страница {{ page }}"
-    }
+    "store_owner_link_html": "Вие ли сте собственикът на магазина? <a href=\"{{ link }}\">Влезте тук</a>"
   },
   "gift_cards": {
     "issued": {
@@ -253,12 +241,7 @@
     "password": "Парола",
     "search": "Търсене",
     "product_title": "Название на продукта",
-    "collection_title": "Название на колекцията",
-    "blog_posts": "Публикации в блогове",
-    "blog_post_title": "Заглавие",
-    "blog_post_author": "Автор",
-    "blog_post_date": "Дата",
-    "blog_post_description": "Откъс от съдържанието на Вашата публикация в блога"
+    "collection_title": "Название на колекцията"
   },
   "products": {
     "product": {
@@ -267,13 +250,7 @@
       "added_to_cart": "Добавено в количката",
       "add_to_cart_error": "Грешка при добавянето в количката",
       "sold_out": "Изчерпано",
-      "unavailable": "Неналично",
-      "quantity_error_max": "За този артикул има максимум от {{ maximum }}",
-      "quantity": "Количество",
-      "quantity_increments": "Стъпки от {{ increment }}",
-      "quantity_minimum": "Минимум: {{ minimum }}",
-      "quantity_maximum": "Максимум: {{ maximum }}",
-      "in_cart": "в количката"
+      "unavailable": "Неналично"
     }
   },
   "fields": {

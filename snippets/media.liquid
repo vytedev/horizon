@@ -7,15 +7,14 @@
 {%- enddoc -%}
 
 {% liquid
-  assign block_settings = block.settings
   assign show_image = false
   assign show_video = false
 
-  if block_settings.media_type == 'image'
+  if block.settings.media_type == 'image'
     assign show_image = true
   endif
 
-  if block_settings.media_type == 'video'
+  if block.settings.media_type == 'video'
     assign show_video = true
   endif
 %}
@@ -24,37 +23,61 @@
   class="
     media-block
     spacing-style
-    {% if block_settings.inherit_color_scheme == false %} color-{{ block_settings.color_scheme }}{% endif %}
-    {% if show_image and block_settings.image_position == 'contain' or show_video and block_settings.video_position == 'contain' %}
+    {% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }}{% endif %}
+    {% if show_image and block.settings.image_position == 'contain' or show_video and block.settings.video_position == 'contain' %}
       media-block--contain
     {% endif %}
   "
   style="
-    {% render 'border-override', settings: block_settings %}
-    {% render 'spacing-style', settings: block_settings %}
-    --image-position: {{ block_settings.image_position }};
-    --video-position: {{ block_settings.video_position }};
+    {% render 'border-override', settings: block.settings %}
+    {% render 'spacing-style', settings: block.settings %}
+    --image-position: {{ block.settings.image_position }};
+    --video-position: {{ block.settings.video_position }};
   "
   {{ block.shopify_attributes }}
 >
   {%- if show_image -%}
+    {% liquid
+      assign display_image = blank
+      if block.settings.product != blank and block.settings.media_type == 'image'
+        assign product_obj = all_products[block.settings.product]
+        if product_obj != blank and product_obj.featured_image != blank
+          assign display_image = product_obj.featured_image
+        endif
+      endif
+      if display_image == blank and block.settings.image != blank
+        assign display_image = block.settings.image
+      endif
+    %}
     {% capture image_tag %}
-      {% if block_settings.image != blank %}
+      {% if display_image != blank %}
         {% render 'image',
-          image: block_settings.image,
+          image: display_image,
           class: 'media-block__media border-style',
           unset_image_tag: unset_image_tag
         %}
       {% else %}
         <div class="placeholder-image media-block__media border-style">
-          {{ 'detailed-apparel-1' | placeholder_svg_tag: 'hero__image' }}
+          <placeholder-image
+            data-block-id="{{ section_id }}-{{ block.id }}"
+            data-type="general"
+          ></placeholder-image>
         </div>
       {% endif %}
     {% endcapture %}
 
-    {% if block_settings.link != blank %}
+    {% liquid
+      assign link_url = block.settings.link
+      if block.settings.product != blank and link_url == blank
+        assign product_obj = all_products[block.settings.product]
+        if product_obj != blank
+          assign link_url = product_obj.url
+        endif
+      endif
+    %}
+    {% if link_url != blank %}
       <a
-        href="{{ block_settings.link }}"
+        href="{{ link_url }}"
         class="media-block__media-link"
       >
         {{ image_tag }}
@@ -64,15 +87,18 @@
     {% endif %}
   {%- elsif show_video -%}
     {% render 'video',
-      video: block_settings.video,
-      video_autoplay: block_settings.video_autoplay,
-      video_loop: block_settings.video_loop,
+      video: block.settings.video,
+      video_autoplay: block.settings.video_autoplay,
+      video_loop: block.settings.video_loop,
       video_class: 'media-block__media media-block__media--video border-style',
       section_id: section_id
     %}
   {%- else -%}
     <div class="placeholder-image media-block__media border-style">
-      {{ 'hero-apparel-3' | placeholder_svg_tag }}
+      <placeholder-image
+        data-block-id="{{ section_id }}-{{ block.id }}"
+        data-type="general"
+      ></placeholder-image>
     </div>
   {%- endif -%}
 </div>

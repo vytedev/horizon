@@ -1,8 +1,14 @@
 (function () {
-  //Remove the view transition render blocker if the user has reduced motion enabled
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  // Disable view transitions on mobile devices to prevent crashes
+  const isMobile = window.matchMedia('(max-width: 749px)').matches;
+  
+  //Remove the view transition render blocker if the user has reduced motion enabled or on mobile
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || isMobile) {
     const viewTransitionRenderBlocker = document.getElementById('view-transition-render-blocker');
     if (viewTransitionRenderBlocker) viewTransitionRenderBlocker.remove();
+    
+    // If on mobile, exit early to prevent view transition setup
+    if (isMobile) return;
   }
 
   const idleCallback = typeof requestIdleCallback === 'function' ? requestIdleCallback : setTimeout;
@@ -14,13 +20,6 @@
     if (!hasViewTransition(event)) return;
 
     const { viewTransition } = event;
-
-    // Cancel view transition on user interaction to improve INP (Interaction to Next Paint)
-    ['pointerdown', 'keydown'].forEach(eventName => {
-      document.addEventListener(eventName, () => {
-        viewTransition.skipTransition();
-      }, { once: true });
-    });
 
     // Clean in case you landed on the pdp first. We want to remove the default transition type on the PDP media gallery so there is no duplicate transition name
     document

@@ -3,8 +3,8 @@
 
   @param {string} action - { 'previous' | 'next' } The action to perform when the arrow is clicked.
   @param {string} [icon_style] - { 'arrow' | 'chevron' } The style of the icon, defaults to 'arrow'.
-  @param {string} [icon_shape] - { 'none' | 'circle' | 'square' } The shape of the icon background, defaults to 'none'.
   @param {string} [icon_size] - { 'small' | 'medium' | 'large' } The size of the icon, defaults to 'medium'.
+  @param {string} [icon_shape] - { 'circle' | 'square' } The shape of the control, defaults to 'none'.
 
   @example
   {%- render 'slideshow-arrow', action: 'previous' -%}
@@ -13,7 +13,6 @@
 {%- liquid
   assign icon_name = 'arrow'
   assign style = icon_style | default: 'arrow'
-  assign shape = icon_shape | default: 'none'
 
   if icon_style contains 'chevron'
     assign icon_name = 'caret'
@@ -22,15 +21,18 @@
   if icon_style contains 'large'
     assign icon_size = 'large'
   endif
+
+  assign shape = icon_shape | default: 'none'
 -%}
 
 <button
   class="
     slideshow-control slideshow-control--{{ action }}
     {% if icon_size %} slideshow-control--{{ icon_size }}{% endif %}
-    {% if shape != 'none' %} slideshow-control--shape-{{ shape }}{% endif %}
+    slideshow-control--shape-{{ shape }}
     slideshow-control--style-{{ style }}
-    button button-unstyled button-unstyled--transparent
+    button
+    {% if shape == 'none' %} button-unstyled button-unstyled--transparent{% endif %}
     {% if action == 'previous' %} flip-x{% endif %}
   "
   {% # theme-check-disable %}

@@ -1,13 +1,13 @@
-{%- assign block_settings = block.settings -%}
+{% # import schema from '../schemas/blocks/_product-details' %}
 
 <div
   id="ProductInformation-{{ section.id }}"
   class="
     product-details
-    {% if block_settings.sticky_details_desktop %} sticky-content--desktop{% endif %}
-    {% if block_settings.height == 'fill' -%} full-height--desktop{% endif -%}
+    {% if block.settings.sticky_details_desktop %} sticky-content--desktop{% endif %}
+    {% if block.settings.height == 'fill' -%} full-height--desktop{% endif -%}
   "
-  style="--details-position: {{ block_settings.details_position }};"
+  style="--details-position: {{ block.settings.details_position }};"
   data-testid="product-information-details"
   {% if settings.transition_to_main_product %}
     data-view-transition-type="product-details"
@@ -25,7 +25,7 @@
     {% content_for 'blocks' %}
   {% endcapture %}
 
-  {% render 'group', children: children, settings: block_settings, shopify_attributes: block.shopify_attributes %}
+  {% render 'group', children: children, settings: block.settings, shopify_attributes: block.shopify_attributes %}
 </div>
 
 {% stylesheet %}
@@ -126,7 +126,7 @@
       "type": "product-inventory"
     },
     {
-      "type": "product-custom-property"
+      "type": "product-metafields-accordion"
     }
   ],
   "tag": null,
@@ -453,7 +453,7 @@
         "text_TMtYp8": {
           "type": "text",
           "settings": {
-            "text": "t:html_defaults.home_to_shirts",
+            "text": "<p>Home → Shirts</p>",
             "alignment": "left",
             "padding-block-start": 16,
             "padding-inline-end": 0,
@@ -472,7 +472,7 @@
         "text_GMQR8L": {
           "type": "text",
           "settings": {
-            "text": "t:html_defaults.reviews",
+            "text": "<p>★★★★★ 368 Reviews</p>",
             "alignment": "left"
           }
         },
@@ -575,7 +575,7 @@
                 "text_83R7CQ": {
                   "type": "text",
                   "settings": {
-                    "text": "t:html_defaults.free_shipping_over",
+                    "text": "<p>Free shipping over $50</p>",
                     "alignment": "left",
                     "padding-block-start": 0,
                     "padding-block-end": 0,
@@ -620,7 +620,7 @@
                 "text_EmGGUV": {
                   "type": "text",
                   "settings": {
-                    "text": "t:html_defaults.free_returns",
+                    "text": "<p>Free 30-day returns</p>",
                     "alignment": "left",
                     "padding-block-start": 0,
                     "padding-block-end": 0,
@@ -641,7 +641,7 @@
             "accordion-row-1": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "t:text_defaults.materials"
+                "heading": "Materials"
               },
               "blocks": {
                 "text": {
@@ -653,7 +653,7 @@
             "accordion-row-2": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "t:text_defaults.care_instructions"
+                "heading": "Care instructions"
               },
               "blocks": {
                 "text": {
@@ -665,7 +665,7 @@
             "accordion-row-3": {
               "type": "_accordion-row",
               "settings": {
-                "heading": "t:text_defaults.fit"
+                "heading": "Fit"
               },
               "blocks": {
                 "text": {
@@ -686,7 +686,7 @@
             "recommendations-header": {
               "type": "text",
               "settings": {
-                "text": "t:html_defaults.styled_with",
+                "text": "<h3>Styled with</h3>",
                 "type_preset": "h5"
               }
             }

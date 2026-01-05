@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Įkelti vaizdo įrašą „{{ description }}“",
@@ -37,7 +46,7 @@
     "search_results_count": "Rasti {{ count }} rezultatai (-ų) pagal užklausą „{{ query }}“",
     "search_results_no_results": "Nerasta jokių rezultatų pagal užklausą „{{ query }}“",
     "filters": "Filtrai",
-    "account": "Paskyra",
+    "account": "Atidaryti paskyros meniu",
     "cart": "Krepšelis",
     "cart_count": "Iš viso prekių krepšelyje",
     "filter_count": {
@@ -53,16 +62,16 @@
     "loading_product_recommendations": "Įkeliamos gaminių rekomendacijos",
     "discount": "Taikyti nuolaidos kodą",
     "discount_applied": "Pritaikytas nuolaidos kodas: {{ code }}",
+    "open_cart_drawer": "Atidaryti krepšelį",
     "inventory_status": "Atsargų būsena",
     "pause_video": "Pristabdyti vaizdo įrašą",
     "find_country": "Rasti šalį",
-    "localization_region_and_language": "Regiono ir kalbos parinkiklis",
+    "localization_region_and_language": "Atidaryti regiono ir kalbos parinkiklį",
+    "open_search_modal": "Atidaryti paiešką",
     "decrease_quantity": "Sumažinti kiekį",
     "increase_quantity": "Padidinti kiekį",
     "rating": "Šio produkto vertinimas: {{ rating }} iš 5",
-    "quantity": "Kiekis",
-    "nested_product": "{{ product_title }} ({{ parent_title }})",
-    "discount_menu": "Nuolaidų kodai"
+    "quantity": "Kiekis"
   },
   "actions": {
     "add_to_cart": "Įdėti į krepšelį",
@@ -103,8 +112,7 @@
     "sign_up": "Prisiregistruoti",
     "open_image_in_full_screen": "Atidaryti vaizdą per visą ekraną",
     "sort": "Rūšiuoti",
-    "show_all_options": "Rodyti visus variantus",
-    "open": "Atidaryti"
+    "show_all_options": "Rodyti visus variantus"
   },
   "content": {
     "reviews": "apžvalgos (-ų; -a)",
@@ -223,27 +231,7 @@
     "shipping_policy": "Siuntimo išlaidos apskaičiuojamos atsiskaitant.",
     "shipping_discount_error": "Siuntimui taikomos nuolaidos rodomos atsiskaitant, įvedus adresą",
     "powered_by": "Ši parduotuvė bus teikiama per platformą",
-    "store_owner_link_html": "Ar esate parduotuvės savininkas? <a href=\"{{ link }}\">Prisijunkite čia</a>",
-    "recipient_form_send_to": "Siųsti",
-    "recipient_form_email_label": "Gavėjo el. pašto adresas",
-    "recipient_form_email_label_my_email": "Mano el. pašto adresas",
-    "recipient_form_email_address": "Gavėjo el. pašto adresas",
-    "recipient_form_name_label": "Gavėjo vardas (pasirinktinai)",
-    "recipient_form_message": "Žinutė (pasirinktinai)",
-    "recipient_form_characters_used": "Panaudota {{ used_chars }}/{{ max_chars }} simbolių",
-    "recipient_form_send_on": "MMMM-MM-DD",
-    "recipient_form_send_on_label": "Išsiuntimo data (pasirinktinai)",
-    "recipient_form_fields_visible": "Dabar gavėjo formos laukai yra matomi",
-    "recipient_form_fields_hidden": "Dabar gavėjo formos laukai yra paslėpti",
-    "recipient_form_error": "Įvyko su formos pateikimu susijusi klaida",
-    "product_custom_property_character_count": "Panaudota {{ used_chars }}/{{ max_chars }} simbolių",
-    "terms_and_policies": "Sąlygos ir politika",
-    "pagination": {
-      "nav_label": "Skirstymo puslapiais navigacija",
-      "previous": "Ankstesnis",
-      "next": "Kitas",
-      "page": "{{ page }} puslapis"
-    }
+    "store_owner_link_html": "Ar esate parduotuvės savininkas? <a href=\"{{ link }}\">Prisijunkite čia</a>"
   },
   "gift_cards": {
     "issued": {
@@ -263,12 +251,7 @@
     "password": "Slaptažodis",
     "search": "Ieškoti",
     "product_title": "Gaminio pavadinimas",
-    "collection_title": "Kolekcijos pavadinimas",
-    "blog_posts": "Tinklaraščio įrašai",
-    "blog_post_title": "Pavadinimas",
-    "blog_post_author": "Autorius",
-    "blog_post_date": "Data",
-    "blog_post_description": "Jūsų tinklaraščio įrašo turinio ištrauka"
+    "collection_title": "Kolekcijos pavadinimas"
   },
   "products": {
     "product": {
@@ -277,13 +260,7 @@
       "adding_to_cart": "Pridedama…",
       "add_to_cart_error": "Dedant į krepšelį įvyko klaida",
       "sold_out": "Išparduota",
-      "unavailable": "Nėra",
-      "quantity_error_max": "Nustatytas didžiausias šios prekės kiekis: {{ maximum }}",
-      "quantity": "Kiekis",
-      "quantity_increments": "Kiekis didėja kas {{ increment }}",
-      "quantity_minimum": "Mažiausiai {{ minimum }}",
-      "quantity_maximum": "Daugiausiai {{ maximum }}",
-      "in_cart": "krepšelyje"
+      "unavailable": "Nėra"
     }
   },
   "fields": {

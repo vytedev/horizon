@@ -1,11 +1,36 @@
-{% if closest.collection == blank %}
+{% # import schema from '../schemas/blocks/collection-title' %}
+
+{% if closest.collection == blank and request.design_mode %}
   {% assign text = 'placeholders.collection_title' | t %}
   {% assign collection_title = '<p>' | append: text | append: '</p>' %}
+  <div class="collection-title-wrapper">
   {% render 'text', fallback_text: collection_title, block: block %}
+  </div>
 {% elsif closest.collection != blank %}
   {% assign collection_title = '<p>' | append: closest.collection.title | append: '</p>' %}
+  <div class="collection-title-wrapper">
   {% render 'text', fallback_text: collection_title, block: block %}
+  </div>
 {% endif %}
+
+{% stylesheet %}
+  /* Make collection titles uppercase by default */
+  .collection-title-wrapper,
+  .collection-title-wrapper *,
+  .collection-title-wrapper .text-block,
+  .collection-title-wrapper .text-block *,
+  .collection-title-wrapper rte-formatter,
+  .collection-title-wrapper rte-formatter *,
+  .collection-title-wrapper p,
+  .collection-title-wrapper h1,
+  .collection-title-wrapper h2,
+  .collection-title-wrapper h3,
+  .collection-title-wrapper h4,
+  .collection-title-wrapper h5,
+  .collection-title-wrapper h6 {
+    text-transform: uppercase !important;
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -34,7 +59,7 @@
           "label": "t:options.fill"
         }
       ],
-      "default": "fit-content"
+      "default": "100%"
     },
     {
       "type": "select",
@@ -60,7 +85,7 @@
       "type": "text_alignment",
       "id": "alignment",
       "label": "t:settings.alignment",
-      "default": "left",
+      "default": "center",
       "visible_if": "{{ block.settings.width == '100%' }}"
     },
     {
@@ -322,14 +347,14 @@
       "type": "checkbox",
       "id": "background",
       "label": "t:settings.background",
-      "default": false
+      "default": true
     },
     {
       "type": "color",
       "id": "background_color",
       "label": "t:settings.background_color",
       "alpha": true,
-      "default": "#00000026",
+      "default": "#1e1e20",
       "visible_if": "{{ block.settings.background }}"
     },
     {

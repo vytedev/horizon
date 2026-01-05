@@ -1,28 +1,17 @@
-{%- doc -%}
-  Renders the blog post description block.
-
-  @param {object} article - The article object
-  @param {boolean} show_read_more - Whether to display the read more link
-  @param {boolean} [should_truncate] - Whether to truncate the content
-  @param {string} [onboarding_text] - Optional placeholder text for onboarding mode
-{%- enddoc -%}
-
 {% liquid
-  assign block_settings = block.settings
+  assign content = article.excerpt | default: article.content
 
-  assign content = onboarding_text | default: article.excerpt | default: article.content
-
-  if block_settings.type_preset == 'rte' or block_settings.type_preset == 'paragraph'
+  if block.settings.type_preset == 'rte' or block.settings.type_preset == 'paragraph'
     assign is_rte = true
   endif
 
   capture text_block_classes
-    if block_settings.type_preset == 'custom'
+    if block.settings.type_preset == 'custom'
       echo ' custom-typography '
-      if block_settings.font_size != ''
+      if block.settings.font_size != ''
         echo ' custom-font-size '
       endif
-      if block_settings.color != ''
+      if block.settings.color != ''
         echo ' custom-color '
       endif
     endif
@@ -33,15 +22,15 @@
 %}
 
 {% capture attributes %}
-  class="blog-post-card__content-text spacing-style text-block text-block--{{ block.id }} {{ block_settings.type_preset }}
+  class="blog-post-card__content-text spacing-style text-block text-block--{{ block.id }} {{ block.settings.type_preset }}
     {{ text_block_classes }}
   "
 
   style="
-    {% render 'spacing-padding', settings: block_settings %}
-    {% render 'typography-style', settings: block_settings %}
-    {% if block_settings.color != '' %}
-      --color: {{ block_settings.color }};
+    {% render 'spacing-padding', settings: block.settings %}
+    {% render 'typography-style', settings: block.settings %}
+    {% if block.settings.color != '' %}
+      --color: {{ block.settings.color }};
     {% endif %}
   "
 
@@ -50,7 +39,7 @@
 
 {% if content %}
   {% assign truncatewords = 30 %}
-  {% unless should_truncate or article.image %}
+  {% unless article.image %}
     {% assign truncatewords = 90 %}
   {% endunless %}
 
@@ -63,9 +52,7 @@
 
   <{{ element }} {{ attributes }}>
     {{ content | strip_html | truncatewords: truncatewords }}
-    {% if show_read_more %}
-      <a href="{{ article.url }}">{{- 'content.read_more' | t -}}</a>
-    {% endif %}
+    <a href="{{ article.url }}">{{ 'content.read_more' | t }}</a>
   </{{ element }}>
 {% endif %}
 

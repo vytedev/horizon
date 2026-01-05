@@ -1,25 +1,15 @@
-{% liquid
-  assign has_applied_colour_filter = false
-  assign filters_to_check = collection.filters | default: search.filters
-
-  for filter in filters_to_check
-    if filter.type == 'list' and filter.param_name contains 'color' and filter.active_values.size > 0
-      assign has_applied_colour_filter = true
-      break
-    endif
-  endfor
-%}
+{% # import schema from '../schemas/blocks/_product-card-gallery' %}
 
 {% capture children %}
   {% unless closest.product == blank %}
-    {% render 'product-card-badges', product: closest.product, settings: settings %}
+    {% render 'product-card-badges', product: closest.product %}
     {%  if settings.quick_add or settings.mobile_quick_add %}
       {% render 'quick-add', product: closest.product, section_id: section.id %}
     {% endif %}
   {% endunless %}
 {% endcapture %}
 
-{% render 'card-gallery', children: children, has_applied_colour_filter: has_applied_colour_filter %}
+{% render 'card-gallery', children: children %}
 
 {% # Title and price for the zoomed out grid view %}
 <div class="product-grid-view-zoom-out--details">
@@ -27,6 +17,11 @@
     <h3 class="h4">{{ 'content.product_card_placeholder' | t }}</h3>
   {% else %}
     <h3 class="h4">{{ closest.product.title }}</h3>
+    <div class="h6">
+      <product-price data-product-id="{{ closest.product.id }}">
+        {% render 'price', product_resource: closest.product, show_unit_price: false %}
+      </product-price>
+    </div>
   {% endif %}
 </div>
 

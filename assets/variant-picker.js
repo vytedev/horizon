@@ -1,18 +1,13 @@
 import { Component } from '@theme/component';
 import { VariantSelectedEvent, VariantUpdateEvent } from '@theme/events';
 import { morph } from '@theme/morph';
-import { requestYieldCallback, getViewParameterValue } from '@theme/utilities';
-
-/**
- * @typedef {object} VariantPickerRefs
- * @property {HTMLFieldSetElement[]} fieldsets – The fieldset elements.
- */
 
 /**
  * A custom element that manages a variant picker.
  *
- * @template {import('@theme/component').Refs} [TRefs=VariantPickerRefs]
- * @extends Component<TRefs>
+ * @template {import('@theme/component').Refs} [Refs = {}]
+ *
+ * @extends Component<Refs>
  */
 export default class VariantPicker extends Component {
   /** @type {string | undefined} */
@@ -21,25 +16,8 @@ export default class VariantPicker extends Component {
   /** @type {AbortController | undefined} */
   #abortController;
 
-  /** @type {number[][]} */
-  #checkedIndices = [];
-
-  /** @type {HTMLInputElement[][]} */
-  #radios = [];
-
   connectedCallback() {
     super.connectedCallback();
-    const fieldsets = /** @type {HTMLFieldSetElement[]} */ (this.refs.fieldsets || []);
-
-    fieldsets.forEach((fieldset) => {
-      const radios = Array.from(fieldset?.querySelectorAll('input') ?? []);
-      this.#radios.push(radios);
-
-      const initialCheckedIndex = radios.findIndex((radio) => radio.dataset.currentChecked === 'true');
-      if (initialCheckedIndex !== -1) {
-        this.#checkedIndices.push([initialCheckedIndex]);
-      }
-    });
 
     this.addEventListener('change', this.variantChanged.bind(this));
   }
@@ -51,30 +29,32 @@ export default class VariantPicker extends Component {
   variantChanged(event) {
     if (!(event.target instanceof HTMLElement)) return;
 
-    const selectedOption =
-      event.target instanceof HTMLSelectElement ? event.target.options[event.target.selectedIndex] : event.target;
-
-    if (!selectedOption) return;
-
     this.updateSelectedOption(event.target);
-    this.dispatchEvent(new VariantSelectedEvent({ id: selectedOption.dataset.optionValueId ?? '' }));
+    this.dispatchEvent(new VariantSelectedEvent({ id: event.target.dataset.optionValueId ?? '' }));
 
     const isOnProductPage =
-      this.dataset.templateProductMatch === 'true' &&
+      Theme.template.name === 'product' &&
       !event.target.closest('product-card') &&
       !event.target.closest('quick-add-dialog');
 
     // Morph the entire main content for combined listings child products, because changing the product
     // might also change other sections depending on recommendations, metafields, etc.
     const currentUrl = this.dataset.productUrl?.split('?')[0];
-    const newUrl = selectedOption.dataset.connectedProductUrl;
+    const newUrl = event.target.dataset.connectedProductUrl;
     const loadsNewProduct = isOnProductPage && !!newUrl && newUrl !== currentUrl;
 
-    this.fetchUpdatedSection(this.buildRequestUrl(selectedOption), loadsNewProduct);
+    this.fetchUpdatedSection(this.buildRequestUrl(event.target), loadsNewProduct);
 
     const url = new URL(window.location.href);
 
-    const variantId = selectedOption.dataset.variantId || null;
+    let variantId;
+
+    if (event.target instanceof HTMLInputElement && event.target.type === 'radio') {
+      variantId = event.target.dataset.variantId || null;
+    } else if (event.target instanceof HTMLSelectElement) {
+      const selectedOption = event.target.options[event.target.selectedIndex];
+      variantId = selectedOption?.dataset.variantId || null;
+    }
 
     if (isOnProductPage) {
       if (variantId) {
@@ -90,9 +70,7 @@ export default class VariantPicker extends Component {
     }
 
     if (url.href !== window.location.href) {
-      requestYieldCallback(() => {
-        history.replaceState({}, '', url.toString());
-      });
+      history.replaceState({}, '', url.toString());
     }
   }
 
@@ -110,53 +88,6 @@ export default class VariantPicker extends Component {
     }
 
     if (target instanceof HTMLInputElement) {
-      const fieldsetIndex = Number.parseInt(target.dataset.fieldsetIndex || '');
-      const inputIndex = Number.parseInt(target.dataset.inputIndex || '');
-
-      if (!Number.isNaN(fieldsetIndex) && !Number.isNaN(inputIndex)) {
-        const fieldsets = /** @type {HTMLFieldSetElement[]} */ (this.refs.fieldsets || []);
-        const fieldset = fieldsets[fieldsetIndex];
-        const checkedIndices = this.#checkedIndices[fieldsetIndex];
-        const radios = this.#radios[fieldsetIndex];
-
-        if (radios && checkedIndices && fieldset) {
-          // Clear previous checked states
-          const [currentIndex, previousIndex] = checkedIndices;
-
-          if (currentIndex !== undefined && radios[currentIndex]) {
-            radios[currentIndex].dataset.previousChecked = 'false';
-          }
-          if (previousIndex !== undefined && radios[previousIndex]) {
-            radios[previousIndex].dataset.previousChecked = 'false';
-          }
-
-          // Update checked indices array - keep only the last 2 selections
-          checkedIndices.unshift(inputIndex);
-          checkedIndices.length = Math.min(checkedIndices.length, 2);
-
-          // Update the new states
-          const newCurrentIndex = checkedIndices[0]; // This is always inputIndex
-          const newPreviousIndex = checkedIndices[1]; // This might be undefined
-
-          // newCurrentIndex is guaranteed to exist since we just added it
-          if (newCurrentIndex !== undefined && radios[newCurrentIndex]) {
-            radios[newCurrentIndex].dataset.currentChecked = 'true';
-            fieldset.style.setProperty(
-              '--pill-width-current',
-              `${radios[newCurrentIndex].parentElement?.offsetWidth || 0}px`
-            );
-          }
-
-          if (newPreviousIndex !== undefined && radios[newPreviousIndex]) {
-            radios[newPreviousIndex].dataset.previousChecked = 'true';
-            radios[newPreviousIndex].dataset.currentChecked = 'false';
-            fieldset.style.setProperty(
-              '--pill-width-previous',
-              `${radios[newPreviousIndex].parentElement?.offsetWidth || 0}px`
-            );
-          }
-        }
-      }
       target.checked = true;
     }
 
@@ -187,10 +118,6 @@ export default class VariantPicker extends Component {
     let productUrl = selectedOption.dataset.connectedProductUrl || this.#pendingRequestUrl || this.dataset.productUrl;
     this.#pendingRequestUrl = productUrl;
     const params = [];
-    const viewParamValue = getViewParameterValue();
-
-    // preserve view parameter, if it exists, for alternative product view testing
-    if (viewParamValue) params.push(`view=${viewParamValue}`);
 
     if (this.selectedOptionsValues.length && !source) {
       params.push(`option_values=${this.selectedOptionsValues.join(',')}`);
@@ -252,7 +179,7 @@ export default class VariantPicker extends Component {
       })
       .catch((error) => {
         if (error.name === 'AbortError') {
-          console.warn('Fetch aborted by user');
+          console.log('Fetch aborted by user');
         } else {
           console.error(error);
         }

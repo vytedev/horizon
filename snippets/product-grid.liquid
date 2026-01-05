@@ -6,7 +6,6 @@
   @param {object} products - Array of product objects
   @param {string} [title] - Header of the collection or search results
   @param {string} children - List or grid of product cards
-  @param {boolean} [enable_infinite_scroll] - Whether to enable infinite scroll (default: true)
 {%- enddoc -%}
 
 {% capture product_card_size %}
@@ -21,8 +20,6 @@
         .product-grid--{{ section.id }}:is(.product-grid--grid) {
           --product-grid-columns-desktop: repeat(auto-fill, minmax({{ product_card_size }}, 1fr));
         }
-
-
       {% when 'organic' %}
         {% assign large_span = 2 %}
         {% assign row_cycle = 3 %}
@@ -57,15 +54,15 @@
     {% endcase %}
 
     /* When zoomed out, fit as many 100px-wide columns as possible */
-    .product-grid--{{ section.id }}[product-grid-view='zoom-out'] {
+    .product-grid--{{ section.id }}:is([product-grid-view='zoom-out']) {
       --product-grid-columns-desktop: repeat(auto-fill, minmax(6.25rem, 1fr));
     }
 
-    .product-grid--{{ section.id }}[product-grid-view='zoom-out'] .product-grid-view-zoom-out--details {
+    .product-grid--{{ section.id }}:is([product-grid-view='zoom-out']) .product-grid-view-zoom-out--details {
       display: block;
     }
 
-    .product-grid--{{ section.id }}[product-grid-view='zoom-out'] .product-grid__card {
+    .product-grid--{{ section.id }}:is([product-grid-view='zoom-out']) .product-grid__card {
       padding-inline-start: var(--zoom-out-padding-inline-start, 0);
       padding-inline-end: var(--zoom-out-padding-inline-end, 0);
       padding-block-start: var(--zoom-out-padding-block-start, 0);
@@ -103,17 +100,18 @@
   >
     {% if products.size == 0 %}
       <div class="main-collection-grid__empty">
-        <h2 class="main-collection-grid__empty-title h2">
+        <div class="main-collection-grid__empty-image">
+          <img src="{{ 'empty_shop_bag.svg' | asset_url }}" alt="" width="300" height="300">
+        </div>
+        <p class="main-collection-grid__empty-text">
           {{ 'content.no_products_found' | t }}
-        </h2>
+        </p>
         <p>
           {{ 'content.use_fewer_filters_html' | t: link: collection.url, class: 'main-collection-grid__empty-link' }}
         </p>
       </div>
     {% else %}
-      {% if enable_infinite_scroll %}
-        <span ref="viewMorePrevious"></span>
-      {% endif %}
+      <span ref="viewMorePrevious"></span>
 
       {% if title %}
         <h4 class="main-collection-grid__title">{{ title }}</h4>
@@ -122,18 +120,13 @@
         class="product-grid product-grid--{{ section.id }} product-grid--{{ section.settings.layout_type }} {% if section.settings.mobile_product_card_size == 'large' %} product-grid-mobile--large{% endif %}"
         product-grid-view="default"
         ref="grid"
+        last-page="{% if paginate %}{{ paginate.pages }}{% else %}1{% endif %}"
         role="list"
-        data-last-page="{{ paginate.pages }}"
         data-product-card-size="{{ section.settings.product_card_size }}"
-        style="--mobile-columns: {% if section.settings.mobile_product_card_size == 'large' %}1{% else %}2{% endif %};"
       >
         {{ children }}
       </ul>
-      {% if enable_infinite_scroll != false %}
-        <span ref="viewMoreNext"></span>
-      {% else %}
-        {% render 'pagination-controls', paginate: paginate %}
-      {% endif %}
+      <span ref="viewMoreNext"></span>
     {% endif %}
   </div>
 </div>
@@ -167,8 +160,6 @@
 {% stylesheet %}
   .product-grid {
     --product-grid-gap: var(--product-grid-gap-mobile);
-    --mobile-columns: 2; /* Default value */
-
     isolation: isolate;
 
     @media screen and (min-width: 750px) {
@@ -181,15 +172,6 @@
 
     @media screen and (min-width: 750px) {
       display: grid;
-    }
-  }
-
-  /* This triggers iOS < 16.4 */
-  @supports not (background-color: rgb(from red 150 g b / alpha)) {
-    /* Force aspect ratio to auto for iOS < 16.4 since it's not compatible with the infinite pagination */
-    .product-grid .product-media,
-    .product-grid .product-media-container {
-      aspect-ratio: auto;
     }
   }
 
@@ -211,8 +193,22 @@
     gap: var(--padding-sm);
   }
 
-  .main-collection-grid__empty-title {
+  .main-collection-grid__empty-image {
+    margin-bottom: var(--padding-md);
+  }
+
+  .main-collection-grid__empty-image img {
+    max-width: 300px;
+    height: auto;
+  }
+
+  .main-collection-grid__empty-text {
     margin: 0;
+    font-family: var(--font-body--family);
+    font-size: 1rem;
+    line-height: normal;
+    letter-spacing: normal;
+    color: var(--color-foreground);
   }
 
   .collection-wrapper--full-width .main-collection-grid__title {

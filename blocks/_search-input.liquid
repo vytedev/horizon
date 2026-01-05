@@ -1,4 +1,4 @@
-{%- assign block_settings = block.settings -%}
+{% # import schema from '../schemas/blocks/_search-input' %}
 
 <script
   src="{{ 'search-page-input.js' | asset_url }}"
@@ -6,8 +6,8 @@
   type="module"
 ></script>
 
-{% if block_settings.inherit_color_scheme == false %}
-  {% assign color_scheme = block_settings.color_scheme | prepend: ' color-' %}
+{% if block.settings.inherit_color_scheme == false %}
+  {% assign color_scheme = block.settings.color_scheme | prepend: ' color-' %}
 {% endif %}
 
 <form
@@ -17,7 +17,7 @@
   class="search-page-input__parent"
 >
   <search-page-input-component
-    style="{% render 'size-style', settings: block_settings %}{% render 'spacing-style', settings: block_settings %}"
+    style="{% render 'size-style', settings: block.settings %}{% render 'spacing-style', settings: block.settings %}"
     {{ block.shopify_attributes }}
   >
     <label
@@ -52,7 +52,7 @@
       on:click="/handleClearClick"
     >
       <span class="svg-wrapper search__reset-button-icon">
-        {{ 'icon-reset.svg' | inline_asset_content }}
+        {{ 'icon-close.svg' | inline_asset_content }}
       </span>
       <span class="search__reset-button-text">
         {{ 'actions.clear' | t }}
@@ -73,13 +73,22 @@
   .search-page-input {
     width: 100%;
     color: var(--color-input-text);
-    background-color: var(--color-input-background);
+    background-color: transparent;
     padding-block: var(--padding-lg);
     padding-inline: calc(var(--icon-size-lg) + var(--margin-xl) * 1.5);
     text-overflow: ellipsis;
     overflow: hidden;
-    border-radius: var(--style-border-radius-inputs);
-    border: var(--style-border-width-inputs) solid var(--color-input-border);
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid var(--color-input-border);
+
+    &:hover,
+    &:active,
+    &:focus {
+      border-bottom-color: var(--color-input-border);
+      background-color: transparent;
+      outline: none;
+    }
 
     @media screen and (max-width: 749px) {
       padding-inline: calc(var(--margin-xs) + var(--icon-size-lg) + var(--padding-md));
@@ -87,7 +96,7 @@
   }
 
   .search-page-input::placeholder {
-    color: rgb(var(--color-input-text-rgb) / var(--opacity-subdued-text));
+    color: rgba(from var(--color-input-text) r g b / var(--opacity-subdued-text));
   }
 
   .search-page-input__parent {
@@ -145,8 +154,9 @@
   }
 
   search-page-input-component .search__reset-button {
-    border-radius: 100%;
-    color: var(--color-input-text);
+    border-radius: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
     right: var(--margin-lg);
     cursor: pointer;
     opacity: 0;
@@ -181,8 +191,8 @@
   }
 
   search-page-input-component .search__reset-button-icon svg {
-    width: var(--icon-size-md);
-    height: var(--icon-size-md);
+    width: 12px;
+    height: 12px;
   }
 
   search-page-input-component .search__reset-button--hidden {

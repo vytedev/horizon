@@ -1,18 +1,14 @@
-{% assign block_settings = block.settings %}
-<email-signup-block
+{% # import schema from '../schemas/blocks/email-signup' %}
+
+<div
   class="email-signup-block size-style spacing-style"
-  style="{% render 'size-style', settings: block_settings %}{% render 'spacing-style', settings: block_settings %}"
+  style="{% render 'size-style', settings: block.settings %}{% render 'spacing-style', settings: block.settings %}"
   {{ block.shopify_attributes }}
 >
-  {% if block_settings.heading != blank %}
-    <div class="email-signup__heading {{ block_settings.heading_preset }}">
-      {{ block_settings.heading | escape }}
-    </div>
-  {% endif %}
   {%- form 'customer', class: 'email-signup__form spacing-style' %}
     <div
-      class="email-signup__input-group {% if block_settings.inherit_color_scheme == false %}color-{{ block_settings.color_scheme }}{% endif %}"
-      style="--border-width: {{ block_settings.border_width }}px; --border-radius: {{ block_settings.border_radius }}px;"
+      class="email-signup__input-group {% if block.settings.inherit_color_scheme == false %}color-{{ block.settings.color_scheme }}{% endif %}"
+      style="--border-width: {{ block.settings.border_width }}px; --border-radius: {{ block.settings.border_radius }}px;"
     >
       <label
         for="EmailInput-{{ block.id }}"
@@ -22,7 +18,7 @@
       </label>
       <input
         id="EmailInput-{{ block.id }}"
-        class="email-signup__input email-signup__input--{{ block_settings.border_style }} {{ block_settings.input_type_preset }} {{ block_settings.border_variation }}"
+        class="email-signup__input email-signup__input--{{ block.settings.border_style }} {{ block.settings.input_type_preset }} {{ block.settings.border_variation }}"
         type="email"
         name="contact[email]"
         autocorrect="off"
@@ -39,13 +35,16 @@
         {% endif %}
       >
       <button
-        class="email-signup__button {% if block_settings.integrated_button or block_settings.border_style == 'underline' %}email-signup__button--integrated{% endif %} email-signup__button--{{ block_settings.display_type }} {{ block_settings.button_type_preset }} {{ block_settings.style_class }} {{ block_settings.style_class }}--{{ block.id }} {% if block_settings.inherit_color_scheme == false %}color-{{ block_settings.color_scheme }}{% endif %}"
-        {% if block_settings.display_type != 'text' %}
+        class="email-signup__button {% if block.settings.integrated_button or block.settings.border_style == 'underline' %}email-signup__button--integrated{% endif %} email-signup__button--{{ block.settings.display_type }} {{ block.settings.button_type_preset }} {{ block.settings.style_class }} {{ block.settings.style_class }}--{{ block.id }} {% if block.settings.inherit_color_scheme == false %}color-{{ block.settings.color_scheme }}{% endif %}"
+        {% if block.settings.display_type != 'text' %}
           aria-label="{{ 'actions.sign_up' | t }}"
         {% endif %}
       >
-        {% if block_settings.display_type == 'text' %}
-          {{ block_settings.label }}
+        {% if block.settings.display_type == 'text' %}
+          <span>{{ block.settings.label }}</span>
+          <span class="svg-wrapper email-signup__button-icon">
+            {{- 'icon-arrow.svg' | inline_asset_content -}}
+          </span>
         {% else %}
           <svg
             viewBox="0 0 20 20"
@@ -93,29 +92,13 @@
       </div>
     {%- endif -%}
   {% endform %}
-
-  <script
-    src="{{ 'email-signup.js' | asset_url }}"
-    defer
-  ></script>
-</email-signup-block>
+</div>
 
 {% stylesheet %}
-  email-signup-block {
-    display: block;
-  }
-
   .email-signup-block {
-    min-width: fit-content;
-
     @media screen and (max-width: 749px) {
       width: 100%;
-      min-width: unset;
     }
-  }
-
-  .email-signup__heading {
-    padding-block: var(--padding-sm);
   }
 
   .email-signup__form {
@@ -128,10 +111,11 @@
     display: grid;
     grid-template-columns: 1fr auto;
     background-color: transparent;
+    align-items: end;
   }
 
   .email-signup__input-group:not(:has(.email-signup__button--integrated)) {
-    gap: var(--gap-xs);
+    gap: 0;
   }
 
   .email-signup__input-group:not(:has(.email-signup__button--arrow)) {
@@ -142,20 +126,26 @@
 
   .email-signup__input {
     width: 100%;
-    border-width: var(--border-width);
-    border-radius: var(--border-radius);
-    border-style: solid;
-    border-color: var(--color-input-border);
-  }
+    border: none;
+    border-bottom: 1px solid var(--color-input-border);
+    border-radius: 0;
+    background-color: transparent;
 
-  .email-signup__input.paragraph {
-    color: var(--color-input-text);
-    outline-color: var(--color-input-background);
+    &:hover,
+    &:active,
+    &:focus {
+      border-bottom-color: var(--color-input-border);
+      background-color: transparent;
+      outline: none;
+    }
   }
 
   .email-signup__button {
     white-space: nowrap;
     padding: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--gap-xs);
 
     @media screen and (max-width: 749px) {
       width: 100%;
@@ -170,25 +160,16 @@
   .email-signup__input-group .email-signup__input--underline {
     --box-shadow-color: var(--color-input-border);
     --box-shadow-multiplier: 1;
-
     color: var(--color-input-text);
     background-color: transparent;
     padding: 12px 0;
     border: none;
     border-radius: 0;
-    box-shadow: 0 calc(var(--border-width) * var(--box-shadow-multiplier)) 0 var(--box-shadow-color);
-    transition: box-shadow var(--animation-values);
-
-    &:focus-visible {
-      --box-shadow-multiplier: 1.75;
-      --box-shadow-color: var(--color-input-text);
-
-      outline: none;
-    }
+    box-shadow: 0px calc(var(--border-width) * var(--box-shadow-multiplier)) 0px var(--box-shadow-color);
   }
 
   .email-signup__input::placeholder {
-    color: rgb(var(--color-input-text-rgb) / var(--opacity-70));
+    color: rgb(from var(--color-input-text) r g b / 70%);
   }
 
   .email-signup__input-group .email-signup__input--none {
@@ -197,36 +178,10 @@
     border: none;
   }
 
-  .email-signup__input-group {
-    --button-actual-width: var(--button-size);
-  }
-
-  .email-signup__input:has(+ .email-signup__button--arrow.email-signup__button--integrated) {
-    padding-inline-end: calc(var(--button-size) + var(--padding-sm));
-
+  .email-signup__input:has(+ .email-signup__button--arrow),
+  .email-signup__input:has(+ .email-signup__button--integrated) {
     @media screen and (max-width: 749px) {
       text-align: left;
-    }
-  }
-
-  .email-signup__input:has(+ .email-signup__button--integrated.email-signup__button--text) {
-    padding-inline-end: calc(var(--button-actual-width) + var(--padding-xs) + var(--margin-xs));
-
-    @media screen and (max-width: 749px) {
-      text-align: left;
-    }
-  }
-
-  .email-signup__button-icon {
-    color: currentcolor;
-    padding: 5px;
-
-    @media screen and (max-width: 749px) {
-      padding: 0;
-      align-self: center;
-      justify-self: center;
-      width: var(--icon-size-lg);
-      height: var(--icon-size-lg);
     }
   }
 
@@ -241,12 +196,10 @@
 
   .email-signup__button--integrated {
     --button-offset: var(--margin-xs);
-
     position: absolute;
     height: calc(100% - (var(--button-offset) * 2) - (var(--border-width) * 2));
     right: calc(var(--button-offset) + var(--border-width));
     top: calc(var(--button-offset) + var(--border-width));
-    width: max-content;
 
     @media screen and (max-width: 749px) {
       width: fit-content;
@@ -270,9 +223,8 @@
   }
 
   .email-signup__input--underline + .email-signup__button--integrated {
-    --button-offset: calc(10% - var(--border-width));
-
     right: 0;
+    --button-offset: calc(10% - var(--border-width));
 
     &.email-signup__button--text.button-unstyled {
       padding: 0;
@@ -284,12 +236,27 @@
   }
 
   .email-signup__button:not(.button-unstyled) {
-    background-color: var(--button-background-color);
+    background-color: transparent;
+    border: none;
+    border-bottom: 1px solid var(--color-input-border);
     color: var(--button-color);
+    font-weight: var(--button-font-weight-primary);
     text-transform: var(--button-text-case-primary);
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 30%;
+      bottom: 8px;
+      width: 1px;
+      background-color: var(--color-input-border);
+    }
   }
 
   .email-signup__button.button-secondary {
+    font-weight: var(--button-font-weight-secondary);
     text-transform: var(--button-text-case-secondary);
   }
 
@@ -299,8 +266,34 @@
   }
 
   .email-signup__button.button-unstyled:hover {
-    color: rgb(var(--color-input-text-rgb) / var(--opacity-70));
+    color: rgb(from var(--color-input-text) r g b / 70%);
     cursor: pointer;
+  }
+
+  .email-signup__button-icon {
+    fill: currentcolor;
+    padding: 5px;
+
+    @media screen and (max-width: 749px) {
+      padding: 0;
+      align-self: center;
+      justify-self: center;
+      width: var(--icon-size-lg);
+      height: var(--icon-size-lg);
+    }
+  }
+
+  .email-signup__button:not(.email-signup__button--arrow) .email-signup__button-icon {
+    display: inline-flex;
+    align-items: center;
+    width: var(--icon-size-sm);
+    height: var(--icon-size-sm);
+    padding: 0;
+    transition: transform 0.5s ease;
+  }
+
+  .email-signup__button:hover:not(.email-signup__button--arrow) .email-signup__button-icon {
+    transform: translateX(4px);
   }
 
   .email-signup__message {
@@ -311,6 +304,35 @@
 
   .email-signup__message-text {
     margin: 0;
+  }
+
+  /* Remove background from autocomplete suggestions in footer */
+  footer .email-signup__input:-webkit-autofill,
+  footer .email-signup__input:-webkit-autofill:hover,
+  footer .email-signup__input:-webkit-autofill:focus,
+  footer .email-signup__input:-webkit-autofill:active,
+  footer .email-signup__input:-webkit-autofill:focus-visible,
+  footer .email-signup__input--underline:-webkit-autofill,
+  footer .email-signup__input--underline:-webkit-autofill:hover,
+  footer .email-signup__input--underline:-webkit-autofill:focus,
+  footer .email-signup__input--underline:-webkit-autofill:active,
+  footer .email-signup__input--underline:-webkit-autofill:focus-visible,
+  footer .email-signup__input:autofill,
+  footer .email-signup__input:autofill:hover,
+  footer .email-signup__input:autofill:focus,
+  footer .email-signup__input:autofill:active,
+  footer .email-signup__input--underline:autofill,
+  footer .email-signup__input--underline:autofill:hover,
+  footer .email-signup__input--underline:autofill:focus,
+  footer .email-signup__input--underline:autofill:active {
+    background-color: transparent !important;
+    background-image: none !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-text-fill-color: var(--color-foreground) !important;
+    color: var(--color-foreground) !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+    -webkit-transition: background-color 5000s ease-in-out 0s !important;
   }
 {% endstylesheet %}
 
@@ -343,7 +365,7 @@
       "type": "range",
       "id": "custom_width",
       "label": "t:settings.custom_width",
-      "min": 20,
+      "min": 0,
       "max": 100,
       "step": 1,
       "unit": "%",
@@ -362,56 +384,6 @@
       "label": "t:settings.color_scheme",
       "default": "primary",
       "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
-    },
-    {
-      "type": "header",
-      "content": "t:content.heading"
-    },
-    {
-      "type": "text",
-      "id": "heading",
-      "label": "t:settings.text"
-    },
-    {
-      "type": "select",
-      "id": "heading_preset",
-      "label": "t:settings.type_preset",
-      "options": [
-        {
-          "value": "",
-          "label": "t:options.default"
-        },
-        {
-          "value": "paragraph",
-          "label": "t:options.paragraph"
-        },
-        {
-          "value": "h1",
-          "label": "t:options.h1"
-        },
-        {
-          "value": "h2",
-          "label": "t:options.h2"
-        },
-        {
-          "value": "h3",
-          "label": "t:options.h3"
-        },
-        {
-          "value": "h4",
-          "label": "t:options.h4"
-        },
-        {
-          "value": "h5",
-          "label": "t:options.h5"
-        },
-        {
-          "value": "h6",
-          "label": "t:options.h6"
-        }
-      ],
-      "default": "h3",
-      "info": "t:info.edit_presets_in_theme_settings"
     },
     {
       "type": "header",
@@ -456,7 +428,7 @@
       "max": 100,
       "step": 1,
       "unit": "px",
-      "default": 100,
+      "default": 0,
       "visible_if": "{{ block.settings.border_style != \"underline\" }}"
     },
     {

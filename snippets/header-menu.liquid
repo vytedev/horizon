@@ -1,10 +1,9 @@
 {% liquid
-  assign block_settings = block.settings
-  assign menu_content_type = block_settings.menu_style | default: 'text'
-  assign image_border_radius = block_settings.image_border_radius
+  assign menu_content_type = block.settings.menu_style | default: 'text'
+  assign image_border_radius = block.settings.image_border_radius
   assign color_scheme_classes = ''
   assign color_scheme_setting_id = 'color_scheme_' | append: section.settings.menu_row
-  assign current_color_scheme = block_settings.color_scheme
+  assign current_color_scheme = block.settings.color_scheme
   assign parent_color_scheme = section.settings[color_scheme_setting_id]
 
   if parent_color_scheme.id != current_color_scheme.id
@@ -16,15 +15,15 @@
     assign color_scheme_classes = color_scheme_classes | append: ' color-scheme-matches-parent'
   endif
 
-  if block_settings.menu_style == 'featured_collections'
-    assign ratio = block_settings.featured_collections_aspect_ratio
-  elsif block_settings.menu_style == 'featured_products'
-    assign ratio = block_settings.featured_products_aspect_ratio
+  if block.settings.menu_style == 'featured_collections'
+    assign ratio = block.settings.featured_collections_aspect_ratio
+  elsif block.settings.menu_style == 'featured_products'
+    assign ratio = block.settings.featured_products_aspect_ratio
   endif
 %}
 
 {% capture children %}
-  {% for link in block_settings.menu.links %}
+  {% for link in block.settings.menu.links %}
     <li
       role="presentation"
       class="menu-list__list-item"
@@ -35,7 +34,6 @@
     >
       <a
         href="{{ link.url }}"
-        data-skip-node-update="true"
         class="menu-list__link{% if link.active %} menu-list__link--active{% endif %}"
         {%- if link.links != blank -%}
           aria-controls="submenu-{{ forloop.index }}"
@@ -51,11 +49,10 @@
           <div
             id="submenu-{{ forloop.index }}"
             class="menu-list__submenu-inner"
-            style="{% render 'submenu-font-styles', settings: block_settings %}"
+            style="{% render 'submenu-font-styles', settings: block.settings %}"
           >
             {% assign list_id = 'MegaMenuList-' | append: forloop.index %}
             {% render 'mega-menu',
-              section: section,
               parent_link: link,
               id: list_id,
               menu_content_type: menu_content_type,
@@ -66,6 +63,25 @@
         </div>
       {%- endif -%}
     </li>
+    {%- comment -%} Insert Collection link after "totes" and before "about" {%- endcomment -%}
+    {% if link.handle == 'totes' or link.title == 'Totes' or link.title == 'totes' %}
+      <li
+        role="presentation"
+        class="menu-list__list-item"
+        on:focus="/activate"
+        on:blur="/deactivate"
+        on:pointerenter="/activate"
+        on:pointerleave="/deactivate"
+      >
+        <a
+          href="{{ routes.all_products_collection_url }}"
+          class="menu-list__link{% if request.page_type == 'collection' and collection.handle == 'all' %} menu-list__link--active{% endif %}"
+          ref="menuitem"
+        >
+          <span class="menu-list__link-title">Collection</span>
+        </a>
+      </li>
+    {% endif %}
   {% endfor %}
   <li
     class="menu-list__list-item"
@@ -85,9 +101,9 @@
 <nav header-menu>
   <div
     class="menu-list"
-    style="{% render 'menu-font-styles', settings: block_settings %}"
+    style="{% render 'menu-font-styles', settings: block.settings %}"
   >
     {% assign class = 'overflow-menu' | append: color_scheme_classes %}
-    {% render 'overflow-list', class: class, ref: 'overflowMenu', children: children, minimum-items: 2, defer: true %}
+    {% render 'overflow-list', class: class, ref: 'overflowMenu', children: children, minimum-items: 2 %}
   </div>
 </nav>

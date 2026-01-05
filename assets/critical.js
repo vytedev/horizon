@@ -3,7 +3,7 @@
  * If the component is mounted after the browser finishes the initial render,
  * the shadow root needs to be manually hydrated.
  */
-export class DeclarativeShadowElement extends HTMLElement {
+class DeclarativeShadowElement extends HTMLElement {
   connectedCallback() {
     if (!this.shadowRoot) {
       const template = this.querySelector(':scope > template[shadowrootmode="open"]');
@@ -20,7 +20,7 @@ export class DeclarativeShadowElement extends HTMLElement {
  * A custom ResizeObserver that only calls the callback when the element is resized.
  * By default the ResizeObserver callback is called when the element is first observed.
  */
-export class ResizeNotifier extends ResizeObserver {
+class ResizeNotifier extends ResizeObserver {
   #initialized = false;
 
   /**
@@ -43,7 +43,7 @@ export class ResizeNotifier extends ResizeObserver {
  * Event class for overflow minimum items updates
  * @extends {Event}
  */
-export class OverflowMinimumEvent extends Event {
+class OverflowMinimumEvent extends Event {
   /**
    * Creates a new OverflowMinimumEvent
    * @param {boolean} minimumReached - Whether the minimum number of visible items has been reached
@@ -56,7 +56,7 @@ export class OverflowMinimumEvent extends Event {
   }
 }
 
-export class ReflowEvent extends Event {
+class ReflowEvent extends Event {
   /**
    * @param {HTMLElement} lastVisibleElement - The element to move to the last visible position
    */
@@ -75,7 +75,7 @@ export class ReflowEvent extends Event {
  *   <!-- list items -->
  * </overflow-list>
  */
-export class OverflowList extends DeclarativeShadowElement {
+class OverflowList extends DeclarativeShadowElement {
   static get observedAttributes() {
     return ['disabled', 'minimum-items'];
   }
@@ -97,34 +97,6 @@ export class OverflowList extends DeclarativeShadowElement {
 
   connectedCallback() {
     super.connectedCallback();
-
-    if (this.hasAttribute('defer')) {
-      const deferredReflow = () => {
-        // Remove attribute first to change layout before calculating the actual size
-        this.removeAttribute('defer');
-        this.#initialize();
-      };
-      const { schedule } = this;
-
-      const requestIdleCallback =
-        typeof window.requestIdleCallback === 'function' ? window.requestIdleCallback : setTimeout;
-
-      requestIdleCallback(() => schedule(deferredReflow));
-    } else if (this.shadowRoot) {
-      this.#initialize();
-    } else {
-      // Not all element children has been parsed yet, try again in the next tick
-      // <overflow-list> is a special case as critical.js can execute before DOMContentLoaded
-      setTimeout(() => {
-        this.#initialize();
-      }, 0);
-    }
-  }
-
-  /**
-   * Initialize the element
-   */
-  #initialize() {
     const { shadowRoot } = this;
 
     if (!shadowRoot) throw new Error('Missing shadow root');
@@ -164,7 +136,19 @@ export class OverflowList extends DeclarativeShadowElement {
       }
     );
 
-    this.#reflowItems();
+    if (this.hasAttribute('defer')) {
+      const deferredReflow = () => {
+        // Remove attribute first to change layout before calculating the actual size
+        this.removeAttribute('defer');
+        this.#reflowItems();
+      };
+
+      const idleCallback = typeof requestIdleCallback === 'function' ? requestIdleCallback : setTimeout;
+
+      idleCallback(() => this.schedule(deferredReflow));
+    } else {
+      this.#reflowItems();
+    }
   }
 
   disconnectedCallback() {
@@ -174,8 +158,7 @@ export class OverflowList extends DeclarativeShadowElement {
   get schedule() {
     return typeof Theme?.utilities?.scheduler?.schedule === 'function'
       ? Theme.utilities.scheduler.schedule
-      : /** @param {FrameRequestCallback} callback */ (callback) =>
-          requestAnimationFrame(() => setTimeout(callback, 0));
+      : requestAnimationFrame;
   }
 
   #scheduled = false;
@@ -424,7 +407,7 @@ if (!customElements.get('overflow-list')) {
 }
 
 // Function to calculate total height of header group children
-export function calculateHeaderGroupHeight(
+function calculateHeaderGroupHeight(
   header = document.querySelector('#header-component'),
   headerGroup = document.querySelector('#header-group')
 ) {
@@ -437,12 +420,6 @@ export function calculateHeaderGroupHeight(
     if (element === header || !(element instanceof HTMLElement)) continue;
     totalHeight += element.offsetHeight;
   }
-
-  // If the header is transparent and has a sibling section, add the height of the header to the total height
-  if (header instanceof HTMLElement && header.hasAttribute('transparent') && header.parentElement?.nextElementSibling) {
-    return totalHeight + header.offsetHeight;
-  }
-
   return totalHeight;
 }
 
@@ -452,7 +429,7 @@ export function calculateHeaderGroupHeight(
  * There is a `ResizeObserver` and `MutationObserver` that kicks in post hydration in header.js
  * Note: header-group uses display: contents, so we must observe all children.
  */
-function updateHeaderHeights() {
+(() => {
   const header = document.querySelector('header-component');
 
   // Early exit if no header - nothing to do
@@ -464,31 +441,4 @@ function updateHeaderHeights() {
 
   document.body.style.setProperty('--header-height', `${headerHeight}px`);
   document.body.style.setProperty('--header-group-height', `${headerGroupHeight}px`);
-}
-
-/**
- * Updates CSS custom properties for transparent header offset calculation
- * Avoids expensive :has() selectors
- */
-function updateTransparentHeaderOffset() {
-  const header = document.querySelector('#header-component');
-  const headerGroup = document.querySelector('#header-group');
-  const hasHeaderSection = headerGroup?.querySelector('.header-section');
-  if (!hasHeaderSection || !header?.hasAttribute('transparent')) {
-    document.body.style.setProperty('--transparent-header-offset-boolean', '0');
-    return;
-  }
-
-  const hasImmediateSection = hasHeaderSection.nextElementSibling?.classList.contains('shopify-section');
-
-  const shouldApplyOffset = !hasImmediateSection ? '1' : '0';
-  document.body.style.setProperty('--transparent-header-offset-boolean', shouldApplyOffset);
-}
-
-export function updateAllHeaderCustomProperties() {
-  updateHeaderHeights();
-  updateTransparentHeaderOffset();
-}
-
-// Run both functions on page load
-updateAllHeaderCustomProperties();
+})();

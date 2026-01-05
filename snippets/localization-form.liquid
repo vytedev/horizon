@@ -48,7 +48,6 @@
     id: 'LocalizationForm',
     class: 'localization-form',
     ref: 'form',
-    return_to: back,
     aria-label: localization_label
   -%}
     {% if show_country %}
@@ -309,14 +308,12 @@
   .localization-form__list-item:hover,
   .localization-form__list-item:focus {
     --button-color: var(--color-primary-hover);
-
-    background-color: rgb(var(--color-primary-hover-rgb) / var(--opacity-8));
+    background-color: rgb(from var(--color-primary-hover) r g b / 8%);
   }
 
   .localization-form__list-item[aria-current='true'] {
     --button-color: var(--color-primary-active);
-
-    background-color: rgb(var(--color-primary-hover-rgb) / var(--opacity-10));
+    background-color: rgb(from var(--color-primary-hover) r g b / 10%);
   }
 
   .localization-form__list-item-disabled {
@@ -374,7 +371,7 @@
   .dropdown-localization__button .icon-flag {
     width: var(--menu-localization-font-size, var(--icon-size-sm));
     height: var(--menu-localization-font-size, var(--icon-size-sm));
-    clip-path: circle(50%); /* stylelint-disable-line */
+    clip-path: circle(50%);
     background-position: center;
     background-size: cover;
     margin-inline-end: 4px;
@@ -410,9 +407,8 @@
     overflow-y: auto;
     white-space: nowrap;
 
-    /* Hide scrollbar which would cause extra right padding in Safari */
+    /* Hide scrollbar which would cause extra right padding in Safari*/
     scrollbar-width: none;
-
     &::-webkit-scrollbar {
       display: none;
     }
@@ -426,23 +422,38 @@
     position: fixed;
     z-index: var(--layer-raised);
     border-radius: var(--style-border-radius-popover);
-    transition-property: display, opacity, translate;
-    transition-duration: 0.3s;
-    transition-timing-function: var(--ease-out-quad);
-    transition-behavior: allow-discrete;
-    translate: 0 20px;
-    opacity: 0;
+    animation: localization-slide-down 0.3s ease-in-out;
   }
 
   .localization-wrapper:not([hidden]) {
-    translate: 0 0;
-    opacity: 1;
+    animation: localization-slide-up 0.3s ease-in-out;
   }
 
-  @starting-style {
-    .localization-wrapper:not([hidden]) {
-      translate: 0 20px;
+  @keyframes localization-slide-up {
+    from {
+      display: none;
       opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes localization-slide-down {
+    from {
+      display: block;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    to {
+      display: none;
+      opacity: 0;
+      transform: translateY(20px);
     }
   }
 
@@ -464,7 +475,7 @@
     }
 
     &:hover {
-      background-color: rgb(var(--color-foreground-rgb) / var(--opacity-8));
+      background-color: rgb(from var(--color-foreground) r g b / 8%);
     }
 
     &[aria-current='true'] {
@@ -477,11 +488,11 @@
   .localization-form__list-item#no-results-message {
     grid-template-columns: 1fr;
     text-align: center;
-    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+    color: rgb(from var(--color-foreground) r g b / var(--opacity-subdued-text));
   }
 
   .is-searching .localization-form__list-item .country {
-    color: rgb(var(--color-foreground-rgb) / var(--opacity-80));
+    color: rgb(from var(--color-foreground) r g b / 80%);
   }
 
   .localization-form__list-item .country mark {
@@ -528,7 +539,7 @@
 
   .language-selector__label {
     flex-shrink: 0;
-    color: rgb(var(--color-foreground-rgb) / var(--opacity-subdued-text));
+    color: rgb(from var(--color-foreground) r g b / var(--opacity-subdued-text));
   }
 
   .localization-form__select {
@@ -544,9 +555,8 @@
     text-overflow: ellipsis;
 
     &:focus-visible {
-      outline: var(--focus-outline-width) solid currentcolor;
+      outline: var(--focus-outline-width) solid currentColor;
     }
-
     &:focus {
       outline: none;
     }
@@ -562,7 +572,7 @@
   }
 
   dropdown-localization-component .localization-form__select:hover {
-    background-color: rgb(var(--color-primary-hover-rgb) / var(--opacity-8));
+    background-color: rgb(from var(--color-primary-hover) r g b / 8%);
   }
 
   .language-selector .svg-wrapper.icon-caret {

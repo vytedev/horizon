@@ -16,14 +16,12 @@
     ref="dialog"
     class="color-{{ settings.popover_color_scheme }} dialog-modal dialog-drawer dialog-bottom-sheet account-drawer__dialog"
     scroll-lock
-    aria-labelledby="account-drawer-heading"
   >
     <button
       ref="closeButton"
       on:click="/closeDialog"
-      class="button button-unstyled close-button account-drawer__close-button"
+      class="button button-unstyled account-drawer__close-button"
       aria-label="{{ 'actions.close_dialog' | t }}"
-      autofocus
     >
       <span
         class="svg-wrapper"
@@ -32,7 +30,7 @@
         {{- 'icon-close.svg' | inline_asset_content -}}
       </span>
     </button>
-    {% render 'account-actions' %}
+    {% render 'account-actions', autofocus_enabled: true %}
   </dialog>
 </dialog-component>
 
@@ -47,7 +45,6 @@
     --animation-speed: 0.24s;
     --dialog-drawer-opening-animation: account-drawer-slide-in;
     --dialog-drawer-closing-animation: account-drawer-slide-out;
-
     height: fit-content;
     margin: 0;
     inset-block-end: 0;
@@ -57,11 +54,17 @@
   }
 
   .account-drawer__close-button {
+    position: absolute;
     z-index: 1;
     inset-block-start: var(--padding-xs);
     inset-inline-end: var(--padding-xs);
+    width: var(--minimum-touch-target);
+    height: var(--minimum-touch-target);
     color: var(--color-foreground);
     background-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .account-drawer__close-button .svg-wrapper {
@@ -70,6 +73,11 @@
     height: var(--button-size);
     align-items: center;
     justify-content: center;
+  }
+
+  .account-drawer__close-button svg {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
   }
 
   @keyframes account-drawer-slide-in {

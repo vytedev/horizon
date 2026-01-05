@@ -1,21 +1,22 @@
-{% assign block_settings = block.settings %}
+{% # import schema from '../schemas/blocks/icon.js' %}
+
 {% assign icon_block_class = 'icon-block__media icon-block-' | append: block.id %}
 
 {% capture icon %}
   {% render 'icon-or-image',
-    icon: block_settings.icon,
-    image_upload: block_settings.image_upload,
-    width: block_settings.width,
+    icon: block.settings.icon,
+    image_upload: block.settings.image_upload,
+    width: block.settings.width,
     class_name: icon_block_class,
     attributes: block.shopify_attributes
   %}
 {% endcapture %}
 
-{%- if block_settings.link != blank -%}
+{%- if block.settings.link != blank -%}
   <a
-    href="{{ block_settings.link }}"
+    href="{{ block.settings.link }}"
     class="text-inherit"
-    {% if block_settings.open_in_new_tab %}
+    {% if block.settings.open_in_new_tab %}
       target="_blank" rel="noopener"
     {% endif %}
   >
@@ -31,7 +32,6 @@
     fill: currentcolor;
     flex-shrink: 0;
   }
-
   .icon-block__media {
     height: auto;
   }

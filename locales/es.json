@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Cargar video: {{ description }}",
@@ -42,7 +51,7 @@
       "other": "{{ count }} filtros aplicados",
       "many": "{{ count }} filtros aplicados"
     },
-    "account": "Cuenta",
+    "account": "Abrir menú de cuenta",
     "cart": "Carrito",
     "cart_count": "Total de artículos en el carrito",
     "menu": "Menú",
@@ -51,17 +60,17 @@
     "scroll_to": "Desplázate a {{ title }}",
     "loading_product_recommendations": "Carga de recomendaciones de productos",
     "discount": "Aplicar un código de descuento",
-    "discount_menu": "Códigos de descuento",
     "discount_applied": "Aplicar código de descuento: {{ code }}",
+    "open_cart_drawer": "Abrir carrito",
     "pause_video": "Pausar el video",
     "inventory_status": "Estado del inventario",
     "find_country": "Buscar país",
-    "localization_region_and_language": "Selector de región e idioma",
+    "localization_region_and_language": "Abrir selector de región e idioma",
+    "open_search_modal": "Abrir búsqueda",
     "decrease_quantity": "Disminuir cantidad",
     "increase_quantity": "Aumentar cantidad",
     "quantity": "Cantidad",
-    "rating": "La calificación de este producto es {{ rating }} de 5",
-    "nested_product": "{{ product_title }} para {{ parent_title }}"
+    "rating": "La calificación de este producto es {{ rating }} de 5"
   },
   "actions": {
     "add_to_cart": "Agregar al carrito",
@@ -101,8 +110,7 @@
     "sign_in_options": "Otras opciones de inicio de sesión",
     "sign_up": "Registrarse",
     "sort": "Ordenar",
-    "show_all_options": "Mostrar todas las opciones",
-    "open": "Abrir"
+    "show_all_options": "Mostrar todas las opciones"
   },
   "content": {
     "reviews": "reseñas",
@@ -218,26 +226,6 @@
       "one": "{{ count }} restante",
       "other": "{{ count }} restantes",
       "many": "{{ count }} restantes"
-    },
-    "recipient_form_send_to": "Enviar a",
-    "recipient_form_email_label": "Correo electrónico del destinatario",
-    "recipient_form_email_label_my_email": "Mi correo electrónico",
-    "recipient_form_email_address": "Dirección de correo electrónico del destinatario",
-    "recipient_form_name_label": "Nombre de la persona destinataria (opcional)",
-    "recipient_form_message": "Mensaje (opcional)",
-    "recipient_form_characters_used": "{{ used_chars }} de {{ max_chars }} caracteres utilizados",
-    "recipient_form_send_on": "AAAA-MM-DD",
-    "recipient_form_send_on_label": "Fecha de envío (opcional)",
-    "recipient_form_fields_visible": "Los campos de destinatario en el formulario ya son visibles",
-    "recipient_form_fields_hidden": "Los campos de destinatario en el formulario ya no son visibles",
-    "recipient_form_error": "Hubo un error al enviar el formulario",
-    "product_custom_property_character_count": "{{ used_chars }} de {{ max_chars }} caracteres utilizados",
-    "terms_and_policies": "Términos y políticas",
-    "pagination": {
-      "nav_label": "Navegación de paginación",
-      "previous": "Anterior",
-      "next": "Siguiente",
-      "page": "Página {{ page }}"
     }
   },
   "gift_cards": {
@@ -258,12 +246,7 @@
     "password": "Contraseña",
     "search": "Buscar",
     "product_title": "Nombre del producto",
-    "collection_title": "Título de la colección",
-    "blog_posts": "Artículos del blog",
-    "blog_post_title": "Nombre",
-    "blog_post_author": "Autor",
-    "blog_post_date": "Fecha",
-    "blog_post_description": "Un extracto del contenido de tus artículos del blog"
+    "collection_title": "Título de la colección"
   },
   "products": {
     "product": {
@@ -272,13 +255,7 @@
       "adding_to_cart": "Agregando...",
       "add_to_cart_error": "Error al agregar al carrito",
       "sold_out": "Agotado",
-      "unavailable": "No disponible",
-      "quantity_error_max": "Este artículo tiene un máximo de {{ maximum }}",
-      "quantity": "Cantidad",
-      "quantity_increments": "Incrementos de {{ increment }}",
-      "quantity_minimum": "Mínimo de {{ minimum }}",
-      "quantity_maximum": "Máximo de {{ maximum }}",
-      "in_cart": "en el carrito"
+      "unavailable": "No disponible"
     }
   },
   "fields": {

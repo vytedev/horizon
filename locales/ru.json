@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Загрузить видео: {{ description }}",
@@ -37,7 +46,7 @@
     "search_results_count": "Найдено {{ count }} результата(-ов) по запросу «{{ query }}»",
     "search_results_no_results": "По запросу «{{ query }}» ничего не найдено",
     "filters": "Фильтры",
-    "account": "Учетная запись",
+    "account": "Скрыть меню учетной записи",
     "cart": "Корзина",
     "cart_count": "Всего товаров в корзине",
     "filter_count": {
@@ -53,16 +62,16 @@
     "loading_product_recommendations": "Загрузка рекомендаций товаров",
     "discount": "Применить промокод",
     "discount_applied": "Примененный промокод : {{ code }}",
+    "open_cart_drawer": "Открыть корзину",
     "inventory_status": "Статус ассортимента",
     "pause_video": "Приостановить видео",
     "find_country": "Найти страну",
-    "localization_region_and_language": "Выбор региона и языка",
+    "localization_region_and_language": "Открыть выбор региона и языка",
+    "open_search_modal": "Открыть поиск",
     "decrease_quantity": "Убрать позиции",
     "increase_quantity": "Добавить позиции",
     "quantity": "Количество",
-    "rating": "Рейтинг этого продукта {{ rating }} из 5",
-    "nested_product": "{{ product_title }} для товара \"{{ parent_title }}\"",
-    "discount_menu": "Коды скидок"
+    "rating": "Рейтинг этого продукта {{ rating }} из 5"
   },
   "actions": {
     "add_to_cart": "Добавить в корзину",
@@ -103,8 +112,7 @@
     "sign_up": "Регистрация",
     "open_image_in_full_screen": "Открыть изображение во весь экран",
     "sort": "Сортировать",
-    "show_all_options": "Показать все варианты",
-    "open": "Открыть"
+    "show_all_options": "Показать все варианты"
   },
   "content": {
     "reviews": "отз.",
@@ -223,27 +231,7 @@
     "store_owner_link_html": "Вы владелец магазина? <a href=\"{{ link }}\">Войдите здесь</a>",
     "shipping_discount_error": "Скидки на доставку отображаются при оформлении и оплате заказа после добавления адреса",
     "discount_code_error": "Код скидки не может быть применен к вашей корзине",
-    "shipping_policy": "Стоимость доставки рассчитывается при оформлении заказа.",
-    "recipient_form_send_to": "Куда отправить",
-    "recipient_form_email_label": "Электронный адрес получателя",
-    "recipient_form_email_label_my_email": "Мой электронный адрес",
-    "recipient_form_email_address": "Адрес электронной почты получателя",
-    "recipient_form_name_label": "Имя получателя (необязательно)",
-    "recipient_form_message": "Сообщение (необязательно)",
-    "recipient_form_characters_used": "Использовано символов: {{ used_chars }}/{{ max_chars }}",
-    "recipient_form_send_on": "ГГГГ-ММ-ДД",
-    "recipient_form_send_on_label": "Дата отправки (необязательно)",
-    "recipient_form_fields_visible": "Поля формы получателя теперь отображаются",
-    "recipient_form_fields_hidden": "Поля формы получателя теперь скрыты",
-    "recipient_form_error": "При отправке формы возникла ошибка",
-    "product_custom_property_character_count": "Использовано символов: {{ used_chars }}/{{ max_chars }}",
-    "terms_and_policies": "Условия и политики",
-    "pagination": {
-      "nav_label": "Постраничная навигация",
-      "previous": "Назад",
-      "next": "Далее",
-      "page": "Страница {{ page }}"
-    }
+    "shipping_policy": "Стоимость доставки рассчитывается при оформлении заказа."
   },
   "gift_cards": {
     "issued": {
@@ -263,12 +251,7 @@
     "password": "Пароль",
     "search": "Поиск",
     "product_title": "Название продукта",
-    "collection_title": "Название коллекции",
-    "blog_posts": "Записи в блоге",
-    "blog_post_title": "Название",
-    "blog_post_author": "Автор",
-    "blog_post_date": "Дата",
-    "blog_post_description": "Фрагмент текста вашей записи в блоге"
+    "collection_title": "Название коллекции"
   },
   "products": {
     "product": {
@@ -277,13 +260,7 @@
       "adding_to_cart": "Добавление...",
       "add_to_cart_error": "Возникла ошибка при добавлении в корзину",
       "sold_out": "Продано",
-      "unavailable": "Недоступно",
-      "quantity_error_max": "Максимальное количество этого товара — {{ maximum }}",
-      "quantity": "Количество",
-      "quantity_increments": "Прирост: {{ increment }}",
-      "quantity_minimum": "Минимум: {{ minimum }}",
-      "quantity_maximum": "Максимум: {{ maximum }}",
-      "in_cart": "в корзине"
+      "unavailable": "Недоступно"
     }
   },
   "fields": {

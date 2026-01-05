@@ -1,4 +1,3 @@
-import { ResizeNotifier } from '@theme/critical';
 import { prefersReducedMotion } from '@theme/utilities';
 
 /**

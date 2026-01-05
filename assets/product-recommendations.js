@@ -22,12 +22,6 @@ class ProductRecommendations extends HTMLElement {
       // Only attribute changes are interesting
       if (mutation.target !== this || mutation.type !== 'attributes') continue;
 
-      // Ignore error attribute changes
-      if (mutation.attributeName === 'data-error') continue;
-
-      // Ignore addition of hidden class because it means there's an error with the display
-      if (mutation.attributeName === 'class' && this.classList.contains('hidden')) continue;
-
       // Ignore when the data-recommendations-performed attribute has been set to 'true'
       if (
         mutation.attributeName === 'data-recommendations-performed' &&
@@ -139,7 +133,7 @@ class ProductRecommendations extends HTMLElement {
    * @param {Error} error
    */
   #handleError(error) {
-    console.error('Product recommendations error:', error.message);
+    console.error('Product recommendations error:', error);
     this.classList.add('hidden');
     this.dataset.error = 'Error loading product recommendations';
   }

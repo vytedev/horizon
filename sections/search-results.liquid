@@ -1,32 +1,26 @@
+{% # import schema from '../schemas/sections/search-results.js' %}
+
 <script
   src="{{ 'results-list.js' | asset_url }}"
   type="module"
-  fetchpriority="low"
 ></script>
 
 <div class="section-background color-{{ section.settings.color_scheme }}"></div>
-
 <results-list
   class="section product-grid-container spacing-style color-{{ section.settings.color_scheme }}"
   style="--padding-block-start: {{ section.settings.padding-block-start }}px; --padding-block-end: {{ section.settings.padding-block-end }}px;"
   section-id="{{ section.id }}"
-  infinite-scroll="{{ section.settings.enable_infinite_scroll }}"
 >
   {% render 'skip-to-content-link', href: '#ResultsList', text: 'accessibility.skip_to_results_list' %}
 
   <div
     class="collection-wrapper grid gap-style"
   >
-    {% assign products_per_page = 24 %}
-
-    {% if section.settings.enable_infinite_scroll == false %}
-      {% assign products_per_page = section.settings.products_per_page %}
-    {% endif %}
-
-    {% paginate search.results by products_per_page %}
+    {% paginate search.results by 24 %}
       {% if search.results_count > 0 %}
         {% content_for 'block', type: 'filters', id: 'filters', results: search, results_size: search.results_count %}
         {% assign products = search.results | where: 'object_type', 'product' %}
+        {% assign title = '' %}
       {% else %}
         {% assign collection = settings.empty_state_collection | default: collections.all %}
         {% assign default_title = 'content.search_results_resource_products' | t %}
@@ -53,12 +47,17 @@
         children: children,
         products: products,
         paginate: paginate,
-        enable_infinite_scroll: section.settings.enable_infinite_scroll,
-        title: title
+        title: ''
       %}
     {% endpaginate %}
   </div>
 </results-list>
+
+{% stylesheet %}
+  results-list .main-collection-grid__title {
+    display: none;
+  }
+{% endstylesheet %}
 
 {% schema %}
 {
@@ -124,22 +123,6 @@
         }
       ],
       "default": "small"
-    },
-    {
-      "type": "checkbox",
-      "id": "enable_infinite_scroll",
-      "label": "t:settings.auto_load_products",
-      "default": true
-    },
-    {
-      "type": "range",
-      "id": "products_per_page",
-      "label": "t:settings.products_per_page",
-      "min": 8,
-      "max": 36,
-      "step": 4,
-      "default": 24,
-      "visible_if": "{{ section.settings.enable_infinite_scroll == false }}"
     },
     {
       "type": "header",

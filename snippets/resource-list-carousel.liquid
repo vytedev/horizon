@@ -25,16 +25,16 @@
     {% render 'slideshow-slide'
       index : forloop.index0,
       children : item,
-      class : 'resource-list__slide'
+      class : 'resource-list__slide',
+      ref : 'slides[]',
+      aria_hidden : false
     %}
   {% endfor %}
 {% endcapture %}
 
-{% if settings.icons_style != 'none' %}
-  {% capture slideshow_arrows %}
-    {% render 'slideshow-arrows', icon_style: settings.icons_style, icon_shape: settings.icons_shape %}
-  {% endcapture %}
-{% endif %}
+{% capture slideshow_arrows %}
+  {% render 'slideshow-arrows', icon_style: settings.icons_style, icon_shape: settings.icons_shape %}
+{% endcapture %}
 
 <div
   class="resource-list__carousel"

@@ -47,11 +47,29 @@ class CartItemsComponent extends Component {
   #onQuantityChange(event) {
     const { quantity, cartLine: line } = event.detail;
 
-    if (!line) return;
+    console.log('[Cart Items] 📦 Received QuantitySelectorUpdateEvent:', {
+      line,
+      quantity,
+      eventType: event.type,
+      source: event.target?.tagName || 'unknown',
+      timestamp: new Date().toISOString()
+    });
+
+    if (!line) {
+      console.log('[Cart Items] ⚠️ No line number, ignoring');
+      return;
+    }
 
     if (quantity === 0) {
+      console.log('[Cart Items] 🗑️ Quantity is 0, removing item');
       return this.onLineItemRemove(line);
     }
+
+    console.log('[Cart Items] ✅ Calling updateQuantity:', {
+      line,
+      quantity,
+      action: 'change'
+    });
 
     this.updateQuantity({
       line,
@@ -60,7 +78,10 @@ class CartItemsComponent extends Component {
     });
     const lineItemRow = this.refs.cartItemRows[line - 1];
 
-    if (!lineItemRow) return;
+    if (!lineItemRow) {
+      console.log('[Cart Items] ⚠️ Line item row not found for line:', line);
+      return;
+    }
 
     const textComponent = /** @type {TextComponent | undefined} */ (lineItemRow.querySelector('text-component'));
     textComponent?.shimmer();
@@ -81,24 +102,16 @@ class CartItemsComponent extends Component {
 
     if (!cartItemRowToRemove) return;
 
-    const rowsToRemove = [
-      cartItemRowToRemove,
-      // Get all nested lines of the row to remove
-      ...this.refs.cartItemRows.filter((row) => row.dataset.parentKey === cartItemRowToRemove.dataset.key),
-    ];
+    const remove = () => cartItemRowToRemove.remove();
+
+    if (prefersReducedMotion()) return remove();
 
     // Add class to the row to trigger the animation
-    rowsToRemove.forEach((row) => {
-      const remove = () => row.remove();
+    cartItemRowToRemove.style.setProperty('--row-height', `${cartItemRowToRemove.clientHeight}px`);
+    cartItemRowToRemove.classList.add('removing');
 
-      if (prefersReducedMotion()) return remove();
-
-      row.style.setProperty('--row-height', `${row.clientHeight}px`);
-      row.classList.add('removing');
-
-      // Remove the row after the animation ends
-      onAnimationEnd(row, remove);
-    });
+    // Remove the row after the animation ends
+    onAnimationEnd(cartItemRowToRemove, remove);
   }
 
   /**
@@ -109,6 +122,15 @@ class CartItemsComponent extends Component {
    * @param {string} config.action - The action.
    */
   updateQuantity(config) {
+    console.log('[Cart Items] 🔄 updateQuantity called:', {
+      line: config.line,
+      quantity: config.quantity,
+      action: config.action,
+      sectionId: this.sectionId,
+      timestamp: new Date().toISOString(),
+      stackTrace: new Error().stack
+    });
+
     const cartPerformaceUpdateMarker = cartPerformance.createStartingMarker(`${config.action}:user-action`);
 
     this.#disableCartItems();
@@ -131,6 +153,13 @@ class CartItemsComponent extends Component {
       sections_url: window.location.pathname,
     });
 
+    console.log('[Cart Items] 📤 Sending cart change request:', {
+      line,
+      quantity,
+      sections: Array.from(sectionsToUpdate),
+      body
+    });
+
     cartTotal?.shimmer();
 
     fetch(`${Theme.routes.cart_change_url}`, fetchConfig('json', { body }))
@@ -140,9 +169,17 @@ class CartItemsComponent extends Component {
       .then((responseText) => {
         const parsedResponseText = JSON.parse(responseText);
 
+        console.log('[Cart Items] 📥 Cart change response received:', {
+          line,
+          requestedQuantity: quantity,
+          hasErrors: !!parsedResponseText.errors,
+          sections: Object.keys(parsedResponseText.sections || {})
+        });
+
         resetShimmer(this);
 
         if (parsedResponseText.errors) {
+          console.log('[Cart Items] ❌ Cart update error:', parsedResponseText.errors);
           this.#handleCartError(line, parsedResponseText);
           return;
         }
@@ -156,8 +193,26 @@ class CartItemsComponent extends Component {
         const newCartHiddenItemCount = newSectionHTML.querySelector('[ref="cartItemCount"]')?.textContent;
         const newCartItemCount = newCartHiddenItemCount ? parseInt(newCartHiddenItemCount, 10) : 0;
 
-        // Update data-cart-quantity for all matching variants
-        this.#updateQuantitySelectors(parsedResponseText);
+        // Check what the actual quantity is in the updated section
+        const updatedQuantityInput = newSectionHTML.querySelector(`input[data-cart-line="${line}"]`);
+        const actualQuantity = updatedQuantityInput ? parseInt(updatedQuantityInput.value) || 0 : null;
+
+        console.log('[Cart Items] ✅ Cart updated successfully:', {
+          line,
+          requestedQuantity: quantity,
+          actualQuantity: actualQuantity,
+          newCartItemCount,
+          quantityMatches: actualQuantity === quantity
+        });
+
+        if (actualQuantity !== null && actualQuantity !== quantity) {
+          console.warn('[Cart Items] ⚠️ QUANTITY MISMATCH:', {
+            line,
+            requested: quantity,
+            actual: actualQuantity,
+            difference: actualQuantity - quantity
+          });
+        }
 
         this.dispatchEvent(
           new CartUpdateEvent({}, this.sectionId, {
@@ -168,8 +223,6 @@ class CartItemsComponent extends Component {
         );
 
         morphSection(this.sectionId, parsedResponseText.sections[this.sectionId]);
-
-        this.#updateCartQuantitySelectorButtonStates();
       })
       .catch((error) => {
         console.error(error);
@@ -227,9 +280,6 @@ class CartItemsComponent extends Component {
     const cartItemsHtml = event.detail.data.sections?.[this.sectionId];
     if (cartItemsHtml) {
       morphSection(this.sectionId, cartItemsHtml);
-
-      // Update button states for all cart quantity selectors after morph
-      this.#updateCartQuantitySelectorButtonStates();
     } else {
       sectionRenderer.renderSection(this.sectionId, { cache: false });
     }
@@ -247,46 +297,6 @@ class CartItemsComponent extends Component {
    */
   #enableCartItems() {
     this.classList.remove('cart-items-disabled');
-  }
-
-  /**
-   * Updates quantity selectors for all matching variants in the cart.
-   * @param {Object} updatedCart - The updated cart object.
-   * @param {Array<{variant_id: number, quantity: number}>} [updatedCart.items] - The cart items.
-   */
-  #updateQuantitySelectors(updatedCart) {
-    if (!updatedCart.items) return;
-
-    for (const item of updatedCart.items) {
-      const variantId = item.variant_id.toString();
-      const selectors = document.querySelectorAll(
-        `quantity-selector-component[data-variant-id="${variantId}"], cart-quantity-selector-component[data-variant-id="${variantId}"]`
-      );
-
-      for (const selector of selectors) {
-        const input = selector.querySelector('input[data-cart-quantity]');
-        if (!input) continue;
-
-        input.setAttribute('data-cart-quantity', item.quantity.toString());
-
-        // Update the quantity selector's internal state
-        if ('updateCartQuantity' in selector && typeof selector.updateCartQuantity === 'function') {
-          selector.updateCartQuantity();
-        }
-      }
-    }
-  }
-
-  /**
-   * Updates button states for all cart quantity selector components.
-   */
-  #updateCartQuantitySelectorButtonStates() {
-    const cartQuantitySelectors = document.querySelectorAll('cart-quantity-selector-component');
-    for (const selector of cartQuantitySelectors) {
-      if ('updateButtonStates' in selector && typeof selector.updateButtonStates === 'function') {
-        selector.updateButtonStates();
-      }
-    }
   }
 
   /**

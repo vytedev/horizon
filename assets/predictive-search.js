@@ -1,7 +1,8 @@
 import { Component } from '@theme/component';
-import { debounce, onAnimationEnd, prefersReducedMotion, onDocumentLoaded } from '@theme/utilities';
+import { debounce, onAnimationEnd, prefersReducedMotion, onDocumentReady } from '@theme/utilities';
 import { sectionRenderer } from '@theme/section-renderer';
 import { morph } from '@theme/morph';
+import { ThemeEvents } from '@theme/events';
 import { RecentlyViewed } from '@theme/recently-viewed-products';
 import { DialogCloseEvent, DialogComponent } from '@theme/dialog';
 
@@ -28,6 +29,12 @@ class PredictiveSearchComponent extends Component {
    */
   #activeFetch = null;
 
+  #resizeObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+      this.style.setProperty('--predictive-search-results-height', `${entry.contentRect.height}px`);
+    }
+  });
+
   /**
    * Get the dialog component.
    * @returns {DialogComponent | null} The dialog component.
@@ -51,11 +58,17 @@ class PredictiveSearchComponent extends Component {
       dialog.addEventListener(DialogCloseEvent.eventName, this.#handleDialogClose, { signal });
 
       this.addEventListener('click', this.#handleModalClick, { signal });
+    } else {
+      document.addEventListener(ThemeEvents.megaMenuHover, this.#blurSearch, { signal });
     }
 
-    onDocumentLoaded(() => {
-      this.resetSearch(false); // Pass false to avoid focusing the input
-    });
+    onDocumentReady(this.#getRecentlyViewed);
+
+    const results = this.refs.predictiveSearchResults.firstElementChild;
+
+    if (results) {
+      this.#resizeObserver.observe(results);
+    }
   }
 
   /**
@@ -80,6 +93,7 @@ class PredictiveSearchComponent extends Component {
   disconnectedCallback() {
     super.disconnectedCallback();
     this.#controller.abort();
+    this.#resizeObserver.disconnect();
   }
 
   /**
@@ -97,6 +111,15 @@ class PredictiveSearchComponent extends Component {
    */
   #handleDialogClose = () => {
     this.#resetSearch();
+  };
+
+  expandSearch = () => {
+    // Add the expanded class to the search component
+    this.classList.add('predictive-search--expanded');
+    if (this.dataset.activeColorScheme) {
+      const target = this.dialog ?? this;
+      target.classList.add(`color-${this.dataset.activeColorScheme}`);
+    }
   };
 
   get #allResultsItems() {
@@ -198,7 +221,7 @@ class PredictiveSearchComponent extends Component {
         this.#currentIndex = currentIndex > 0 ? currentIndex - 1 : totalItems - 1;
         break;
 
-      case 'Enter': {
+      case 'Enter':
         const singleResultContainer = this.refs.predictiveSearchResults.querySelector('[data-single-result-url]');
         if (singleResultContainer instanceof HTMLElement && singleResultContainer.dataset.singleResultUrl) {
           event.preventDefault();
@@ -215,7 +238,6 @@ class PredictiveSearchComponent extends Component {
           window.location.href = searchUrl.toString();
         }
         break;
-      }
     }
   };
 
@@ -342,6 +364,43 @@ class PredictiveSearchComponent extends Component {
     return sectionRenderer.getSectionHTML(this.dataset.sectionId, false, url);
   }
 
+  /**
+   * Fetch recently viewed products using the section renderer and update the results container.
+   */
+  #getRecentlyViewed = async () => {
+    const { predictiveSearchResults } = this.refs;
+    // Get the initial height before the results are rendered
+    const abortController = this.#createAbortController();
+
+    try {
+      const resultsMarkup = await this.#getRecentlyViewedProductsMarkup();
+      if (!resultsMarkup) return;
+
+      const parsedNextPage = new DOMParser().parseFromString(resultsMarkup, 'text/html');
+      const recentlyViewedProductsHtml = parsedNextPage.getElementById('predictive-search-products');
+      if (!recentlyViewedProductsHtml) return;
+
+      for (const child of recentlyViewedProductsHtml.children) {
+        if (child instanceof HTMLElement) {
+          child.setAttribute('ref', 'recentlyViewedWrapper');
+        }
+      }
+
+      const collectionElement = predictiveSearchResults.querySelector('#predictive-search-products');
+      if (!collectionElement) return;
+
+      if (this.refs.recentlyViewedWrapper) {
+        this.refs.recentlyViewedWrapper.remove();
+      }
+
+      if (abortController.signal.aborted) return;
+      // Prepend the recently viewed products to the collection
+      collectionElement.prepend(...recentlyViewedProductsHtml.children);
+    } catch (error) {
+      throw error;
+    }
+  };
+
   #hideResetButton() {
     const { resetButton } = this.refs;
 
@@ -372,10 +431,7 @@ class PredictiveSearchComponent extends Component {
     this.#hideResetButton();
 
     const abortController = this.#createAbortController();
-    const url = new URL(window.location.href);
-    url.searchParams.delete('page');
-
-    const emptySectionMarkup = await sectionRenderer.getSectionHTML(emptySectionId, false, url);
+    const emptySectionMarkup = await sectionRenderer.getSectionHTML(emptySectionId, false);
     const parsedEmptySectionMarkup = new DOMParser()
       .parseFromString(emptySectionMarkup, 'text/html')
       .querySelector('.predictive-search-empty-section');
@@ -409,6 +465,13 @@ class PredictiveSearchComponent extends Component {
 
     morph(predictiveSearchResults, parsedEmptySectionMarkup);
     this.#resetScrollPositions();
+  };
+
+  /**
+   * Closes the predictive search.
+   */
+  #blurSearch = () => {
+    this.refs.searchInput.blur();
   };
 }
 

@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/sections/collection-links.js' %}
+
 {% liquid
   assign collection_list = section.settings.collection_list
 
@@ -17,15 +19,21 @@
 <script
   src="{{ 'collection-links.js' | asset_url }}"
   type="module"
-  fetchpriority="low"
 ></script>
 
 <div class="section-background color-{{ section.settings.color_scheme }}"></div>
 <div
-  class="section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }} spacing-style"
+  class="
+    section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }} spacing-style
+    {% if section.settings.collection_list == blank and request.design_mode == false %}
+      in-onboarding-state
+    {% endif %}
+  "
   style="{% render 'spacing-style', settings: section.settings %}"
-  data-testid="collection-links-{{ section.id }}"
 >
+  <div class="section-resource-list__content">
+    {%- content_for 'blocks' -%}
+  </div>
   <collection-links-component
     layout="{{ section.settings.layout }}"
     alignment="{{ section.settings.alignment }}"
@@ -80,7 +88,7 @@
             {% # theme-check-enable UniqueStaticBlockId %}
           {% endcapture %}
 
-          {% render 'slideshow-slide', children: slide, index: forloop.index0 %}
+          {% render 'slideshow-slide', children: slide, index: forloop.index0, selected: selected %}
         {% endfor %}
       {% endcapture %}
 
@@ -136,11 +144,9 @@
       grid-template-columns: 1fr var(--template-column-ratio);
       grid-template-areas: 'text image';
 
-      @media (min-width: 749px) {
-        &[reverse] {
-          grid-template-areas: 'image text';
-          grid-template-columns: var(--template-column-ratio) 1fr;
-        }
+      &[reverse] {
+        grid-template-areas: 'image text';
+        grid-template-columns: var(--template-column-ratio) 1fr;
       }
 
       .collection-links__container {
@@ -193,6 +199,9 @@
 {% schema %}
 {
   "name": "t:names.collection_links",
+  "blocks": [
+    { "type": "section_number" }
+  ],
   "disabled_on": {
     "groups": ["header", "footer"]
   },
@@ -279,7 +288,7 @@
       "type": "color_scheme",
       "id": "color_scheme",
       "label": "t:settings.color_scheme",
-      "default": "scheme-1"
+      "default": "scheme-5"
     },
     {
       "type": "header",
@@ -310,6 +319,12 @@
     {
       "name": "t:names.collection_links_spotlight",
       "category": "t:categories.collections",
+      "settings": {
+        "layout": "spotlight",
+        "alignment": "left",
+        "image_position": "right",
+        "color_scheme": "scheme-5"
+      },
       "blocks": {
         "link": {
           "type": "_collection-link",
@@ -340,7 +355,8 @@
       "category": "t:categories.collections",
       "settings": {
         "layout": "text",
-        "alignment": "center"
+        "alignment": "center",
+        "color_scheme": "scheme-5"
       },
       "blocks": {
         "link": {

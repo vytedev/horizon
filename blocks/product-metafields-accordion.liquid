@@ -1,0 +1,384 @@
+{% # Display product metafields in an accordion format %}
+
+{% liquid
+  assign product = closest.product
+  if request.visual_preview_mode and product == blank
+    assign product = collections.all.products.first
+  endif
+%}
+
+<div
+  class="product-metafields-accordion accordion accordion--{{ block.id }} accordion--{{ block.settings.icon }} border-style spacing-style{% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }}{% endif %}{% if block.settings.dividers %} accordion--dividers{% endif %}"
+  style="
+    {% if block.settings.type_preset == blank or block.settings.type_preset == '' %}
+      {% assign font_preset = 'paragraph' %}
+    {% else %}
+      {% assign font_preset = block.settings.type_preset %}
+    {% endif %}
+    --summary-font-family: var(--font-{{ font_preset }}--family);
+    --summary-font-style: var(--font-{{ font_preset }}--style);
+    --summary-font-weight: var(--font-{{ font_preset }}--weight);
+    --summary-font-size: var(--font-{{ font_preset }}--size);
+    --summary-font-line-height: var(--font-{{ font_preset }}--line-height);
+    --summary-font-case: var(--font-{{ font_preset }}--case);
+    {% render 'spacing-style', settings: block.settings %}
+    {% render 'border-override', settings: block.settings %}
+  "
+  {{ block.shopify_attributes }}
+>
+  {% comment %}
+    Display specific product metafields: authentication, condition and details
+    These are accessed directly from the custom namespace
+  {% endcomment %}
+  
+  {% assign authentication_metafield = product.metafields.custom.authenticaion %}
+  {% assign condition_metafield = product.metafields.custom.condition %}
+  {% assign details_metafield = product.metafields.custom.details %}
+  
+  {% if details_metafield != blank and details_metafield.value != blank %}
+    <accordion-custom>
+      <details class="details">
+        <summary class="details__header">
+          Details
+          <span class="svg-wrapper icon-caret icon-animated">
+            {{- 'icon-caret.svg' | inline_asset_content -}}
+          </span>
+          <span class="svg-wrapper icon-plus">
+            {{- 'icon-plus.svg' | inline_asset_content -}}
+          </span>
+        </summary>
+        <div class="details-content">
+          <div class="rte">
+            {% if details_metafield.type == 'multi_line_text_field' or details_metafield.type == 'rich_text_field' %}
+              {{ details_metafield.value | newline_to_br }}
+            {% elsif details_metafield.type == 'page_reference' or details_metafield.type == 'product_reference' %}
+              {{ details_metafield.value }}
+            {% else %}
+              {{ details_metafield.value | newline_to_br }}
+            {% endif %}
+          </div>
+        </div>
+      </details>
+    </accordion-custom>
+  {% endif %}
+  
+  {% if condition_metafield != blank and condition_metafield.value != blank %}
+    <accordion-custom>
+      <details class="details">
+        <summary class="details__header">
+          Condition
+          <span class="svg-wrapper icon-caret icon-animated">
+            {{- 'icon-caret.svg' | inline_asset_content -}}
+          </span>
+          <span class="svg-wrapper icon-plus">
+            {{- 'icon-plus.svg' | inline_asset_content -}}
+          </span>
+        </summary>
+        <div class="details-content">
+          <div class="rte">
+            {% if condition_metafield.type == 'multi_line_text_field' or condition_metafield.type == 'rich_text_field' %}
+              {{ condition_metafield.value | newline_to_br }}
+            {% elsif condition_metafield.type == 'page_reference' or condition_metafield.type == 'product_reference' %}
+              {{ condition_metafield.value }}
+            {% else %}
+              {{ condition_metafield.value | newline_to_br }}
+            {% endif %}
+          </div>
+        </div>
+      </details>
+    </accordion-custom>
+  {% endif %}
+  
+  {% comment %} Always show Authentication accordion - will display content if metafield exists {% endcomment %}
+  <accordion-custom>
+    <details class="details">
+      <summary class="details__header">
+        Authentication
+        <span class="svg-wrapper icon-caret icon-animated">
+          {{- 'icon-caret.svg' | inline_asset_content -}}
+        </span>
+        <span class="svg-wrapper icon-plus">
+          {{- 'icon-plus.svg' | inline_asset_content -}}
+        </span>
+      </summary>
+      <div class="details-content">
+        <div class="rte">
+          {% if authentication_metafield != blank and authentication_metafield.value != blank %}
+            {% if authentication_metafield.type == 'multi_line_text_field' or authentication_metafield.type == 'rich_text_field' %}
+              {{ authentication_metafield.value | newline_to_br }}
+            {% elsif authentication_metafield.type == 'page_reference' or authentication_metafield.type == 'product_reference' %}
+              {{ authentication_metafield.value }}
+            {% else %}
+              {{ authentication_metafield.value | newline_to_br }}
+            {% endif %}
+          {% else %}
+            <p>Authenticated by Authentic Detective</p>
+          {% endif %}
+        </div>
+      </div>
+    </details>
+  </accordion-custom>
+</div>
+
+{% stylesheet %}
+  .product-metafields-accordion {
+    flex: 1;
+    width: 100%;
+  }
+{% endstylesheet %}
+
+<script>
+  (function() {
+    const accordion = document.querySelector('.product-metafields-accordion.accordion--{{ block.id }}');
+    if (!accordion) return;
+
+    // Find the product form or product information section to scope all accordions
+    const productSection = accordion.closest('[data-section-id], .product-form, [class*="product"]') || 
+                           document.querySelector('main[data-template="product"]') ||
+                           document.body;
+
+    // Function to close other accordions when one opens
+    function handleAccordionToggle(event) {
+      const details = event.target;
+      
+      // Only proceed if this is a details element and it's opening
+      if (details.tagName !== 'DETAILS' || !details.open) return;
+
+      // Check if this details element is within our product section
+      if (!productSection.contains(details)) return;
+      
+      // Find all details elements within the product section
+      const allDetails = productSection.querySelectorAll('details');
+      
+      // Close all other details except the one being opened
+      allDetails.forEach(function(otherDetails) {
+        if (otherDetails !== details && otherDetails.open) {
+          otherDetails.open = false;
+        }
+      });
+    }
+
+    // Listen for toggle events on the document (capture phase) to catch all accordions
+    document.addEventListener('toggle', handleAccordionToggle, true);
+    
+    // Also listen for click events on summary elements as a fallback
+    const summaries = accordion.querySelectorAll('summary');
+    summaries.forEach(function(summary) {
+      summary.addEventListener('click', function() {
+        // Use setTimeout to ensure the toggle event has fired
+        setTimeout(function() {
+          const details = summary.closest('details');
+          if (details && details.open && productSection.contains(details)) {
+            handleAccordionToggle({ target: details });
+          }
+        }, 0);
+      });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Product Metafields",
+  "tag": null,
+  "class": "accordion",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Metafield Settings"
+    },
+    {
+      "type": "text",
+      "id": "namespace",
+      "label": "Metafield Namespace",
+      "info": "Optional: Specify the metafield namespace (e.g., 'custom', 'my_fields'). Leave empty to show all metafields from 'custom' namespace."
+    },
+    {
+      "type": "text",
+      "id": "metafield_key",
+      "label": "Metafield Key",
+      "info": "Optional: Specify a specific metafield key. Leave empty to show all metafields."
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Custom Heading",
+      "info": "Optional: Custom heading for the metafield. If empty, the metafield key will be used."
+    },
+    {
+      "type": "header",
+      "content": "Accordion Settings"
+    },
+    {
+      "type": "select",
+      "id": "icon",
+      "label": "t:settings.icon",
+      "options": [
+        {
+          "value": "caret",
+          "label": "t:options.caret"
+        },
+        {
+          "value": "plus",
+          "label": "t:options.plus"
+        }
+      ],
+      "default": "caret"
+    },
+    {
+      "type": "checkbox",
+      "id": "dividers",
+      "label": "t:settings.dividers",
+      "default": true
+    },
+    {
+      "type": "select",
+      "id": "type_preset",
+      "label": "t:settings.heading_preset",
+      "options": [
+        {
+          "value": "",
+          "label": "t:options.default"
+        },
+        {
+          "value": "paragraph",
+          "label": "t:options.paragraph"
+        },
+        {
+          "value": "h1",
+          "label": "t:options.h1"
+        },
+        {
+          "value": "h2",
+          "label": "t:options.h2"
+        },
+        {
+          "value": "h3",
+          "label": "t:options.h3"
+        },
+        {
+          "value": "h4",
+          "label": "t:options.h4"
+        },
+        {
+          "value": "h5",
+          "label": "t:options.h5"
+        },
+        {
+          "value": "h6",
+          "label": "t:options.h6"
+        }
+      ],
+      "default": "paragraph"
+    },
+    {
+      "type": "checkbox",
+      "id": "inherit_color_scheme",
+      "label": "t:settings.inherit_color_scheme",
+      "default": true
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "t:settings.color_scheme",
+      "default": "scheme-1",
+      "visible_if": "{{ block.settings.inherit_color_scheme == false }}"
+    },
+    {
+      "type": "header",
+      "content": "t:content.borders"
+    },
+    {
+      "type": "select",
+      "id": "border",
+      "label": "t:settings.style",
+      "options": [
+        {
+          "value": "none",
+          "label": "t:options.none"
+        },
+        {
+          "value": "solid",
+          "label": "t:options.solid"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "range",
+      "id": "border_width",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "label": "t:settings.thickness",
+      "default": 1,
+      "visible_if": "{{ block.settings.border != \"none\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_opacity",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "%",
+      "label": "t:settings.opacity",
+      "default": 100,
+      "visible_if": "{{ block.settings.border != \"none\" }}"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "label": "t:settings.border_radius",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "default": 0
+    },
+    {
+      "type": "header",
+      "content": "t:content.padding"
+    },
+    {
+      "type": "range",
+      "id": "padding-block-start",
+      "label": "t:settings.top",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-block-end",
+      "label": "t:settings.bottom",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-start",
+      "label": "t:settings.left",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    },
+    {
+      "type": "range",
+      "id": "padding-inline-end",
+      "label": "t:settings.right",
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "unit": "px",
+      "default": 0
+    }
+  ]
+}
+{% endschema %}

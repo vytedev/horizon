@@ -2,7 +2,7 @@
   {
     "name": "theme_info",
     "theme_name": "Horizon",
-    "theme_version": "3.1.0",
+    "theme_version": "2.0.0",
     "theme_author": "Shopify",
     "theme_documentation_url": "https://help.shopify.com/manual/online-store/themes",
     "theme_support_url": "https://support.shopify.com/"
@@ -24,30 +24,6 @@
         "id": "logo_inverse",
         "label": "t:settings.inverse_logo",
         "info": "t:content.inverse_logo_info"
-      },
-      {
-        "type": "range",
-        "id": "logo_height",
-        "label": "t:settings.desktop_height",
-        "min": 12,
-        "max": 100,
-        "step": 1,
-        "unit": "px",
-        "default": 36,
-        "visible_if": "{{ settings.logo != blank or settings.logo_inverse != blank }}",
-        "info": "t:info.logo_height"
-      },
-      {
-        "type": "range",
-        "id": "logo_height_mobile",
-        "label": "t:settings.mobile_height",
-        "min": 12,
-        "max": 100,
-        "step": 1,
-        "unit": "px",
-        "default": 28,
-        "visible_if": "{{ settings.logo != blank or settings.logo_inverse != blank }}",
-        "info": "t:info.logo_height"
       },
       {
         "type": "image_picker",
@@ -102,7 +78,7 @@
             "type": "color",
             "id": "border",
             "label": "t:settings.borders",
-            "default": "#E6E6E6",
+            "default": "#333333",
             "alpha": true
           },
           {
@@ -120,7 +96,7 @@
             "type": "color",
             "id": "primary_button_background",
             "label": "t:settings.background",
-            "default": "#000F9F",
+            "default": "#333333",
             "alpha": true
           },
           {
@@ -134,14 +110,14 @@
             "type": "color",
             "id": "primary_button_border",
             "label": "t:settings.borders",
-            "default": "#000F9F",
+            "default": "#333333",
             "alpha": true
           },
           {
             "type": "color",
             "id": "primary_button_hover_background",
             "label": "t:settings.hover_background",
-            "default": "#000F9F",
+            "default": "#222222",
             "alpha": true
           },
           {
@@ -155,7 +131,7 @@
             "type": "color",
             "id": "primary_button_hover_border",
             "label": "t:settings.hover_borders",
-            "default": "#000F9F",
+            "default": "#222222",
             "alpha": true
           },
           {
@@ -180,7 +156,7 @@
             "type": "color",
             "id": "secondary_button_border",
             "label": "t:settings.borders",
-            "default": "#000000",
+            "default": "#333333",
             "alpha": true
           },
           {
@@ -201,7 +177,7 @@
             "type": "color",
             "id": "secondary_button_hover_border",
             "label": "t:settings.hover_borders",
-            "default": "#000000",
+            "default": "#333333",
             "alpha": true
           },
           {
@@ -258,7 +234,7 @@
             "type": "color",
             "id": "variant_border_color",
             "label": "t:settings.borders",
-            "default": "#E6E6E6",
+            "default": "#333333",
             "alpha": true
           },
           {
@@ -279,7 +255,7 @@
             "type": "color",
             "id": "variant_hover_border_color",
             "label": "t:settings.hover_borders",
-            "default": "#E6E6E6",
+            "default": "#333333",
             "alpha": true
           },
           {
@@ -1398,12 +1374,6 @@
         "default": true
       },
       {
-        "type": "checkbox",
-        "id": "add_to_cart_animation",
-        "label": "t:settings.add_to_cart_animation",
-        "default": true
-      },
-      {
         "type": "select",
         "id": "card_hover_effect",
         "label": "t:settings.card_hover_effect",
@@ -1550,7 +1520,7 @@
         "step": 1,
         "unit": "px",
         "label": "t:settings.border_radius",
-        "default": 100
+        "default": 0
       },
       {
         "type": "select",
@@ -1568,7 +1538,46 @@
         ],
         "default": "body"
       },
-
+      {
+        "type": "select",
+        "id": "button_font_weight_primary",
+        "label": "t:settings.button_text_weight",
+        "options": [
+          {
+            "value": "default",
+            "label": "t:options.default"
+          },
+          {
+            "value": "100",
+            "label": "t:options.thin"
+          },
+          {
+            "value": "300",
+            "label": "t:options.light"
+          },
+          {
+            "value": "400",
+            "label": "t:options.regular"
+          },
+          {
+            "value": "500",
+            "label": "t:options.medium"
+          },
+          {
+            "value": "600",
+            "label": "t:options.semibold"
+          },
+          {
+            "value": "700",
+            "label": "t:options.bold"
+          },
+          {
+            "value": "900",
+            "label": "t:options.black"
+          }
+        ],
+        "default": "default"
+      },
       {
         "type": "select",
         "id": "button_text_case_primary",
@@ -1607,7 +1616,7 @@
         "step": 1,
         "unit": "px",
         "label": "t:settings.border_radius",
-        "default": 100
+        "default": 0
       },
       {
         "type": "select",
@@ -1625,7 +1634,46 @@
         ],
         "default": "body"
       },
-
+      {
+        "type": "select",
+        "id": "button_font_weight_secondary",
+        "label": "t:settings.button_text_weight",
+        "options": [
+          {
+            "value": "default",
+            "label": "t:options.default"
+          },
+          {
+            "value": "100",
+            "label": "t:options.thin"
+          },
+          {
+            "value": "300",
+            "label": "t:options.light"
+          },
+          {
+            "value": "400",
+            "label": "t:options.regular"
+          },
+          {
+            "value": "500",
+            "label": "t:options.medium"
+          },
+          {
+            "value": "600",
+            "label": "t:options.semibold"
+          },
+          {
+            "value": "700",
+            "label": "t:options.bold"
+          },
+          {
+            "value": "900",
+            "label": "t:options.black"
+          }
+        ],
+        "default": "default"
+      },
       {
         "type": "select",
         "id": "button_text_case_secondary",
@@ -1703,23 +1751,19 @@
         "label": "t:settings.font_price",
         "options": [
           {
-            "value": "body",
+            "value": "primary",
             "label": "t:options.body"
           },
           {
-            "value": "subheading",
+            "value": "secondary",
             "label": "t:options.subheading"
           },
           {
-            "value": "heading",
-            "label": "t:options.heading"
-          },
-          {
-            "value": "accent",
-            "label": "t:options.accent"
+            "value": "tertiary",
+            "label": "t:options.tertiary"
           }
         ],
-        "default": "subheading"
+        "default": "secondary"
       },
       {
         "type": "checkbox",
@@ -1729,21 +1773,10 @@
         "visible_if": "{{ settings.cart_type == 'drawer' }}"
       },
       {
-        "type": "header",
-        "content": "t:content.cart_features"
-      },
-      {
         "type": "checkbox",
         "id": "show_cart_note",
         "label": "t:settings.seller_note",
         "default": false
-      },
-      {
-        "type": "checkbox",
-        "id": "cart_note_open_by_default",
-        "label": "t:settings.seller_note_open_by_default",
-        "default": false,
-        "visible_if": "{{ settings.show_cart_note == true }}"
       },
       {
         "type": "checkbox",
@@ -1764,64 +1797,15 @@
         "info": "t:info.checkout_buttons",
         "default": true
       },
-
-      {
-        "type": "url",
-        "id": "empty_cart_button_link",
-        "label": "t:settings.empty_cart_button_link",
-        "default": "/collections/all"
-      },
       {
         "type": "header",
-        "content": "t:content.product_media"
+        "content": "Cart Upsell"
       },
       {
-        "type": "select",
-        "id": "cart_thumbnail_border",
-        "label": "t:settings.style",
-        "options": [
-          {
-            "value": "none",
-            "label": "t:options.none"
-          },
-          {
-            "value": "solid",
-            "label": "t:options.solid"
-          }
-        ],
-        "default": "none"
-      },
-      {
-        "type": "range",
-        "id": "cart_thumbnail_border_width",
-        "min": 0,
-        "max": 10,
-        "step": 1,
-        "unit": "px",
-        "label": "t:settings.border_width",
-        "default": 1,
-        "visible_if": "{{ settings.cart_thumbnail_border != 'none' }}"
-      },
-      {
-        "type": "range",
-        "id": "cart_thumbnail_border_opacity",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-        "unit": "%",
-        "label": "t:settings.border_opacity",
-        "default": 50,
-        "visible_if": "{{ settings.cart_thumbnail_border != 'none' }}"
-      },
-      {
-        "type": "range",
-        "id": "cart_thumbnail_border_radius",
-        "label": "t:settings.border_radius",
-        "min": 0,
-        "max": 100,
-        "step": 1,
-        "unit": "px",
-        "default": 0
+        "type": "product",
+        "id": "upsell_product",
+        "label": "Upsell Product",
+        "info": "Select a product to show as an upsell option in the cart. When checked, it will be added to the cart."
       }
     ]
   },
@@ -1926,7 +1910,7 @@
         "step": 1,
         "unit": "px",
         "label": "t:settings.border_radius",
-        "default": 8
+        "default": 0
       },
       {
         "type": "select",
@@ -1971,7 +1955,7 @@
     ]
   },
   {
-    "name": "t:names.popovers_and_modals",
+    "name": "t:names.popovers",
     "settings": [
       {
         "type": "color_scheme",

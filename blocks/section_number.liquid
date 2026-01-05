@@ -1,0 +1,286 @@
+{%- doc -%}
+  Section number.
+  Simple configurable line with optional counter (two numbers).
+{%- enddoc -%}
+{% assign navigator_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .custom-navigator-{{ navigator_id }} {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: {{ block.settings.spacing }}px;
+    padding: 0;
+  }
+
+  .custom-navigator__counter-{{ navigator_id }} {
+    font-size: {{ block.settings.number_size }}px;
+    font-weight: {{ block.settings.number_weight }};
+    color: {{ block.settings.number_color }};
+    font-family: {{ block.settings.number_font.family }}, {{ block.settings.number_font.fallback_families }};
+  }
+
+  .custom-navigator__progress-container-{{ navigator_id }} {
+    position: relative;
+    width: {{ block.settings.progress_width }}px;
+    height: 1px;
+    background-color: transparent;
+    border-radius: {{ block.settings.progress_radius }}px;
+    overflow: hidden;
+  }
+
+  .custom-navigator__progress-fill-{{ navigator_id }} {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background-color: {{ block.settings.progress_fill_color }};
+    width: 100%;
+    border-radius: {{ block.settings.progress_radius }}px;
+  }
+
+  @media screen and (max-width: 749px) {
+    .custom-navigator__progress-container-{{ navigator_id }} {
+      width: {{ block.settings.progress_width | times: 0.7 }}px;
+    }
+
+  }
+{% endstyle %}
+
+{% comment %} Hide section number on collections/all page {% endcomment %}
+{% if collection.handle == 'all' %}
+  {% style %}
+    .custom-navigator-{{ navigator_id }} {
+      display: none !important;
+    }
+  {% endstyle %}
+{% endif %}
+
+{%- liquid
+  # Check if we're on cart page and cart is empty, and this is the product list section number
+  assign is_cart_empty = false
+  if template.name == 'cart' and cart.empty?
+    if block.id contains 'section_number_product_list'
+      assign is_cart_empty = true
+    endif
+  endif
+  
+  if is_cart_empty
+    assign counter_1 = '01'
+    assign counter_2 = '01'
+  else
+    assign counter_1 = block.settings.counter_number_1 | default: '00'
+    assign counter_2 = block.settings.counter_number_2 | default: '00'
+  endif
+-%}
+
+<collection-navigator-{{ navigator_id }}
+  class="custom-navigator-{{ navigator_id }}"
+  {{ block.shopify_attributes }}
+>
+  {% if block.settings.counter_position == 'left' %}
+    <span class="custom-navigator__counter-{{ navigator_id }}">{{ counter_1 }}/{{ counter_2 }}</span>
+  {% endif %}
+
+  <div class="custom-navigator__progress-container-{{ navigator_id }}">
+    <div
+      class="custom-navigator__progress-fill-{{ navigator_id }}"
+      data-progress-fill
+      style="width: 100%;"
+    ></div>
+  </div>
+
+  {% if block.settings.counter_position != 'left' %}
+    <span class="custom-navigator__counter-{{ navigator_id }}">{{ counter_1 }}/{{ counter_2 }}</span>
+  {% endif %}
+</collection-navigator-{{ navigator_id }}>
+
+{% schema %}
+{
+  "name": "Section number",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Numbers"
+    },
+    {
+      "type": "font_picker",
+      "id": "number_font",
+      "label": "Font",
+      "default": "instrument_sans_n4"
+    },
+    {
+      "type": "range",
+      "id": "number_size",
+      "min": 12,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "label": "Size",
+      "default": 12
+    },
+    {
+      "type": "select",
+      "id": "number_weight",
+      "label": "Weight",
+      "options": [
+        {
+          "value": "300",
+          "label": "Light"
+        },
+        {
+          "value": "400",
+          "label": "Regular"
+        },
+        {
+          "value": "500",
+          "label": "Medium"
+        },
+        {
+          "value": "600",
+          "label": "Semibold"
+        },
+        {
+          "value": "700",
+          "label": "Bold"
+        }
+      ],
+      "default": "400"
+    },
+    {
+      "type": "color",
+      "id": "number_color",
+      "label": "Color",
+      "default": "#b0b0b0"
+    },
+    {
+      "type": "header",
+      "content": "Progress bar"
+    },
+    {
+      "type": "range",
+      "id": "progress_width",
+      "min": 50,
+      "max": 300,
+      "step": 10,
+      "unit": "px",
+      "label": "Width",
+      "default": 80
+    },
+    {
+      "type": "header",
+      "content": "Counter"
+    },
+    {
+      "type": "text",
+      "id": "counter_number_1",
+      "label": "Number 1",
+      "default": "00"
+    },
+    {
+      "type": "text",
+      "id": "counter_number_2",
+      "label": "Number 2",
+      "default": "00"
+    },
+    {
+      "type": "select",
+      "id": "counter_position",
+      "label": "Number position",
+      "options": [
+        { "value": "left", "label": "Left" },
+        { "value": "right", "label": "Right" }
+      ],
+      "default": "right"
+    },
+    {
+      "type": "range",
+      "id": "progress_height",
+      "min": 1,
+      "max": 6,
+      "step": 1,
+      "unit": "px",
+      "label": "Height",
+      "default": 2
+    },
+    {
+      "type": "range",
+      "id": "progress_radius",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "label": "Border radius",
+      "default": 2
+    },
+    {
+      "type": "color",
+      "id": "progress_bg_color",
+      "label": "Background color",
+      "default": "#E0E0E0"
+    },
+    {
+      "type": "color",
+      "id": "progress_fill_color",
+      "label": "Fill color",
+      "default": "#b0b0b0"
+    },
+    {
+      "type": "header",
+      "content": "Arrows"
+    },
+    {
+      "type": "range",
+      "id": "arrow_size",
+      "min": 16,
+      "max": 32,
+      "step": 2,
+      "unit": "px",
+      "label": "Size",
+      "default": 20
+    },
+    {
+      "type": "color",
+      "id": "arrow_left_color",
+      "label": "Left arrow color",
+      "default": "#999999"
+    },
+    {
+      "type": "color",
+      "id": "arrow_right_color",
+      "label": "Right arrow color",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Layout"
+    },
+    {
+      "type": "range",
+      "id": "spacing",
+      "min": 8,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Spacing",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "padding",
+      "min": 0,
+      "max": 60,
+      "step": 5,
+      "unit": "px",
+      "label": "Vertical padding",
+      "default": 20
+    }
+  ],
+  "presets": [
+    {
+      "name": "Section number"
+    }
+  ]
+}
+{% endschema %}

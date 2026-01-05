@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Last inn video: {{ description }}",
@@ -41,7 +50,7 @@
       "one": "{{ count }} filter brukt",
       "other": "{{ count }} filtre brukt"
     },
-    "account": "Konto",
+    "account": "Åpne kontomenyen",
     "cart": "Handlekurv",
     "cart_count": "Totalt antall varer i handlekurven",
     "menu": "Meny",
@@ -50,17 +59,17 @@
     "scroll_to": "Bla til {{ title }}",
     "loading_product_recommendations": "Laster inn produktanbefalinger",
     "discount": "Bruk en rabattkode",
-    "discount_menu": "Rabattkoder",
     "discount_applied": "Brukt rabattkode: {{ code }}",
+    "open_cart_drawer": "Åpne handlekurven",
     "pause_video": "Sett videoen på pause",
     "inventory_status": "Lagerstatus",
     "find_country": "Finn land",
-    "localization_region_and_language": "Region- og språkvelger",
+    "localization_region_and_language": "Åpne område- og språkvelgeren",
+    "open_search_modal": "Åpne søk",
     "decrease_quantity": "Reduser antallet",
     "increase_quantity": "Øk antallet",
     "quantity": "Antall",
-    "rating": "Vurderingen av dette produktet er {{ rating }} av 5",
-    "nested_product": "{{ product_title }} for {{ parent_title }}"
+    "rating": "Vurderingen av dette produktet er {{ rating }} av 5"
   },
   "actions": {
     "add_to_cart": "Legg i handlekurv",
@@ -99,8 +108,7 @@
     "sign_in_options": "Andre påloggingsalternativer",
     "sign_up": "Registrer deg",
     "sort": "Sorter",
-    "show_all_options": "Vis alle alternativer",
-    "open": "Åpen"
+    "show_all_options": "Vis alle alternativer"
   },
   "content": {
     "reviews": "anmeldelser",
@@ -213,27 +221,7 @@
       "other": "{{ count }} igjen"
     },
     "powered_by": "Denne butikken skal bli drevet av",
-    "store_owner_link_html": "Er du butikkeieren? <a href=\"{{ link }}\">Logg inn her</a>",
-    "recipient_form_send_to": "Send til",
-    "recipient_form_email_label": "Mottakerens e-postadresse",
-    "recipient_form_email_label_my_email": "Min e-postadresse",
-    "recipient_form_email_address": "Mottakerens e-postadresse",
-    "recipient_form_name_label": "Mottakerens navn (valgfritt)",
-    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} tegn brukt",
-    "recipient_form_send_on": "DD.MM.ÅÅÅÅ",
-    "recipient_form_send_on_label": "Send den (valgfritt)",
-    "recipient_form_message": "Melding (valgfritt)",
-    "recipient_form_fields_visible": "Feltene i mottakerskjemaet er nå synlige",
-    "recipient_form_fields_hidden": "Feltene i mottakerskjemaet er nå skjult",
-    "recipient_form_error": "Det oppsto en feil ved innsendingen av skjemaet",
-    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} tegn er brukt",
-    "terms_and_policies": "Vilkår og betingelser",
-    "pagination": {
-      "nav_label": "Sideinndelingsnavigasjon",
-      "previous": "Forrige",
-      "next": "Neste",
-      "page": "Side {{ page }}"
-    }
+    "store_owner_link_html": "Er du butikkeieren? <a href=\"{{ link }}\">Logg inn her</a>"
   },
   "gift_cards": {
     "issued": {
@@ -253,12 +241,7 @@
     "password": "Passord",
     "search": "Søk",
     "product_title": "Produkttittel",
-    "collection_title": "Samlingstittel",
-    "blog_posts": "Blogginnlegg",
-    "blog_post_title": "Tittel",
-    "blog_post_author": "Forfatter",
-    "blog_post_date": "Dato",
-    "blog_post_description": "Et utdrag av blogginnleggets innhold"
+    "collection_title": "Samlingstittel"
   },
   "products": {
     "product": {
@@ -267,13 +250,7 @@
       "adding_to_cart": "Legger til ...",
       "add_to_cart_error": "Problem med å legge til i handlekurven",
       "sold_out": "Utsolgt",
-      "unavailable": "Utilgjengelig",
-      "quantity_error_max": "Denne varen har et maksimumsantall på {{ maximum }}",
-      "quantity": "Antall",
-      "quantity_increments": "Økninger på {{ increment }}",
-      "quantity_minimum": "Minimum {{ minimum }}",
-      "quantity_maximum": "Maksimum {{ maximum }}",
-      "in_cart": "i handlekurv"
+      "unavailable": "Utilgjengelig"
     }
   },
   "fields": {

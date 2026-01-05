@@ -5,10 +5,15 @@
   @param {string} filter_style - The filter style, can be 'horizontal' or 'vertical'.
   @param {boolean} [autofocus] - Whether to autofocus the filter.
   @param {boolean} [should_render_clear] - Whether to render the clear button.
+  @param {boolean} [in_drawer] - Whether the filter is in a drawer.
 
   @example
   {% render 'price-filter', filter: filter, filter_style: 'vertical' %}
 {%- enddoc -%}
+
+{% liquid
+  assign in_drawer = in_drawer | default: false
+%}
 
 <accordion-custom
   class="facets__item"
@@ -17,11 +22,13 @@
     data-close-with-escape="true"
   {% endif %}
 
+  {% unless in_drawer %}
   open-by-default-on-mobile
   {% if filter_style == 'vertical' %}
     open
     open-by-default-on-desktop
   {% endif %}
+  {% endunless %}
 >
   <details
     class="facets__panel"

@@ -1,7 +1,8 @@
+{% # import schema from '../schemas/sections/marquee' %}
+
 <script
   src="{{ 'marquee.js' | asset_url }}"
   type="module"
-  fetchpriority="low"
 ></script>
 
 {% assign gap_between_elements = section.settings.gap_between_elements %}
@@ -14,7 +15,7 @@
     {% render 'gap-style', value: gap_between_elements, name: 'marquee-gap' %}
     --marquee-direction: {{ section.settings.movement_direction }};
   "
-  data-speed-factor="25"
+  data-speed-factor="20"
   data-movement-direction="{{ section.settings.movement_direction }}"
 >
   <div
@@ -25,10 +26,7 @@
       class="marquee__content"
       ref="content"
     >
-      <div
-        class="marquee__repeated-items"
-        ref="marqueeItems[]"
-      >
+      <div class="marquee__repeated-items">
         {% content_for 'blocks' %}
       </div>
     </div>
@@ -129,7 +127,7 @@
       "type": "color_scheme",
       "id": "color_scheme",
       "label": "t:settings.color_scheme",
-      "default": "scheme-1"
+      "default": "scheme-5"
     },
     {
       "type": "header",
@@ -169,12 +167,12 @@
   "presets": [
     {
       "name": "t:names.marquee_section",
-      "category": "t:categories.text",
+      "category": "t:categories.banners",
       "blocks": {
         "text": {
           "type": "text",
           "settings": {
-            "text": "t:html_defaults.make_things_better",
+            "text": "<p>We make things that work better and last longer.</p>",
             "type_preset": "custom",
             "font": "var(--font-body--family)",
             "font_size": "var(--font-size--h2)",

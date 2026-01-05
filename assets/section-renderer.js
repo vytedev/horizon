@@ -1,4 +1,5 @@
 import { morph } from '@theme/morph';
+import { startViewTransition } from '@theme/utilities';
 
 /**
  * A class to re-render sections using the Section Rendering API
@@ -31,18 +32,17 @@ class SectionRenderer {
    * @param {string} sectionId - The section ID
    * @param {Object} [options] - The options
    * @param {boolean} [options.cache] - Whether to use the cache
-   * @param {URL} [options.url] - The URL to render the section from
    * @returns {Promise<string>} The rendered section HTML
    */
   async renderSection(sectionId, options) {
     const { cache = !Shopify.designMode } = options ?? {};
-    const { url } = options ?? {};
+
     this.#abortPendingMorph(sectionId);
 
     const abortController = new AbortController();
     this.#abortControllersBySectionId.set(sectionId, abortController);
 
-    const sectionHTML = await this.getSectionHTML(sectionId, cache, url);
+    const sectionHTML = await this.getSectionHTML(sectionId, cache);
 
     if (!abortController.signal.aborted) {
       this.#abortControllersBySectionId.delete(sectionId);
@@ -130,7 +130,7 @@ function buildSectionRenderingURL(sectionId, url = new URL(window.location.href)
  * @param {string} sectionId - The section ID
  * @returns {string} The section selector
  */
-export function buildSectionSelector(sectionId) {
+function buildSectionSelector(sectionId) {
   return `${SECTION_ID_PREFIX}${sectionId}`;
 }
 
@@ -139,7 +139,7 @@ export function buildSectionSelector(sectionId) {
  * @param {string} sectionId - The section ID
  * @returns {string} The normalized section ID
  */
-export function normalizeSectionId(sectionId) {
+function normalizeSectionId(sectionId) {
   return sectionId.replace(new RegExp(`^${SECTION_ID_PREFIX}`), '');
 }
 

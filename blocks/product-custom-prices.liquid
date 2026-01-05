@@ -1,0 +1,64 @@
+{% # Custom prices block for Venmo/Zelle and PayPal with money formatting %}
+
+{% liquid
+  assign product = closest.product
+  if request.visual_preview_mode and product == blank
+    assign product = collections.all.products.first
+  endif
+%}
+
+<div class="product-custom-prices-block">
+  {% assign venmo_price = product.metafields.custom.venmo_zelle_price %}
+  {% assign paypal_price = product.metafields.custom.paypal_invioce_price %}
+  
+  {% if venmo_price and venmo_price.value or paypal_price and paypal_price.value %}
+    <p class="custom-price-text">
+      {% if venmo_price and venmo_price.value %}
+        - {% liquid
+          if venmo_price.value.amount
+            echo venmo_price.value.amount | money
+          else
+            echo venmo_price.value | money
+          endif
+        %} - Venmo/Zelle{% if paypal_price and paypal_price.value %}<br/>{% endif %}
+      {% endif %}
+      {% if paypal_price and paypal_price.value %}
+        - {% liquid
+          if paypal_price.value.amount
+            echo paypal_price.value.amount | money
+          else
+            echo paypal_price.value | money
+          endif
+        %} - PayPal Invoice
+      {% endif %}
+    </p>
+  {% else %}
+    <p class="custom-price-text no-payment-methods">
+      No other payment methods.
+    </p>
+  {% endif %}
+</div>
+
+{% stylesheet %}
+  .product-custom-prices-block {
+    width: 100%;
+  }
+  
+  .custom-price-text {
+    font-family: var(--font-body--family);
+    font-style: var(--font-body--style);
+    font-weight: var(--font-body--weight);
+    font-size: var(--font-body--size);
+    line-height: var(--font-body--line-height);
+    color: var(--color-foreground);
+    margin: 0;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Custom Prices",
+  "settings": []
+}
+{% endschema %}
+

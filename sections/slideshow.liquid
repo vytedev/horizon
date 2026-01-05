@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/sections/slideshow.js' %}
+
 {% if section.blocks.size > 1 %}
   {% capture controls %}
     {%- render 'slideshow-controls',
@@ -29,7 +31,6 @@
   endif
 %}
 
-<div class="section-background color-{{ section.settings.color_scheme }}"></div>
 <div
   class="spacing-style section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }} disable-section-top-offset"
   style="{% render 'spacing-padding', settings: section.settings %}"
@@ -199,7 +200,7 @@
   "presets": [
     {
       "name": "t:names.slideshow",
-      "category": "t:categories.banners",
+      "category": "t:categories.storytelling",
       "blocks": {
         "slide_1": {
           "type": "_slide",
@@ -226,20 +227,20 @@
                 "heading": {
                   "type": "text",
                   "settings": {
-                    "text": "t:html_defaults.new_arrivals_h2"
+                    "text": "<h2>New arrivals</h2>"
                   }
                 },
                 "text": {
                   "type": "text",
                   "settings": {
-                    "text": "t:html_defaults.latest_products",
+                    "text": "<p>Introducing our latest products, made especially for the season. Shop your favorites before they're gone!</p>",
                     "padding-block-end": 20
                   }
                 },
                 "button": {
                   "type": "button",
                   "settings": {
-                    "label": "t:text_defaults.shop_now_button_label",
+                    "label": "Shop now",
                     "link": "shopify://collections/all"
                   }
                 }
@@ -274,20 +275,20 @@
                 "heading": {
                   "type": "text",
                   "settings": {
-                    "text": "t:html_defaults.bestseller_h2"
+                    "text": "<h2>Bestsellers</h2>"
                   }
                 },
                 "text": {
                   "type": "text",
                   "settings": {
-                    "text": "t:html_defaults.discover_bestsellers",
+                    "text": "<p>Discover the bestsellers that have captured the hearts of our customers with their perfect blend of functionality and style.</p>",
                     "padding-block-end": 20
                   }
                 },
                 "button": {
                   "type": "button",
                   "settings": {
-                    "label": "t:text_defaults.shop_now_button_label",
+                    "label": "Shop now",
                     "link": "shopify://collections/all"
                   }
                 }

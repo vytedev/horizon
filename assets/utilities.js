@@ -6,26 +6,6 @@ export const requestIdleCallback =
   typeof window.requestIdleCallback == 'function' ? window.requestIdleCallback : setTimeout;
 
 /**
- * Executes a callback in a separate task after the next frame.
- * Using to defer non-critical tasks until after the interaction is complete.
- * @see https://web.dev/articles/optimize-inp#yield_to_allow_rendering_work_to_occur_sooner
- * @param {() => any} callback - The callback to execute
- */
-export const requestYieldCallback = (callback) => {
-  requestAnimationFrame(() => {
-    setTimeout(callback, 0);
-  });
-};
-
-/**
- * Tells if we are on a low power device based on the number of CPU cores and RAM
- * @returns {boolean} True if the device is a low power device, false otherwise
- */
-export function isLowPowerDevice() {
-  return Number(navigator.hardwareConcurrency) <= 2 || Number(navigator.deviceMemory) <= 2;
-}
-
-/**
  * Check if the browser supports View Transitions API
  * @returns {boolean} True if the browser supports View Transitions API, false otherwise
  */
@@ -85,10 +65,9 @@ const viewTransitionTypes = {
  * @returns {Promise<void>} A promise that resolves when the view transition finishes
  */
 export function startViewTransition(callback, types) {
-  // eslint-disable-next-line no-async-promise-executor
   return new Promise(async (resolve) => {
-    // Check if View Transitions API is supported
-    if (supportsViewTransitions() && !prefersReducedMotion()) {
+    // Check if View Transitions API is supported, not on mobile (to prevent crashes), and user hasn't reduced motion
+    if (supportsViewTransitions() && !prefersReducedMotion() && !isMobileBreakpoint()) {
       let cleanupFunctions = [];
 
       if (types) {
@@ -258,27 +237,14 @@ export function formatMoney(value) {
 }
 
 /**
- * Check if the document is ready/loaded and call the callback when it is.
+ * Check if the document is ready and call the callback when it is.
  * @param {() => void} callback The function to call when the document is ready.
  */
-export function onDocumentLoaded(callback) {
+export function onDocumentReady(callback) {
   if (document.readyState === 'complete') {
     callback();
   } else {
     window.addEventListener('load', callback);
-  }
-}
-
-/**
- * Check if the DOM is ready and call the callback when it is.
- * This fires when the DOM is fully parsed but before all resources are loaded.
- * @param {() => void} callback The function to call when the DOM is ready.
- */
-export function onDocumentReady(callback) {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', callback);
-  } else {
-    callback();
   }
 }
 
@@ -474,23 +440,6 @@ export function getVisibleElements(root, elements, ratio = 1, axis) {
   });
 }
 
-export function getIOSVersion() {
-  const { userAgent } = navigator;
-  const isIOS = /(iPhone|iPad)/i.test(userAgent);
-
-  if (!isIOS) return null;
-
-  const version = userAgent.match(/OS ([\d_]+)/)?.[1];
-  const [major, minor] = version?.split('_') || [];
-  if (!version || !major) return null;
-
-  return {
-    fullString: version.replace('_', '.'),
-    major: parseInt(major, 10),
-    minor: minor ? parseInt(minor, 10) : 0,
-  };
-}
-
 /**
  * Determines which grid items should be animated during a transition.
  * It makes an estimation based on the zoom-out card size because it's
@@ -585,16 +534,6 @@ export function changeMetaThemeColor(colorSourceElement) {
   const metaThemeColor = document.head.querySelector('meta[name="theme-color"]');
   const containerStyle = window.getComputedStyle(colorSourceElement);
   if (metaThemeColor) metaThemeColor.setAttribute('content', containerStyle.backgroundColor);
-}
-
-/**
- * Gets the `view` URL search parameter value, if it exists.
- * Useful for Section Rendering API calls to get HTML markup for the correct template view.
- * Primarily used in testing alternative template views.
- * @returns {string | null} The view parameter value, or null if it doesn't exist
- */
-export function getViewParameterValue() {
-  return new URLSearchParams(window.location.search).get('view');
 }
 
 class Scheduler {

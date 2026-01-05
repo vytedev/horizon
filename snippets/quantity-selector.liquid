@@ -3,42 +3,44 @@
   It is used in the product page and the cart page.
 
   @param {object} product - the product to render the quantity selector for
-  @param {object} [variant] - the specific variant to use (for cart items), if not provided uses selected_or_first_available_variant
   @param {number} [in_cart_quantity] - the quantity in the cart to set the input value
   @param {number} [line_index] - the index of the forloop representing the line on which the quantity selector is rendered
+  @param {number} [min] - the minimum quantity the input supports
   @param {string} [class] - custom class for the quantity selector, optional
-  @param {boolean} [can_update_quantity] - whether the quantity can be updated, defaults to true
+  @param {string} [shopify_attributes] - Shopify block attributes to add to the component
 {%- enddoc -%}
 
 {% liquid
-  if variant
-    assign variant = variant
-  else
-    assign variant = product.selected_or_first_available_variant
+  assign variant = product.selected_or_first_available_variant
+  
+  # Get available inventory quantity
+  assign available_quantity = variant.inventory_quantity
+  if variant.inventory_management == null or variant.inventory_policy == 'continue'
+    # If inventory is not tracked or policy is continue, allow unlimited
+    assign available_quantity = 9999
   endif
-  assign component_name = 'quantity-selector-component'
-  if line_index != null
-    assign component_name = 'cart-quantity-selector-component'
+  
+  # Use the smaller of quantity_rule.max or available_quantity
+  assign max_quantity = available_quantity
+  if variant.quantity_rule.max and variant.quantity_rule.max < available_quantity
+    assign max_quantity = variant.quantity_rule.max
   endif
 %}
 
-<{{ component_name }}
+<quantity-selector-component
   class="quantity-selector{% if class %} {{ class }}{% endif %}"
-  data-variant-id="{{ variant.id }}"
-  {% if line_index == null %}
-    {{- block.shopify_attributes -}}
+  {% if line_index == null and shopify_attributes != blank %}
+    {{- shopify_attributes -}}
   {% endif %}
   ref="quantitySelectors[]"
+  data-available-quantity="{{ available_quantity }}"
 >
   <button
     class="button quantity-minus button-unstyled"
     type="button"
     name="minus"
     on:click="/decreaseQuantity"
-    ref="minusButton"
-    {% if can_update_quantity == false %}
-      disabled
-    {% endif %}
+    ref="quantityButtons[]"
   >
     <span class="visually-hidden">{{ 'accessibility.decrease_quantity' | t }}</span
     ><span class="svg-wrapper icon-plus">
@@ -48,21 +50,19 @@
   <input
     type="number"
     name="{% if line_index %}updates[]{% else %}quantity{% endif %}"
-    value="{{ in_cart_quantity | default: variant.quantity_rule.min | default: 1 }}"
-    data-cart-quantity="{{ cart | item_count_for_variant: variant.id }}"
-    min="{{ variant.quantity_rule.min | default: 1 }}"
+    value="{{ in_cart_quantity | default: 1 }}"
+    min="{{ min | default: 1 }}"
+    max="{{ max_quantity }}"
     on:blur="/setQuantity"
     on:focus="/selectInputValue"
+    on:input="/validateQuantity"
     ref="quantityInput"
     aria-label="{{ 'accessibility.quantity' | t }}"
     {% if line_index %}
       data-cart-line="{{ line_index | plus: 1 }}"
     {% endif %}
-    {% if variant.quantity_rule.max %}
-      max="{{ variant.quantity_rule.max }}"
-    {% endif %}
     step="{{ variant.quantity_rule.increment | default: 1 }}"
-    {% if can_update_quantity == false or variant.available == false %}
+    {% if variant.available == false %}
       disabled
     {% endif %}
   >
@@ -71,14 +71,12 @@
     type="button"
     name="plus"
     on:click="/increaseQuantity"
-    ref="plusButton"
-    {% if can_update_quantity == false %}
-      disabled
-    {% endif %}
+    ref="quantityButtons[]"
   >
     <span class="visually-hidden">{{ 'accessibility.increase_quantity' | t }}</span
     ><span class="svg-wrapper icon-plus">
       {{- 'icon-plus.svg' | inline_asset_content -}}
     </span>
   </button>
-</{{ component_name }}>
+  <span class="quantity-selector__stock-message" ref="stockMessage" style="display: none;"></span>
+</quantity-selector-component>

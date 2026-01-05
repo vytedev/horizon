@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Încarcă clipul video: {{ description }}",
@@ -42,7 +51,7 @@
       "other": "{{ count }} filtre aplicate",
       "few": "{{ count }} filtre aplicate"
     },
-    "account": "Cont",
+    "account": "Deschide meniul Cont",
     "cart": "Coș",
     "cart_count": "Total articole în coș",
     "menu": "Meniu",
@@ -52,16 +61,16 @@
     "loading_product_recommendations": "Se încarcă recomandările de produse",
     "discount": "Aplică un cod de reducere",
     "discount_applied": "Cod de reducere aplicat: {{ code }}",
+    "open_cart_drawer": "Deschide coșul",
     "pause_video": "Pune pe pauză videoclipul",
     "inventory_status": "Stare inventar",
     "find_country": "Găsește țara",
-    "localization_region_and_language": "Selectorul de regiune și de limbă",
+    "localization_region_and_language": "Deschide instrumentul de selectare a regiunii și limbii",
+    "open_search_modal": "Deschide fereastra de căutare",
     "decrease_quantity": "Scade cantitatea",
     "increase_quantity": "Crește cantitatea",
     "quantity": "Cantitate",
-    "rating": "Evaluarea acestui produs este de {{ rating }} din 5",
-    "nested_product": "{{ product_title }} pentru {{ parent_title }}",
-    "discount_menu": "Coduri de reduceri"
+    "rating": "Evaluarea acestui produs este de {{ rating }} din 5"
   },
   "actions": {
     "add_to_cart": "Adaugă în coș",
@@ -101,8 +110,7 @@
     "sign_in_options": "Alte opțiuni de conectare",
     "sign_up": "Înscrie-te",
     "sort": "Sortează",
-    "show_all_options": "Afișează toate opțiunile",
-    "open": "Deschidere"
+    "show_all_options": "Afișează toate opțiunile"
   },
   "content": {
     "reviews": "recenzii",
@@ -218,26 +226,6 @@
       "one": "{{ count }} rămas",
       "other": "{{ count }} rămas",
       "few": "{{ count }} rămas"
-    },
-    "recipient_form_send_to": "Destinatar",
-    "recipient_form_email_label": "Adresa de e-mail a destinatarului",
-    "recipient_form_email_label_my_email": "Adresa mea de e-mail",
-    "recipient_form_email_address": "Adresa de e-mail a destinatarului",
-    "recipient_form_name_label": "Numele destinatarului (opțional)",
-    "recipient_form_message": "Mesaj (opțional)",
-    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} caractere folosite",
-    "recipient_form_send_on": "AAAA-LL-ZZ",
-    "recipient_form_send_on_label": "Data trimiterii (opțional)",
-    "recipient_form_fields_visible": "Câmpurile formularului pentru destinatar sunt acum vizibile",
-    "recipient_form_fields_hidden": "Câmpurile formularului pentru destinatar sunt acum ascunse",
-    "recipient_form_error": "A apărut o eroare la trimiterea formularului",
-    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} caractere folosite",
-    "terms_and_policies": "Termeni și politici",
-    "pagination": {
-      "nav_label": "Navigare în paginare",
-      "previous": "Anteriorul",
-      "next": "Următorul",
-      "page": "Pagina {{ page }}"
     }
   },
   "gift_cards": {
@@ -258,12 +246,7 @@
     "password": "Parolă",
     "search": "Caută",
     "product_title": "Titlul produsului",
-    "collection_title": "Titlul colecției",
-    "blog_posts": "Postări pe blog",
-    "blog_post_title": "Titlu",
-    "blog_post_author": "Autor",
-    "blog_post_date": "Data",
-    "blog_post_description": "Un fragment din postarea pe blog"
+    "collection_title": "Titlul colecției"
   },
   "products": {
     "product": {
@@ -272,13 +255,7 @@
       "adding_to_cart": "Se adaugă...",
       "add_to_cart_error": "Eroare la adăugarea în coș",
       "sold_out": "Stoc epuizat",
-      "unavailable": "Indisponibil",
-      "quantity_error_max": "Acest produs are un maxim de {{ maximum }}",
-      "quantity": "Cantitate",
-      "quantity_increments": "Incrementări de {{ increment }}",
-      "quantity_minimum": "Minim {{ minimum }}",
-      "quantity_maximum": "Maxim {{ maximum }}",
-      "in_cart": "în coș"
+      "unavailable": "Indisponibil"
     }
   },
   "fields": {

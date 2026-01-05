@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Tải video: {{ description }}",
@@ -41,7 +50,7 @@
       "one": "Đã áp dụng {{ count }} bộ lọc",
       "other": "Đã áp dụng {{ count }} bộ lọc"
     },
-    "account": "Tài khoản",
+    "account": "Mở menu tài khoản",
     "cart": "Giỏ hàng",
     "cart_count": "Tổng mặt hàng trong giỏ hàng",
     "menu": "Menu",
@@ -51,16 +60,16 @@
     "loading_product_recommendations": "Đang tải đề xuất sản phẩm",
     "discount": "Áp dụng một mã giảm giá",
     "discount_applied": "Đã áp dụng mã giảm giá: {{ code }}",
+    "open_cart_drawer": "Mở giỏ hàng",
     "inventory_status": "Trạng thái hàng trong kho",
     "pause_video": "Tạm dừng video",
     "find_country": "Tìm quốc gia",
-    "localization_region_and_language": "Bộ chọn vùng và ngôn ngữ",
+    "localization_region_and_language": "Mở bộ chọn khu vực và ngôn ngữ",
+    "open_search_modal": "Mở công cụ tìm kiếm",
     "decrease_quantity": "Giảm số lượng",
     "increase_quantity": "Tăng số lượng",
     "rating": "Sản phẩm này được đánh giá {{ rating }}/5",
-    "quantity": "Số lượng",
-    "nested_product": "{{ product_title }} cho {{ parent_title }}",
-    "discount_menu": "Mã giảm giá"
+    "quantity": "Số lượng"
   },
   "actions": {
     "add_to_cart": "Thêm vào giỏ hàng",
@@ -99,8 +108,7 @@
     "sign_up": "Đăng ký",
     "open_image_in_full_screen": "Mở hình ảnh ở chế độ toàn màn hình",
     "sort": "Sắp xếp",
-    "show_all_options": "Hiển thị tất cả tùy chọn",
-    "open": "Mở"
+    "show_all_options": "Hiển thị tất cả tùy chọn"
   },
   "content": {
     "reviews": "đánh giá",
@@ -213,27 +221,7 @@
     "store_owner_link_html": "Bạn có phải chủ cửa hàng không? <a href=\"{{ link }}\">Đăng nhập tại đây</a>",
     "shipping_discount_error": "Ưu đãi giảm giá vận chuyển được hiển thị tại trang thanh toán sau khi thêm địa chỉ",
     "discount_code_error": "Không thể áp dụng mã giảm giá cho giỏ hàng của bạn",
-    "shipping_policy": "Phí vận chuyển được tính khi thanh toán.",
-    "recipient_form_send_to": "Gửi đến",
-    "recipient_form_email_label": "Email của người nhận",
-    "recipient_form_email_label_my_email": "Email của tôi",
-    "recipient_form_email_address": "Địa chỉ email người nhận",
-    "recipient_form_name_label": "Tên người nhận (không bắt buộc)",
-    "recipient_form_message": "Tin nhắn (không bắt buộc)",
-    "recipient_form_characters_used": "Đã sử dụng {{ used_chars }}/{{ max_chars }} ký tự",
-    "recipient_form_send_on": "DD-MM-YYYY",
-    "recipient_form_send_on_label": "Ngày gửi (tùy chọn)",
-    "recipient_form_fields_visible": "Các trường biểu mẫu cho người nhận hiện đã được hiển thị",
-    "recipient_form_fields_hidden": "Các trường biểu mẫu cho người nhận hiện đã được ẩn",
-    "recipient_form_error": "Đã xảy ra lỗi khi gửi biểu mẫu",
-    "product_custom_property_character_count": "Đã sử dụng {{ used_chars }}/{{ max_chars }} ký tự",
-    "terms_and_policies": "Điều khoản và chính sách",
-    "pagination": {
-      "nav_label": "Điều hướng phân trang",
-      "previous": "Trước",
-      "next": "Tiếp",
-      "page": "Trang {{ page }}"
-    }
+    "shipping_policy": "Phí vận chuyển được tính khi thanh toán."
   },
   "gift_cards": {
     "issued": {
@@ -253,12 +241,7 @@
     "password": "Mật khẩu",
     "search": "Tìm kiếm",
     "product_title": "Tiêu đề sản phẩm",
-    "collection_title": "Tiêu đề bộ sưu tập",
-    "blog_posts": "Bài viết blog",
-    "blog_post_title": "Tiêu đề",
-    "blog_post_author": "Tác giả",
-    "blog_post_date": "Ngày",
-    "blog_post_description": "Một đoạn trích nội dung bài viết blog của bạn"
+    "collection_title": "Tiêu đề bộ sưu tập"
   },
   "products": {
     "product": {
@@ -267,13 +250,7 @@
       "adding_to_cart": "Đang thêm...",
       "add_to_cart_error": "Lỗi khi thêm vào giỏ hàng",
       "sold_out": "Hết hàng",
-      "unavailable": "Không khả dụng",
-      "quantity_error_max": "Mặt hàng này có tối đa {{ maximum }}",
-      "quantity": "Số lượng",
-      "quantity_increments": "Mức gia tăng {{ increment }}",
-      "quantity_minimum": "Tối thiểu {{ minimum }}",
-      "quantity_maximum": "Tối đa {{ maximum }}",
-      "in_cart": "trong giỏ hàng"
+      "unavailable": "Không khả dụng"
     }
   },
   "fields": {

@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/sections/featured-product' %}
+
 <script type="application/ld+json">
   {{ section.settings.product | structured_data }}
 </script>
@@ -9,6 +11,9 @@
     section
     section--full-width
     color-{{ section.settings.color_scheme }}
+    {% if request.design_mode == false and section.settings.product == blank %}
+      in-onboarding-state
+    {% endif %}
   "
 >
   <div
@@ -142,7 +147,7 @@
       "name": "t:names.featured_product",
       "category": "t:categories.products",
       "settings": {
-        "color_scheme": "scheme-3"
+        "color_scheme": "scheme-5"
       },
       "blocks": {
         "media": {

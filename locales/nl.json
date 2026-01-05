@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Video laden: {{ description }}",
@@ -41,7 +50,7 @@
       "one": "{{ count }} filter toegepast",
       "other": "{{ count }} filters toegepast"
     },
-    "account": "Account",
+    "account": "Accountmenu openen",
     "cart": "Winkelwagen",
     "cart_count": "Totaal aantal artikelen in winkelwagen",
     "menu": "Menu",
@@ -50,17 +59,17 @@
     "scroll_to": "Scrol naar {{ title }}",
     "loading_product_recommendations": "Productaanbevelingen laden",
     "discount": "Kortingscode toepassen",
-    "discount_menu": "Kortingscodes",
     "discount_applied": "Toegepaste kortingscode: {{ code }}",
+    "open_cart_drawer": "Winkelwagen openen",
     "inventory_status": "Voorraadstatus",
     "pause_video": "Video pauzeren",
     "find_country": "Land zoeken",
-    "localization_region_and_language": "Regio- en taalkiezer",
+    "localization_region_and_language": "Regio- en taalkiezer openen",
+    "open_search_modal": "Zoeken openen",
     "decrease_quantity": "Aantal verlagen",
     "increase_quantity": "Aantal verhogen",
     "quantity": "Aantal",
-    "rating": "Beoordeling van dit product is {{ rating }} van 5",
-    "nested_product": "{{ product_title }} voor {{ parent_title }}"
+    "rating": "Beoordeling van dit product is {{ rating }} van 5"
   },
   "actions": {
     "add_to_cart": "Aan winkelwagen toevoegen",
@@ -99,8 +108,7 @@
     "sign_up": "Aanmelden",
     "open_image_in_full_screen": "Afbeelding openen in volledig scherm",
     "sort": "Sorteren",
-    "show_all_options": "Alle opties tonen",
-    "open": "Openen"
+    "show_all_options": "Alle opties tonen"
   },
   "content": {
     "reviews": "recensies",
@@ -213,27 +221,7 @@
     "shipping_discount_error": "Verzendkortingen worden bij de checkout getoond nadat het adres is ingevoerd",
     "discount_code_error": "Kortingscode kan niet worden toegepast op je winkelwagen",
     "powered_by": "Deze winkel wordt mogelijk gemaakt door",
-    "store_owner_link_html": "Ben jij de winkeleigenaar? <a href=\"{{ link }}\">Log hier in</a>",
-    "recipient_form_send_to": "Verzenden naar",
-    "recipient_form_email_label": "E-mailadres ontvanger",
-    "recipient_form_email_label_my_email": "Mijn e-mailadres",
-    "recipient_form_email_address": "E-mailadres ontvanger",
-    "recipient_form_name_label": "Naam ontvanger (optioneel)",
-    "recipient_form_message": "Bericht (optioneel)",
-    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} tekens gebruikt",
-    "recipient_form_send_on": "JJJJ-MM-DD",
-    "recipient_form_send_on_label": "Verzenden op (optioneel)",
-    "recipient_form_fields_visible": "De formuliervelden voor de ontvanger zijn nu zichtbaar",
-    "recipient_form_fields_hidden": "De formuliervelden voor de ontvanger zijn nu verborgen",
-    "recipient_form_error": "Er is een fout opgetreden bij de indiening van het formulier",
-    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} tekens gebruikt",
-    "terms_and_policies": "Voorwaarden en beleid",
-    "pagination": {
-      "nav_label": "Navigatie paginering",
-      "previous": "Vorige",
-      "next": "Volgende",
-      "page": "Pagina {{ page }}"
-    }
+    "store_owner_link_html": "Ben jij de winkeleigenaar? <a href=\"{{ link }}\">Log hier in</a>"
   },
   "gift_cards": {
     "issued": {
@@ -253,12 +241,7 @@
     "password": "Wachtwoord",
     "search": "Zoeken",
     "product_title": "Producttitel",
-    "collection_title": "Collectietitel",
-    "blog_posts": "Blogposts",
-    "blog_post_title": "Titel",
-    "blog_post_author": "Auteur",
-    "blog_post_date": "Datum",
-    "blog_post_description": "Een uittreksel van de content van je blogpost"
+    "collection_title": "Collectietitel"
   },
   "products": {
     "product": {
@@ -267,13 +250,7 @@
       "added_to_cart": "Toegevoegd aan winkelwagen",
       "add_to_cart_error": "Fout bij het toevoegen aan de winkelwagen",
       "sold_out": "Uitverkocht",
-      "unavailable": "Niet beschikbaar",
-      "quantity_error_max": "Voor dit artikel geldt een maximum van {{ maximum }}.",
-      "quantity": "Aantal",
-      "quantity_increments": "Stappen van {{ increment }}",
-      "quantity_minimum": "Minimum van {{ minimum }}",
-      "quantity_maximum": "Maximum van {{ maximum }}",
-      "in_cart": "in winkelwagen"
+      "unavailable": "Niet beschikbaar"
     }
   },
   "fields": {

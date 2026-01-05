@@ -1,3 +1,5 @@
+{% # import schema from '../schemas/blocks/_collection-card-image' %}
+
 {%- doc -%}
   Display an image of a collection inside a collection card.
   Intended for collection-card.liquid block.
@@ -8,16 +10,119 @@
   {% content_for 'block', type: '_collection-card-image', id: 'collection-card-image', parent_block_id: block.id %}
 {%- enddoc -%}
 
-{% comment %} Render using unified resource image component {% endcomment %}
-{% comment %} Note: image_source auto-determined from closest.collection for collections {% endcomment %}
-{% render 'resource-image',
-  content_type: 'collections',
-  image_source: blank,
-  parent_block_id: parent_block_id,
-  block_settings: block.settings,
-  section_settings: section.settings,
-  block_attributes: block.shopify_attributes
+{% liquid
+  assign collection = closest.collection
+-%}
+
+{% liquid
+  assign image_source = collection.image
+  if image_source == blank
+    assign image_source = collection.products.first.featured_image
+  endif
+
+  assign ratio = 1
+
+  case block.settings.image_ratio
+    when 'landscape'
+      assign ratio = '16 / 9'
+    when 'portrait'
+      assign ratio = '4 / 5'
+    when 'adapt'
+      assign ratio = image_source.aspect_ratio
+  endcase
+
+  if ratio == 0 or ratio == null
+    assign ratio = 1
+  endif
 %}
+
+{% liquid
+  assign sizes = '(min-width: 750px) 50vw, 100vw'
+  assign lazy_sizes = 'auto, ' | append: sizes
+  assign loading = 'eager'
+
+  # when _collection-card-image is inside a Collection List section, specific layout types
+  # can determine the `sizes` and `loading` attributes
+
+  case section.settings.layout_type
+    when 'grid', 'carousel'
+      assign calculated_width = 100 | divided_by: section.settings.columns | append: 'vw'
+      assign sizes = '(min-width: 750px) [calc-width], 100vw' | replace: '[calc-width]', calculated_width
+    when 'editorial', 'bento'
+      assign loading = 'lazy'
+      assign sizes = lazy_sizes
+  endcase
+
+  assign widths = '300, 450, 600, 750, 900, 1050, 1200, 1350, 1500, 1650, 1800, 1950, 2000, 2500, 3000, 3500, 4000, 5000'
+%}
+
+{% style %}
+  .collection-card[data-block-id="{{ parent_block_id }}"] {
+    --ratio: {{ ratio }};
+  }
+{% endstyle %}
+
+{% if image_source != blank %}
+  <div
+    class="
+      image-block
+      collection-card__image
+      border-style
+      {% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }}{% endif %}
+    "
+    style="{% render 'border-override', settings: block.settings %}"
+  >
+    {%- if block.settings.toggle_overlay -%}
+      {% render 'overlay', settings: block.settings %}
+    {%- endif -%}
+
+    {{
+      image_source
+      | image_url: width: 3840
+      | image_tag:
+        width: block.settings.image.width,
+        widths: widths,
+        height: block.settings.image.height,
+        class: 'image-block__image',
+        sizes: sizes,
+        loading: loading
+    }}
+  </div>
+{% else %}
+  <div
+    class="
+      image-block
+      collection-card__image
+      collection-card__image--placeholder
+      border-style
+      {% if block.settings.inherit_color_scheme == false %} color-{{ block.settings.color_scheme }}{% endif %}
+    "
+    style="{% render 'border-override', settings: block.settings %}"
+  >
+    <placeholder-image
+      data-block-id="{{ block.id }}"
+      data-type="general"
+    ></placeholder-image>
+  </div>
+{% endif %}
+
+{% stylesheet %}
+  .collection-card__image {
+    position: relative;
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: var(--ratio);
+    z-index: var(--layer-base);
+    overflow: hidden;
+  }
+
+  .collection-card__image--placeholder {
+    width: 100%;
+    height: 100%;
+  }
+{% endstylesheet %}
 
 {% schema %}
 {

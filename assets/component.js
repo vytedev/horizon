@@ -1,4 +1,3 @@
-import { DeclarativeShadowElement } from '@theme/critical';
 import { requestIdleCallback } from '@theme/utilities';
 
 /**

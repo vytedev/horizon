@@ -2,41 +2,21 @@ import { morph } from '@theme/morph';
 import { Component } from '@theme/component';
 import { CartUpdateEvent, ThemeEvents } from '@theme/events';
 import { DialogComponent, DialogCloseEvent } from '@theme/dialog';
-import { mediaQueryLarge, isMobileBreakpoint, getIOSVersion } from '@theme/utilities';
+import { mediaQueryLarge, isMobileBreakpoint } from '@theme/utilities';
 
 export class QuickAddComponent extends Component {
   /** @type {AbortController | null} */
   #abortController = null;
-  /** @type {Map<string, Element>} */
-  #cachedContent = new Map();
+  /** @type {Document | null} */
+  #cachedProductHtml = null;
 
-  get productPageUrl() {
-    const productCard = /** @type {import('./product-card').ProductCard | null} */ (this.closest('product-card'));
-    const productLink = productCard?.getProductCardLink();
-
-    if (!productLink?.href) return '';
-
-    const url = new URL(productLink.href);
-
-    if (url.searchParams.has('variant')) {
-      return url.toString();
-    }
-
-    const selectedVariantId = this.#getSelectedVariantId();
-    if (selectedVariantId) {
-      url.searchParams.set('variant', selectedVariantId);
-    }
-
-    return url.toString();
+  get cachedProductHtml() {
+    return this.#cachedProductHtml;
   }
 
-  /**
-   * Gets the currently selected variant ID from the product card
-   * @returns {string | null} The variant ID or null
-   */
-  #getSelectedVariantId() {
-    const productCard = /** @type {import('./product-card').ProductCard | null} */ (this.closest('product-card'));
-    return productCard?.getSelectedVariantId() || null;
+  get productPageUrl() {
+    return /** @type {HTMLAnchorElement} */ (this.closest('product-card')?.querySelector('a[ref="productCardLink"]'))
+      ?.href;
   }
 
   connectedCallback() {
@@ -49,7 +29,6 @@ export class QuickAddComponent extends Component {
     super.disconnectedCallback();
 
     mediaQueryLarge.removeEventListener('change', this.#closeQuickAddModal);
-    this.#abortController?.abort();
   }
 
   /**
@@ -59,28 +38,18 @@ export class QuickAddComponent extends Component {
   handleClick = async (event) => {
     event.preventDefault();
 
-    const currentUrl = this.productPageUrl;
-
-    // Check if we have cached content for this URL
-    let productGrid = this.#cachedContent.get(currentUrl);
-
-    if (!productGrid) {
-      // Fetch and cache the content
-      const html = await this.fetchProductPage(currentUrl);
-      if (html) {
-        const gridElement = html.querySelector('[data-product-grid-content]');
-        if (gridElement) {
-          // Cache the cloned element to avoid modifying the original
-          productGrid = /** @type {Element} */ (gridElement.cloneNode(true));
-          this.#cachedContent.set(currentUrl, productGrid);
-        }
-      }
+    if (!this.#cachedProductHtml) {
+      await this.fetchProductPage(this.productPageUrl);
     }
 
-    if (productGrid) {
-      // Use a fresh clone from the cache
-      const freshContent = /** @type {Element} */ (productGrid.cloneNode(true));
-      await this.updateQuickAddModal(freshContent);
+    if (this.#cachedProductHtml) {
+      // Create a fresh copy of the cached HTML to avoid modifying the original
+      const freshHtmlCopy = new DOMParser().parseFromString(
+        this.#cachedProductHtml.documentElement.outerHTML,
+        'text/html'
+      );
+
+      await this.updateQuickAddModal(freshHtmlCopy);
     }
 
     this.#openQuickAddModal();
@@ -114,10 +83,11 @@ export class QuickAddComponent extends Component {
   /**
    * Fetches the product page content
    * @param {string} productPageUrl - The URL of the product page to fetch
-   * @returns {Promise<Document | null>}
+   * @returns {Promise<void>}
+   * @throws {Error} If the fetch request fails or returns a non-200 response
    */
   async fetchProductPage(productPageUrl) {
-    if (!productPageUrl) return null;
+    if (!productPageUrl) return;
 
     // We use this to abort the previous fetch request if it's still pending.
     this.#abortController?.abort();
@@ -135,10 +105,11 @@ export class QuickAddComponent extends Component {
       const responseText = await response.text();
       const html = new DOMParser().parseFromString(responseText, 'text/html');
 
-      return html;
+      // Store the HTML for later use
+      this.#cachedProductHtml = html;
     } catch (error) {
       if (error.name === 'AbortError') {
-        return null;
+        return;
       } else {
         throw error;
       }
@@ -149,15 +120,17 @@ export class QuickAddComponent extends Component {
 
   /**
    * Re-renders the variant picker.
-   * @param {Element} productGrid - The product grid element
+   * @param {Document} newHtml - The new HTML.
    */
-  async updateQuickAddModal(productGrid) {
+  async updateQuickAddModal(newHtml) {
+    const productGrid = newHtml.querySelector('[data-product-grid-content]');
     const modalContent = document.getElementById('quick-add-modal-content');
 
     if (!productGrid || !modalContent) return;
 
     if (isMobileBreakpoint()) {
       const productDetails = productGrid.querySelector('.product-details');
+      if (!productDetails) return;
       const productFormComponent = productGrid.querySelector('product-form-component');
       const variantPicker = productGrid.querySelector('variant-picker');
       const productPrice = productGrid.querySelector('product-price');
@@ -167,47 +140,20 @@ export class QuickAddComponent extends Component {
       // Make product title as a link to the product page
       productTitle.href = this.productPageUrl;
 
+      if (!productFormComponent || !variantPicker || !productPrice || !productTitle) return;
+
       const productHeader = document.createElement('div');
       productHeader.classList.add('product-header');
 
       productHeader.appendChild(productTitle);
-      if (productPrice) {
-        productHeader.appendChild(productPrice);
-      }
+      productHeader.appendChild(productPrice);
       productGrid.appendChild(productHeader);
-
-      if (variantPicker) {
-        productGrid.appendChild(variantPicker);
-      }
-      if (productFormComponent) {
-        productGrid.appendChild(productFormComponent);
-      }
-
-      productDetails?.remove();
+      productGrid.appendChild(variantPicker);
+      productGrid.appendChild(productFormComponent);
+      productDetails.remove();
     }
 
     morph(modalContent, productGrid);
-
-    this.#syncVariantSelection(modalContent);
-  }
-
-  /**
-   * Syncs the variant selection from the product card to the modal
-   * @param {Element} modalContent - The modal content element
-   */
-  #syncVariantSelection(modalContent) {
-    const selectedVariantId = this.#getSelectedVariantId();
-    if (!selectedVariantId) return;
-
-    // Find and check the corresponding input in the modal
-    const modalInputs = modalContent.querySelectorAll('input[type="radio"][data-variant-id]');
-    for (const input of modalInputs) {
-      if (input instanceof HTMLInputElement && input.dataset.variantId === selectedVariantId && !input.checked) {
-        input.checked = true;
-        input.dispatchEvent(new Event('change', { bubbles: true }));
-        break;
-      }
-    }
   }
 }
 
@@ -223,15 +169,12 @@ class QuickAddDialog extends DialogComponent {
 
     this.addEventListener(ThemeEvents.cartUpdate, this.handleCartUpdate, { signal: this.#abortController.signal });
     this.addEventListener(ThemeEvents.variantUpdate, this.#updateProductTitleLink);
-
-    this.addEventListener(DialogCloseEvent.eventName, this.#handleDialogClose);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
 
     this.#abortController.abort();
-    this.removeEventListener(DialogCloseEvent.eventName, this.#handleDialogClose);
   }
 
   /**
@@ -254,27 +197,6 @@ class QuickAddDialog extends DialogComponent {
 
     if (viewMoreDetailsLink) viewMoreDetailsLink.href = anchorElement.href;
     if (mobileProductTitle) mobileProductTitle.href = anchorElement.href;
-  };
-
-  #handleDialogClose = () => {
-    const iosVersion = getIOSVersion();
-    /**
-     * This is a patch to solve an issue with the UI freezing when the dialog is closed.
-     * To reproduce it, use iOS 16.0.
-     */
-    if (!iosVersion || iosVersion.major >= 17 || (iosVersion.major === 16 && iosVersion.minor >= 4)) return;
-
-    requestAnimationFrame(() => {
-      /** @type {HTMLElement | null} */
-      const grid = document.querySelector('#ResultsList [product-grid-view]');
-      if (grid) {
-        const currentWidth = grid.getBoundingClientRect().width;
-        grid.style.width = `${currentWidth - 1}px`;
-        requestAnimationFrame(() => {
-          grid.style.width = '';
-        });
-      }
-    });
   };
 }
 

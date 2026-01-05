@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "Naloži videoposnetek: {{ description }}",
@@ -43,7 +52,7 @@
       "few": "Št. uporabljenih filtrov: {{ count }}",
       "two": "Št. uporabljenih filtrov: {{ count }}"
     },
-    "account": "Račun",
+    "account": "Odpri meni za račun",
     "cart": "Košarica",
     "cart_count": "Skupno število izdelkov v košarici",
     "menu": "Meni",
@@ -53,16 +62,16 @@
     "loading_product_recommendations": "Nalaganje priporočil za izdelke",
     "discount": "Uporabi kodo za popust",
     "discount_applied": "Uporabljena koda za popust: {{ code }}",
+    "open_cart_drawer": "Odpri košarico",
     "inventory_status": "Status zaloge",
     "pause_video": "Zaustavi videoposnetek",
     "find_country": "Poišči državo",
-    "localization_region_and_language": "Izbirnik za regijo in jezik",
+    "localization_region_and_language": "Odpri izbirnik za regijo in jezik",
+    "open_search_modal": "Odpri iskanje",
     "decrease_quantity": "Zmanjšaj količino",
     "increase_quantity": "Povečaj količino",
     "quantity": "Količina",
-    "rating": "Ocena tega izdelka je {{ rating }} od 5",
-    "nested_product": "{{ product_title }} za {{ parent_title }}",
-    "discount_menu": "Kode za popust"
+    "rating": "Ocena tega izdelka je {{ rating }} od 5"
   },
   "actions": {
     "add_to_cart": "Dodaj v košarico",
@@ -103,8 +112,7 @@
     "sign_up": "Prijava",
     "open_image_in_full_screen": "Odpri sliko v celozaslonskem načinu",
     "sort": "Razvrsti",
-    "show_all_options": "Prikaži vse možnosti",
-    "open": "Odpri"
+    "show_all_options": "Prikaži vse možnosti"
   },
   "content": {
     "reviews": "ocen.",
@@ -223,27 +231,7 @@
     "shipping_policy": "Dostava se obračuna ob zaključku nakupa.",
     "powered_by": "To trgovino bo omogočala platforma",
     "store_owner_link_html": "Ali ste lastnik te trgovine? <a href=\"{{ link }}\">Prijavite se tukaj</a>",
-    "shipping_discount_error": "Popusti za dostavo so prikazani ob zaključku nakupa po dodajanju naslova",
-    "recipient_form_send_to": "Pošlji na",
-    "recipient_form_email_label": "E-poštni naslov prejemnika",
-    "recipient_form_email_label_my_email": "Moj e-poštni naslov",
-    "recipient_form_email_address": "E-poštni naslov prejemnika",
-    "recipient_form_name_label": "Ime prejemnika (izbirno)",
-    "recipient_form_message": "Sporočilo (izbirno)",
-    "recipient_form_characters_used": "Uporabljeno št. znakov: {{ used_chars }}/{{ max_chars }}",
-    "recipient_form_send_on": "LLLL-MM-DD",
-    "recipient_form_send_on_label": "Pošlji na datum (izbirno)",
-    "recipient_form_fields_visible": "Polja obrazca prejemnika so zdaj vidna",
-    "recipient_form_fields_hidden": "Polja obrazca prejemnika so zdaj skrita",
-    "recipient_form_error": "Pri pošiljanju obrazca je prišlo do napake",
-    "product_custom_property_character_count": "Uporabljeno št. znakov: {{ used_chars }}/{{ max_chars }}",
-    "terms_and_policies": "Pogoji in pravilniki",
-    "pagination": {
-      "nav_label": "Krmarjenje po straneh",
-      "previous": "Nazaj",
-      "next": "Naprej",
-      "page": "Stran {{ page }}"
-    }
+    "shipping_discount_error": "Popusti za dostavo so prikazani ob zaključku nakupa po dodajanju naslova"
   },
   "gift_cards": {
     "issued": {
@@ -263,12 +251,7 @@
     "password": "Geslo",
     "search": "Išči",
     "product_title": "Naslov izdelka",
-    "collection_title": "Naslov zbirke",
-    "blog_posts": "Objave v spletnem dnevniku",
-    "blog_post_title": "Naslov",
-    "blog_post_author": "Avtor",
-    "blog_post_date": "Datum",
-    "blog_post_description": "Odlomek vsebine vaše objave v spletnem dnevniku"
+    "collection_title": "Naslov zbirke"
   },
   "products": {
     "product": {
@@ -277,13 +260,7 @@
       "adding_to_cart": "Dodajanje ...",
       "add_to_cart_error": "Pri dodajanju v košarico je prišlo do napake",
       "sold_out": "Razprodano",
-      "unavailable": "Ni na voljo",
-      "quantity_error_max": "Ta artikel ima največ {{ maximum }}",
-      "quantity": "Količina",
-      "quantity_increments": "V korakih po {{ increment }}",
-      "quantity_minimum": "Najmanj od {{ minimum }}",
-      "quantity_maximum": "Največ od {{ maximum }}",
-      "in_cart": "v košarici"
+      "unavailable": "Ni na voljo"
     }
   },
   "fields": {

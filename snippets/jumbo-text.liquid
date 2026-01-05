@@ -2,19 +2,17 @@
   Renders text that stretches to fit the full width of its container.
 
   @param {string} [text] - The text to be rendered.
-  @param {object} [block_settings] - The block settings object, defaults to block.settings
 
   @example
   {% render 'jumbo-text', text: block.settings.text %}
 {%- enddoc -%}
 
 {% liquid
-  assign block_settings = block_settings | default: block.settings
-  assign shown_text = text | default: block_settings.text
+  assign shown_text = text | default: block.settings.text
   assign descenders = 'alphabetic'
   assign trim = 'trim-both'
 
-  unless block_settings.case == 'uppercase'
+  unless block.settings.case == 'uppercase'
     if shown_text contains 'g' or shown_text contains 'j' or shown_text contains 'p' or shown_text contains 'q' or shown_text contains 'y'
       assign descenders = 'text'
     endif
@@ -28,22 +26,22 @@
 
 {% capture attributes %}
   style="
-    --font-family: var(--font-{{ block_settings.font | default: 'accent'}}--family);
-    --font-weight: var(--font-{{ block_settings.font | default: 'accent'}}--weight);
-    {% if block_settings.font == 'body' %}
+    --font-family: var(--font-{{ block.settings.font | default: 'accent'}}--family);
+    --font-weight: var(--font-{{ block.settings.font | default: 'accent'}}--weight);
+    {% if block.settings.font == 'body' %}
       --color: var(--color-foreground);
     {% else %}
       --color: var(--color-foreground-heading);
     {% endif %}
-    --text-align: {{ block_settings.alignment | default: 'left' }};
-    {% if block_settings.alignment == "left" %}
+    --text-align: {{ block.settings.alignment | default: 'left' }};
+    {% if block.settings.alignment == "left" %}
       --margin-left-nudge: {{nudge}};
-    {% elsif block_settings.alignment == "right" %}
+    {% elsif block.settings.alignment == "right" %}
       --margin-right-nudge: {{nudge}};
     {% endif %}
-    --line-height: {{ block_settings.line_height | default: '1' }};
-    --letter-spacing: {{ block_settings.letter_spacing | default: '-0.03em' }};
-    --text-transform: {{ block_settings.case | default: 'none' }};
+    --line-height: {{ block.settings.line_height | default: '1' }};
+    --letter-spacing: {{ block.settings.letter_spacing | default: '-0.03em' }};
+    --text-transform: {{ block.settings.case | default: 'none' }};
     --text-trim: {{text_trim}};
   "
   {{ block.shopify_attributes }}
@@ -57,11 +55,11 @@
   {% if text != blank %}
     <jumbo-text {{ attributes }}>{{ text }}</jumbo-text>
   {% else %}
-    <span class="visually-hidden">{{ shown_text }}</span>
     <jumbo-text
       {{ attributes }}
-      data-text-effect="{{ block_settings.text_effect }}"
-      data-animation-repeat="{{ block_settings.animation_repeat }}"
+      aria-label="{{ shown_text }}"
+      data-text-effect="{{ block.settings.text_effect }}"
+      data-animation-repeat="{{ block.settings.animation_repeat }}"
     >
       {%- assign char_index = 0 -%}
       {%- for line in text_with_lines -%}
@@ -72,7 +70,6 @@
           class="jumbo-text-line"
           style="--line-index: {{ forloop.index }};"
           data-testid="jumbo-text-line"
-          aria-hidden="true"
         >
           {%- assign chars = line | split: ' ' | join: ' ' | split: '' -%}
           {%- for char in chars -%}
@@ -98,20 +95,16 @@
       {%- endfor -%}
     </jumbo-text>
   {% endif %}
-
-  <script
-    src="{{ 'jumbo-text.js' | asset_url }}"
-    type="module"
-  ></script>
 </div>
+
+<script
+  src="{{ 'jumbo-text.js' | asset_url }}"
+  type="module"
+></script>
 
 {% stylesheet %}
   .jumbo-text__container {
     width: 100%;
-  }
-
-  footer .jumbo-text__container {
-    pointer-events: none;
   }
 
   jumbo-text {
@@ -140,7 +133,6 @@
   }
 
   jumbo-text[data-cap-text='true'] {
-    /* stylelint-disable-next-line plugin/no-unsupported-browser-features */
     text-box-edge: cap text;
   }
 

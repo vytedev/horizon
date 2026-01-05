@@ -4,18 +4,9 @@
 ></script>
 
 <cart-note style="display: flex;">
-  <accordion-custom
-    class="cart-note"
-    {% if settings.cart_note_open_by_default %}
-      open-by-default-on-desktop
-      open-by-default-on-mobile
-    {% endif %}
-  >
+  <accordion-custom class="cart-note">
     <details
       class="details"
-      {% if settings.cart_note_open_by_default %}
-        open
-      {% endif %}
     >
       <summary class="cart-note__summary">
         <span class="cart-note__label h6">

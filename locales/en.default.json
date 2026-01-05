@@ -9,7 +9,7 @@
  */
 {
   "accessibility": {
-    "account": "Account",
+    "account": "Open account menu",
     "cart": "Cart",
     "cart_count": "Total items in cart",
     "close_dialog": "Close dialog",
@@ -17,7 +17,6 @@
     "country_results_count": "{{ count }} results",
     "decrease_quantity": "Decrease quantity",
     "discount": "Apply a discount code",
-    "discount_menu": "Discount Codes",
     "discount_applied": "Applied discount code: {{ code }}",
     "filters": "Filters",
     "filter_count": {
@@ -26,10 +25,11 @@
     },
     "increase_quantity": "Increase quantity",
     "inventory_status": "Inventory status",
-    "localization_region_and_language": "Region and language selector",
+    "localization_region_and_language": "Open region and language selector",
     "menu": "Menu",
-    "nested_product": "{{ product_title }} for {{ parent_title }}",
     "new_window": "Opens in a new window.",
+    "open_cart_drawer": "Open cart",
+    "open_search_modal": "Open search",
     "quantity": "Quantity",
     "pause_video": "Pause video",
     "play_model": "Play 3D model",
@@ -53,21 +53,15 @@
     "find_country": "Find country"
   },
   "actions": {
-    // Quick add button on product cards, shortened version of add to cart
     "add": "Add",
     "add_to_cart": "Add to cart",
-    // Success message shown after adding item to cart
     "added": "Added",
-    // Button to apply discount code to cart
     "apply": "Apply",
     "back": "Back",
     "choose": "Choose",
-    // Button to reset current selection or input
     "clear": "Clear",
-    // Button to remove all applied product filters
     "clear_all": "Clear all",
     "close": "Close",
-    "open": "Open",
     // Continue shopping link on the cart page which takes the user back to a collection page
     "continue_shopping": "Continue shopping",
     "enter_password": "Enter password",
@@ -75,28 +69,22 @@
     "log_in": "Sign in",
     "log_out": "Log out",
     "open_image_in_full_screen": "Open image in full screen",
-    // Button to remove applied filters from search/collection results
     "remove": "Remove",
     "remove_discount": "Remove discount {{ code }}",
-    // Button to expand hidden product variant options
     "show_all_options": "Show all options",
     "see_items": {
       "one": "See {{ count }} item",
-      // Button to view filtered product results and close filter dialog
       "other": "See {{ count }} items"
     },
     "show_filters": "Filter",
     "show_less": "Show less",
     "show_more": "Show more",
     "sign_in_options": "Other sign in options",
-    // AR button to view 3D product model in physical space
     "view_in_your_space": "View in your space",
-    // Button to view complete collection/product list
     "view_all": "View all",
     "more": "More",
     "zoom": "Zoom",
     "close_dialog": "Close dialog",
-    // Button to clear search filter and restore default view
     "reset": "Reset",
     "enter_using_password": "Enter using password",
     "sign_up": "Sign up",
@@ -145,8 +133,7 @@
   },
   "content": {
     "discount": "Discount",
-    "account_title": "Account",
-    "terms_and_policies": "Terms and Policies",
+    "account_title": "account",
     "account_title_personalized": "Hi {{ first_name }}",
     "account_orders": "Orders",
     "account_profile": "Profile",
@@ -196,12 +183,6 @@
     "no_results_found": "No results found",
     "page_placeholder_title": "Page title",
     "page_placeholder_content": "Select a page to display its content.",
-    "pagination": {
-      "nav_label": "Pagination navigation",
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {{ page }}"
-    },
     "pickup_available_at_html": "Pickup available at <b>{{ location }}</b>",
     "pickup_available_in": "Pickup available, {{ pickup_time }}",
     "pickup_not_available": "Pickup currently not available",
@@ -226,14 +207,13 @@
     "read_more": "Read more...",
     "search_input_label": "Search",
     "search_input_placeholder": "Search",
-    "search": "Search",
-    "search_results": "Search results",
-    "search_results_label": "Search results",
+    "search": "looking for something?",
+    "search_results": "search results",
+    "search_results_label": "search results",
     "search_results_no_results": "No results found for \"{{ terms }}\". Try another search.",
     "search_results_no_results_check_spelling": "No results found for \"{{ terms }}\". Check the spelling or use a different word or phrase.",
     "search_results_resource_articles": "Blog posts",
     "search_results_resource_collections": "Collections",
-    // Section heading for Shopify store pages in search results
     "search_results_resource_pages": "Pages",
     "search_results_resource_products": "Products",
     "search_results_resource_products_count": {
@@ -241,10 +221,8 @@
       "other": "{{ count }} products"
     },
     "search_results_resource_queries": "Search suggestions",
-    // Button to go from search preview to full search results page
     "search_results_view_all": "View all",
     "search_results_view_all_button": "View all",
-    // Label for customer's note to seller during checkout
     "seller_note": "Special instructions",
     "shipping_policy": "Shipping calculated at checkout.",
     "shipping_policy_html": "<a href=\"{{ link }}\">Shipping</a> calculated at checkout.",
@@ -260,29 +238,13 @@
     "taxes_included_shipping_at_checkout_without_policy_without_discounts": "Taxes included. Shipping is calculated at checkout.",
     "unavailable": "Unavailable",
     "use_fewer_filters_html": "Try using fewer filters, or <a class=\"{{ class }}\" href=\"{{ link }}\">clear all filters</a>.",
-    // Link or button to expand additional information
     "view_more_details": "View more details",
     "your_cart_is_empty": "Your cart is empty",
     "product_count": "Product count",
     "errors": "Errors",
-    "wrong_password": "Wrong password",
-    // Legend text for gift card delivery options
-    "recipient_form_send_to": "Send to",
-    "recipient_form_email_label": "Recipient’s email",
-    "recipient_form_email_label_my_email": "My email",
-    "recipient_form_email_address": "Recipient email address",
-    "recipient_form_name_label": "Recipient name (optional)",
-    "recipient_form_message": "Message (optional)",
-    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }} characters used",
-    "recipient_form_send_on": "YYYY-MM-DD",
-    "recipient_form_send_on_label": "Send on (optional)",
-    "recipient_form_fields_visible": "Recipient form fields are now visible",
-    "recipient_form_fields_hidden": "Recipient form fields are now hidden",
-    "recipient_form_error": "There was an error with the form submission",
-    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }} characters used"
+    "wrong_password": "Wrong password"
   },
   "fields": {
-    // Separates min and max values in price range filter
     "separator": "to"
   },
   "gift_cards": {
@@ -303,12 +265,7 @@
     "password": "Password",
     "search": "Search",
     "product_title": "Product title",
-    "collection_title": "Collection title",
-    "blog_posts": "Blog Posts",
-    "blog_post_title": "Title",
-    "blog_post_author": "Author",
-    "blog_post_date": "Date",
-    "blog_post_description": "An excerpt of your blog post's content"
+    "collection_title": "Collection title"
   },
   "products": {
     "product": {
@@ -316,14 +273,8 @@
       "adding_to_cart": "Adding...",
       "added_to_cart": "Added to cart",
       "add_to_cart_error": "Error adding to cart",
-      "quantity_error_max": "This item has a maximum of {{ maximum }}",
       "sold_out": "Sold out",
-      "unavailable": "Unavailable",
-      "quantity": "Quantity",
-      "quantity_increments": "Increments of {{ increment }}",
-      "quantity_minimum": "Minimum of {{ minimum }}",
-      "quantity_maximum": "Maximum of {{ maximum }}",
-      "in_cart": "in cart"
+      "unavailable": "Unavailable"
     }
   }
 }

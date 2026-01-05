@@ -1,26 +1,26 @@
+{% # import schema from '../schemas/blocks/_marquee' %}
+
 <script
   src="{{ 'marquee.js' | asset_url }}"
   type="module"
-  fetchpriority="low"
 ></script>
 
-{% assign block_settings = block.settings %}
-{% assign gap_between_elements = block_settings.gap_between_elements %}
+{% assign gap_between_elements = block.settings.gap_between_elements %}
 
 <marquee-component
   class="
     spacing-style
     gap-style
-    {% if block_settings.inherit_color_scheme == false %}color-{{ block_settings.color_scheme }}{% endif %}
+    {% if block.settings.inherit_color_scheme == false %}color-{{ block.settings.color_scheme }}{% endif %}
   "
   style="
-    {%- render 'spacing-style', settings: block_settings %};
+    {%- render 'spacing-style', settings: block.settings %};
     {% render 'gap-style', value: gap_between_elements, name: 'marquee-gap' %}
-    --marquee-direction: {{ block_settings.movement_direction }};
-    {%- if block_settings.transparent_background == true -%}background-color: transparent;{%- endif -%}
+    --marquee-direction: {{ block.settings.movement_direction }};
+    {%- if block.settings.transparent_background == true -%}background-color: transparent;{%- endif -%}
   "
-  data-speed-factor="25"
-  data-movement-direction="{{ block_settings.movement_direction }}"
+  data-speed-factor="20"
+  data-movement-direction="{{ block.settings.movement_direction }}"
 >
   <div
     class="marquee__wrapper"
@@ -30,10 +30,7 @@
       class="marquee__content"
       ref="content"
     >
-      <div
-        class="marquee__repeated-items"
-        ref="marqueeItems[]"
-      >
+      <div class="marquee__repeated-items">
         {% content_for 'blocks' %}
       </div>
     </div>
@@ -83,7 +80,6 @@
 
   .hero__content-wrapper.layout-panel-flex--column marquee-component {
     --margin-inline: var(--full-page-margin-inline-offset);
-
     width: -webkit-fill-available;
     min-height: max-content;
   }
@@ -195,7 +191,7 @@
         "text": {
           "type": "text",
           "settings": {
-            "text": "t:html_defaults.make_things_better",
+            "text": "<p>We make things that work better and last longer.</p>",
             "type_preset": "custom",
             "font": "var(--font-body--family)",
             "font_size": "var(--font-size--h2)",

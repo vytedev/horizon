@@ -1,4 +1,6 @@
-{% render 'quantity-selector', product: closest.product %}
+{% # import schema from '../schemas/blocks/quantity.js' %}
+
+{% render 'quantity-selector', product: closest.product, shopify_attributes: block.shopify_attributes %}
 
 {% schema %}
 {

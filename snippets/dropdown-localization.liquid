@@ -17,7 +17,7 @@
 
   assign localization_font = '--menu-localization-font: var(--font-[localization_font]--family); ' | replace: '[localization_font]', section.settings.localization_font
   assign localization_font_size = '--menu-localization-font-size: [localization_font_size]; ' | replace: '[localization_font_size]', section.settings.localization_font_size
-  assign color_shadow = '--color-shadow: rgb(var(--color-foreground-rgb) / var(--opacity-10-25));'
+  assign color_shadow = '--color-shadow: rgb(from var(--color-foreground) r g b / var(--opacity-10-25));'
   assign form_style = localization_font | append: localization_font_size | append: color_shadow
 %}
 
@@ -44,6 +44,7 @@
       on:click="/toggleSelector"
       style="{{ localization_font }} {{ localization_font_size }}"
     >
+      <span class="visually-hidden">{{ 'accessibility.localization_region_and_language' | t }}</span>
       {% if show_country %}
         {% if country_style == true %}
           <span
@@ -51,23 +52,14 @@
             style="
               background-image: url({{- localization.country | image_url: width: 32 }});
               --size-shadow: {{ shadow_size }}px;
-              --color-shadow: rgb(var(--color-foreground-rgb) / var(--opacity-30-60));
+              --color-shadow: rgb(from var(--color-foreground) r g b / var(--opacity-30-60));
             "
           ></span>
         {% endif %}
-        <span
-          class="currency-code"
-          data-testid="localization-currency-code"
-        >
+        <span class="currency-code">
           {{- localization.country.currency.iso_code -}}
         </span>
       {% endif %}
-      <span
-        class="visually-hidden"
-        data-testid="localization-visually-hidden"
-      >
-        {{- 'accessibility.localization_region_and_language' | t -}}
-      </span>
 
       {%- if show_country and show_language -%}
         <span>/</span>

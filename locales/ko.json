@@ -1,3 +1,12 @@
+/*
+ * ------------------------------------------------------------
+ * IMPORTANT: The contents of this file are auto-generated.
+ *
+ * This file may be updated by the Shopify admin language editor
+ * or related systems. Please exercise caution as any changes
+ * made to this file may be overwritten.
+ * ------------------------------------------------------------
+ */
 {
   "blocks": {
     "load_video": "동영상 로드: {{ description }}",
@@ -41,7 +50,7 @@
       "one": "{{ count }}개 필터 적용됨",
       "other": "{{ count }}개 필터 적용됨"
     },
-    "account": "계정",
+    "account": "계정 메뉴 열기",
     "cart": "카트",
     "cart_count": "카트에 있는 총 품목 수",
     "menu": "메뉴",
@@ -50,17 +59,17 @@
     "scroll_to": "{{ title }}(으)로 스크롤",
     "loading_product_recommendations": "제품 추천 로드 중",
     "discount": "할인 코드 적용",
-    "discount_menu": "할인 코드",
     "discount_applied": "적용된 할인 코드: {{ code }}",
+    "open_cart_drawer": "카트 열기",
     "pause_video": "동영상 일시 중지",
     "inventory_status": "재고 상태",
     "find_country": "국가 찾기",
-    "localization_region_and_language": "지역 및 언어 선택기",
+    "localization_region_and_language": "지역 및 언어 선택기 열기",
+    "open_search_modal": "검색 열기",
     "decrease_quantity": "수량 감소",
     "increase_quantity": "수량 증가",
     "quantity": "수량",
-    "rating": "이 제품의 평점은 5점 만점에 {{ rating }}점입니다",
-    "nested_product": "{{ parent_title }}용 {{ product_title }}"
+    "rating": "이 제품의 평점은 5점 만점에 {{ rating }}점입니다"
   },
   "actions": {
     "add_to_cart": "카트에 추가",
@@ -99,8 +108,7 @@
     "sign_in_options": "기타 로그인 옵션",
     "sign_up": "가입하기",
     "sort": "정렬",
-    "show_all_options": "모든 옵션 보기",
-    "open": "열기"
+    "show_all_options": "모든 옵션 보기"
   },
   "content": {
     "reviews": "리뷰",
@@ -213,26 +221,6 @@
     "inventory_low_stock_show_count": {
       "one": "{{ count }}개 남음",
       "other": "{{ count }}개 남음"
-    },
-    "recipient_form_send_to": "전송 대상:",
-    "recipient_form_email_label": "수신자 이메일",
-    "recipient_form_email_label_my_email": "내 이메일",
-    "recipient_form_email_address": "수신자 이메일 주소",
-    "recipient_form_name_label": "수신자 이름(선택 사항)",
-    "recipient_form_characters_used": "{{ used_chars }}/{{ max_chars }}자 입력함",
-    "recipient_form_send_on": "YYYY-MM-DD",
-    "recipient_form_send_on_label": "전송 날짜(선택 사항)",
-    "recipient_form_message": "메시지(선택 사항)",
-    "recipient_form_fields_visible": "이제 수취인 양식 필드가 표시됩니다.",
-    "recipient_form_fields_hidden": "이제 수취인 양식 필드가 숨겨집니다.",
-    "recipient_form_error": "양식 제출과 관련하여 오류가 발생했습니다.",
-    "product_custom_property_character_count": "{{ used_chars }}/{{ max_chars }}자 입력함",
-    "terms_and_policies": "약관 및 정책",
-    "pagination": {
-      "nav_label": "페이지 탐색",
-      "previous": "이전",
-      "next": "다음",
-      "page": "{{ page }}페이지"
     }
   },
   "gift_cards": {
@@ -253,12 +241,7 @@
     "password": "비밀번호",
     "search": "검색",
     "product_title": "제품명",
-    "collection_title": "컬렉션 제목",
-    "blog_posts": "블로그 게시물",
-    "blog_post_title": "제목",
-    "blog_post_author": "작성자",
-    "blog_post_date": "날짜",
-    "blog_post_description": "블로그 게시물 콘텐츠의 요약"
+    "collection_title": "컬렉션 제목"
   },
   "products": {
     "product": {
@@ -267,13 +250,7 @@
       "adding_to_cart": "추가 중...",
       "add_to_cart_error": "카트에 추가하는 중 오류 발생",
       "sold_out": "품절",
-      "unavailable": "사용할 수 없음",
-      "quantity_error_max": "이 상품의 최대 수량은 {{ maximum }}개입니다",
-      "quantity": "수량",
-      "quantity_increments": "{{ increment }}씩 증가",
-      "quantity_minimum": "최소 {{ minimum }}개",
-      "quantity_maximum": "최대 {{ maximum }}개",
-      "in_cart": "장바구니에"
+      "unavailable": "사용할 수 없음"
     }
   },
   "fields": {

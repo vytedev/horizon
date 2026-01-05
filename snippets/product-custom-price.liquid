@@ -1,0 +1,27 @@
+{% # Snippet to format custom product prices with money formatting %}
+
+{% liquid
+  assign product = closest.product
+  if request.visual_preview_mode and product == blank
+    assign product = collections.all.products.first
+  endif
+%}
+
+{% if product.metafields.custom.venmo_zelle_price != blank and product.metafields.custom.venmo_zelle_price.value != blank %}
+  <div class="custom-price-item">
+    <span class="custom-price-icon">
+      {% render 'icon-or-image', icon: 'price_tag', width: 16, class_name: 'price-icon' %}
+    </span>
+    <span class="custom-price-text">{{ product.metafields.custom.venmo_zelle_price | money }}</span>
+  </div>
+{% endif %}
+
+{% if product.metafields.custom.paypal_invioce_price != blank and product.metafields.custom.paypal_invioce_price.value != blank %}
+  <div class="custom-price-item">
+    <span class="custom-price-icon">
+      {% render 'icon-or-image', icon: 'price_tag', width: 16, class_name: 'price-icon' %}
+    </span>
+    <span class="custom-price-text">{{ product.metafields.custom.paypal_invioce_price | money }}</span>
+  </div>
+{% endif %}
+

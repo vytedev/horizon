@@ -7,7 +7,7 @@
     <button
       ref="closeButton"
       on:click="/closeDialog"
-      class="button button-unstyled close-button quick-add-modal__close"
+      class="button quick-add-modal__close"
       aria-label="{{ 'accessibility.close_dialog' | t }}"
     >
       {{- 'icon-close.svg' | inline_asset_content -}}
@@ -26,7 +26,7 @@
     height: fit-content;
     overflow: hidden;
     min-height: 500px;
-    box-shadow: 0 5px 30px rgb(0 0 0 / var(--opacity-15));
+    box-shadow: 0 5px 30px rgba(0, 0, 0, 0.15);
 
     @media screen and (max-width: 750px) {
       position: fixed;
@@ -62,12 +62,25 @@
     position: absolute;
     top: var(--margin-2xs);
     right: var(--margin-2xs);
-    transition: transform 0.15s var(--animation-timing-bounce);
-    z-index: var(--layer-raised);
+    width: var(--minimum-touch-target);
+    height: var(--minimum-touch-target);
+    color: var(--color-foreground);
+    background-color: var(--color-background);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    z-index: 2;
+    transition: transform 0.15s var(--animation-timing-bounce), opacity 0.15s var(--animation-easing);
   }
 
   .quick-add-modal__close:active {
     transform: scale(0.8);
+  }
+
+  .quick-add-modal__close svg {
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
   }
 
   .quick-add-modal__content {
@@ -157,14 +170,6 @@
     }
   }
 
-  .quick-add-modal__content .variant-picker__form {
-    display: block;
-  }
-
-  .quick-add-modal__content .variant-option + .variant-option {
-    margin-top: var(--padding-lg);
-  }
-
   .quick-add-modal__content .product-media-container__zoom-button {
     cursor: default;
   }
@@ -200,14 +205,9 @@
   }
 
   .quick-add-modal__content .product-details .variant-picker {
-    --product-swatches-padding-block-end: 0px;
-
     flex: 1 1 auto;
     overflow-y: auto;
     min-height: 0;
-    padding-block-end: calc(
-      var(--product-swatches-padding-block-end) + var(--focus-outline-offset) + var(--focus-outline-width)
-    );
   }
 
   .quick-add-modal__content .variant-option--swatches {
@@ -223,10 +223,7 @@
   }
 
   .quick-add-modal__content .view-product-title {
-    display: flex;
-    padding-block: 0;
-    /* Prevent overlap between title and close button */
-    padding-inline: 0 calc(var(--minimum-touch-target) / 2);
+    padding: 0;
   }
 
   .quick-add-modal__content .view-product-title a {
@@ -267,7 +264,6 @@
       .view-more-details__wrapper *
     ) {
     @media screen and (min-width: 750px) {
-      /* stylelint-disable-next-line declaration-no-important */
       display: none !important;
     }
   }
@@ -287,9 +283,8 @@
           product-inventory *,
           .view-more-details__wrapper,
           .view-more-details__wrapper *
-        ),
-      .buy-buttons-block
-    ) {
+        )
+    ):not(.buy-buttons-block) {
     display: none;
   }
 
@@ -425,7 +420,6 @@
       opacity: 0;
       transform: translateY(10px);
     }
-
     to {
       opacity: 1;
       transform: translateY(0);
