@@ -1,9 +1,56 @@
+{% style %}
+  /* Force center alignment for product titles */
+  .text-block--{{ block.id }},
+  .text-block--{{ block.id }}.text-block--align-left,
+  .text-block--{{ block.id }}.text-block--align-right {
+    text-align: center !important;
+    --text-align: center !important;
+  }
+  .text-block--{{ block.id }} > *,
+  .text-block--{{ block.id }} p,
+  .text-block--{{ block.id }} h1,
+  .text-block--{{ block.id }} h2,
+  .text-block--{{ block.id }} h3,
+  .text-block--{{ block.id }} h4,
+  .text-block--{{ block.id }} h5,
+  .text-block--{{ block.id }} h6,
+  .text-block--{{ block.id }}[style*="--text-align"] {
+    text-align: center !important;
+  }
+  /* Override any heading gold color - use block color setting or foreground */
+  .text-block--{{ block.id }},
+  .text-block--{{ block.id }} p,
+  .text-block--{{ block.id }} h1,
+  .text-block--{{ block.id }} h2,
+  .text-block--{{ block.id }} h3,
+  .text-block--{{ block.id }} h4,
+  .text-block--{{ block.id }} h5,
+  .text-block--{{ block.id }} h6 {
+    color: {% if block.settings.color != blank %}{{ block.settings.color }}{% else %}var(--color-foreground){% endif %} !important;
+  }
+  
+  /* Limit product title to 2 lines with ellipsis */
+  .text-block--{{ block.id }} p {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+    max-height: calc(1.4em * 2);
+  }
+{% endstyle %}
+
 {% if closest.product == blank %}
   {% assign text = 'placeholders.product_title' | t %}
   {% assign product_title = '<p>' | append: text | append: '</p>' %}
   {% render 'text', fallback_text: product_title, block: block %}
 {% else %}
-  {% assign product_title = '<p>' | append: closest.product.title | append: '</p>' %}
+  {% liquid
+    assign vendor = closest.product.vendor | upcase
+    assign title = closest.product.title | upcase
+    assign product_title = '<p>' | append: vendor | append: ' ' | append: title | append: '</p>'
+  %}
   <a
     class="contents user-select-text"
     ref="productTitleLink"
@@ -66,7 +113,7 @@
       "type": "text_alignment",
       "id": "alignment",
       "label": "t:settings.alignment",
-      "default": "left",
+      "default": "center",
       "visible_if": "{{ block.settings.width == '100%' }}"
     },
     {

@@ -14,7 +14,7 @@
     "type_body_font": "instrument_sans_n4",
     "type_subheading_font": "inter_n5",
     "type_heading_font": "inter_n7",
-    "type_accent_font": "inter_n7",
+    "type_accent_font": "fahkwang_n4",
     "type_size_paragraph": "14",
     "type_line_height_paragraph": "body-loose",
     "type_font_h1": "accent",
@@ -52,7 +52,6 @@
     "button_border_radius_primary": 0,
     "secondary_button_border_width": 1,
     "button_border_radius_secondary": 0,
-    "button_font_weight_secondary": "default",
     "cart_type": "drawer",
     "product_title_case": "default",
     "cart_price_font": "secondary",
@@ -82,6 +81,7 @@
     "variant_button_border_width": 1,
     "variant_button_radius": 14,
     "variant_button_width": "equal-width-buttons",
+    "button_font_weight_secondary": "default",
     "content_for_index": [],
     "blocks": {
       "5057006142565981955": {

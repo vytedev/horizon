@@ -55,7 +55,30 @@
   </div>
 
   <div class="section-resource-list__header">
-    {%- content_for 'block', type: '_product-list-content', id: 'static-header' -%}
+    {%- liquid
+      assign header_block = null
+      for block in section.blocks
+        if block.type == '_product-list-content' and block.id == 'static-header'
+          assign header_block = block
+          break
+        endif
+      endfor
+      
+      # If header block has background_media set to image but no background_image,
+      # and we have a collection with an image, use the collection image as background
+      assign use_collection_image = false
+      if header_block != null and header_block.settings.background_media == 'image' and header_block.settings.background_image == blank and section.settings.collection != blank and section.settings.collection.featured_image != blank
+        assign use_collection_image = true
+        assign collection_image = section.settings.collection.featured_image
+      endif
+    -%}
+    {%- if use_collection_image -%}
+      <div class="group-block group-block--height-custom group-block--width-fill" style="--custom-height: 50%; background-image: url('{{ collection_image | image_url: width: 2000 }}'); background-size: cover; background-position: center;">
+        {%- content_for 'block', type: '_product-list-content', id: 'static-header' -%}
+      </div>
+    {%- else -%}
+      {%- content_for 'block', type: '_product-list-content', id: 'static-header' -%}
+    {%- endif -%}
   </div>
 
   {% capture list_items %}

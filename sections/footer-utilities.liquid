@@ -20,7 +20,7 @@
     align-items: center;
     gap: var(--gap);
     text-wrap: nowrap;
-    border-top: var(--border-width) solid var(--color-border);
+    border-top: none;
     color: var(--color-foreground-muted);
 
     @media screen and (min-width: 750px) {
@@ -83,6 +83,49 @@
       justify-self: end;
       text-align: right;
     }
+  }
+
+  /* Make social media and icon SVGs light in color in footer utilities */
+  .utilities .social-icons__icon-wrapper .social-icons__icon,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg,
+  .utilities .icon-block__media svg {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg *,
+  .utilities .icon-block__media svg,
+  .utilities .icon-block__media svg * {
+    fill: rgba(255, 255, 255, 0.7) !important;
+    stroke: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg path,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg circle,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg rect,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg polygon,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg g,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg use,
+  .utilities .icon-block__media svg path,
+  .utilities .icon-block__media svg circle,
+  .utilities .icon-block__media svg rect,
+  .utilities .icon-block__media svg polygon,
+  .utilities .icon-block__media svg g {
+    fill: rgba(255, 255, 255, 0.7) !important;
+    stroke: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  /* Force light color using filter for all social icons in utilities */
+  .utilities .social-icons__wrapper svg,
+  .utilities .social-icons__wrapper a svg,
+  .utilities .social-icons__icon-wrapper svg,
+  .utilities .social-icons__icon-wrapper a svg,
+  .utilities .social-icons__icon-wrapper .social-icons__icon,
+  .utilities .social-icons__icon-wrapper .social-icons__icon svg,
+  .utilities .footer-utilities__icons svg,
+  .utilities .footer-utilities__icons a svg {
+    filter: brightness(0) invert(1) opacity(0.7) !important;
+    -webkit-filter: brightness(0) invert(1) opacity(0.7) !important;
   }
 {% endstylesheet %}
 

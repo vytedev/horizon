@@ -550,20 +550,9 @@
       ],
       "name": "Footer",
       "settings": {
-        "content_direction": "column",
-        "vertical_on_mobile": true,
-        "horizontal_alignment": "center",
-        "vertical_alignment": "center",
-        "align_baseline": false,
-        "horizontal_alignment_flex_direction_column": "center",
-        "vertical_alignment_flex_direction_column": "center",
-        "gap": 48,
         "section_width": "page-width",
-        "section_height": "",
+        "gap": 48,
         "color_scheme": "scheme-6",
-        "background_media": "none",
-        "video_position": "cover",
-        "background_image_position": "cover",
         "padding-block-start": 0,
         "padding-block-end": 48
       }

@@ -132,6 +132,10 @@
                 class="cart-drawer__content motion-reduce"
                 aria-label="{{ 'accessibility.cart' | t }}"
               >
+                <div class="cart-drawer__empty-image">
+                  <img src="{{ 'empty_shop_bag.svg' | asset_url }}" alt="" width="200" height="200">
+                </div>
+
                 <h2
                   class="cart-drawer__heading h4 cart-drawer__heading--empty"
                   id="cart-drawer-heading-empty"
@@ -419,6 +423,19 @@
 
   .cart-drawer--empty .cart-drawer__heading {
     margin-bottom: var(--margin-md);
+  }
+
+  .cart-drawer__empty-image {
+    margin: var(--padding-lg) 0 var(--padding-md) 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cart-drawer__empty-image img {
+    max-width: 200px;
+    width: 100%;
+    height: auto;
   }
 
   .cart-drawer__items .cart-items__table-row {

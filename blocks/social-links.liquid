@@ -157,6 +157,33 @@
   .shopify-design-mode .social-icons__icon-wrapper--disabled a {
     pointer-events: none;
   }
+
+  /* Make social media icon SVGs light in color */
+  .social-icons__icon-wrapper,
+  .social-icons__icon-wrapper a {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .social-icons__icon-wrapper .social-icons__icon,
+  .social-icons__icon-wrapper .social-icons__icon svg {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .social-icons__icon-wrapper .social-icons__icon svg,
+  .social-icons__icon-wrapper .social-icons__icon svg * {
+    fill: rgba(255, 255, 255, 0.7) !important;
+    stroke: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .social-icons__icon-wrapper .social-icons__icon svg path,
+  .social-icons__icon-wrapper .social-icons__icon svg circle,
+  .social-icons__icon-wrapper .social-icons__icon svg rect,
+  .social-icons__icon-wrapper .social-icons__icon svg polygon,
+  .social-icons__icon-wrapper .social-icons__icon svg g,
+  .social-icons__icon-wrapper .social-icons__icon svg use {
+    fill: rgba(255, 255, 255, 0.7) !important;
+    stroke: rgba(255, 255, 255, 0.7) !important;
+  }
 {% endstylesheet %}
 
 {% schema %}

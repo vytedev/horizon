@@ -294,6 +294,7 @@
     display: flex;
     min-height: var(--minimum-touch-target);
     align-items: center;
+    position: relative;
 
     &:hover,
     &:focus {
@@ -322,6 +323,29 @@
   .menu-list .menu-list__list-item:where(:hover, :focus-within) .menu-list__link,
   .menu-list .menu-list__list-item[slot='overflow'] .menu-list__link[aria-expanded='true'] {
     color: var(--menu-top-level-font-color);
+  }
+
+  /* Gold underline with absolute positioning and slide animation */
+  .menu-list__link::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    width: 0;
+    height: 1.5px;
+    background-color: #D4AF37;
+    transition: width 0.3s ease-in-out;
+  }
+
+  /* Gold underline for active menu links - slide from left to right */
+  .menu-list__link--active::after {
+    width: 100%;
+  }
+
+  /* Gold underline for hovered menu links - slide from left to right */
+  .menu-list .menu-list__list-item:hover .menu-list__link::after,
+  .menu-list .menu-list__list-item:focus-within .menu-list__link::after {
+    width: 100%;
   }
 
   .overflow-menu::part(list) {

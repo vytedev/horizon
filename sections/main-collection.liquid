@@ -370,65 +370,7 @@
       {% endif %}
       
       {% comment %} Display collections with no products at the end {% endcomment %}
-      {% if collections_without_products != '' %}
-        {% assign empty_collections_array = collections_without_products | split: '||' %}
-        {% for collection_handle in empty_collections_array %}
-          {% if collection_handle != '' %}
-            {% for coll in collections %}
-              {% if coll.handle == collection_handle %}
-                {% liquid
-                  assign collection_counter_index = collection_counter_index | plus: 1
-                  assign collection_counter = collection_counter_index | prepend: '0' | slice: -2, 2
-                  case collection_counter_index
-                    when 1
-                      assign ordinal_text = 'first'
-                    when 2
-                      assign ordinal_text = 'second'
-                    when 3
-                      assign ordinal_text = 'third'
-                    when 4
-                      assign ordinal_text = 'fourth'
-                    when 5
-                      assign ordinal_text = 'fifth'
-                    when 6
-                      assign ordinal_text = 'sixth'
-                    when 7
-                      assign ordinal_text = 'seventh'
-                    when 8
-                      assign ordinal_text = 'eighth'
-                    when 9
-                      assign ordinal_text = 'ninth'
-                    when 10
-                      assign ordinal_text = 'tenth'
-                    else
-                      assign ordinal_text = collection_counter_index | append: 'th'
-                  endcase
-                %}
-                <div class="collection-group" style="grid-column: var(--full-width); margin-top: 48px; margin-bottom: 24px; padding-inline: calc(var(--page-margin) * 2); position: relative; z-index: 1;">
-                  <div class="collection-group__header" style="display: flex; flex-direction: row; align-items: center; gap: 12px; margin-bottom: 24px; width: fit-content;">
-                    <p style="font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); margin: 0; text-transform: uppercase;">
-                      {{ ordinal_text }} collection
-                    </p>
-                    <div class="collection-group__section-number" style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 0;">
-                      <div style="position: relative; width: 80px; height: 1px; background-color: transparent; border-radius: 2px; overflow: hidden;">
-                        <div style="position: absolute; top: 0; left: 0; height: 100%; background-color: #b0b0b0; width: 100%; border-radius: 2px;"></div>
-                      </div>
-                      <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: #b0b0b0;">{{ collection_counter }}/{{ total_counter }}</span>
-                    </div>
-                  </div>
-                  {% liquid
-                    assign collection_title_text = '<h2>' | append: coll.title | append: '</h2>'
-                  %}
-                  <div class="collection-title-wrapper collection-title-lowercase text-block spacing-style" style="width: fit-content; max-width: normal; margin-bottom: 24px; text-align: right; margin-left: auto; font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); background-color: #1e1e20; padding: max(var(--padding-2xs), calc((0 + var(--padding-xs)) * (1 - cos(45deg))));">
-                    {{ collection_title_text }}
-                  </div>
-                  <p style="font-family: var(--font-body--family); font-size: 1rem; color: var(--color-foreground);">No products in this collection.</p>
-                </div>
-              {% endif %}
-            {% endfor %}
-          {% endif %}
-      {% endfor %}
-      {% endif %}
+      {% comment %} Empty collections are now hidden - only collections with products are displayed {% endcomment %}
       
       {% comment %} Find products that don't belong to any collection (excluding 'all' and homepage) {% endcomment %}
       {% comment %} Note: has_products_without_collection is already calculated above {% endcomment %}

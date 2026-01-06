@@ -79,7 +79,8 @@
         class: 'button quick-add__button quick-add__button--add add-to-cart-button',
         can_add_to_cart: can_add_to_cart,
         icon_only_on_mobile: true,
-        product: product
+        product: product,
+        icon_type: 'plus'
       %}
 
       <button
@@ -97,7 +98,7 @@
             aria-hidden="true"
             class="svg-wrapper add-to-cart-icon quick-add__button-icon"
           >
-            {{- 'icon-add-to-cart.svg' | inline_asset_content -}}
+            {{- 'icon-plus.svg' | inline_asset_content -}}
           </span>
           <span class="add-to-cart-text__content is-visually-hidden-mobile quick-add__button-text">
             <span>
@@ -145,11 +146,14 @@
   .quick-add__button {
     display: var(--quick-add-mobile-display, none);
     align-items: center;
-    background: linear-gradient(var(--color-background) 0 100%) padding-box;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.85);
     padding: 0;
     border-radius: 50px;
-    border: 2px solid hsl(0 0% 0% / 0.15);
+    border: none;
+    width: var(--button-size-md);
     height: var(--button-size-md);
+    aspect-ratio: 1 / 1;
     cursor: pointer;
     opacity: var(--quick-add-mobile-opacity, 0);
     overflow: hidden;
@@ -158,7 +162,8 @@
     position: absolute;
     right: max(var(--quick-add-right), calc((var(--border-radius) + var(--quick-add-right)) * (1 - cos(45deg))));
     bottom: max(var(--quick-add-bottom), calc((var(--border-radius) + var(--quick-add-bottom)) * (1 - cos(45deg))));
-    backdrop-filter: blur(20px) saturate(180%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 
     &:active {
       scale: 0.99;
@@ -170,14 +175,13 @@
     }
 
     &:is(:hover, :focus-visible) {
-      .add-to-cart-text__content {
-        grid-template-columns: 1fr;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
 
-        span span {
-          opacity: 1;
-          translate: 0 0;
-          filter: blur(0);
-        }
+    @media (prefers-reduced-motion: no-preference) {
+      &:is(:hover, :focus-visible) {
+        transform: scale(1.05);
       }
     }
 
@@ -188,10 +192,14 @@
   }
 
   .quick-add__button .add-to-cart-text {
-    background: var(--color-background);
+    background: transparent;
     overflow: hidden;
     border-radius: 50px;
+    width: 100%;
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 0;
   }
 
@@ -204,6 +212,26 @@
     /* account for border width */
     height: 100%;
     width: calc(var(--button-size-md) - 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hide text in all quick-add buttons - show only icon */
+  .quick-add__button .add-to-cart-text__content {
+    display: none !important;
+  }
+
+  /* Make icon color darker */
+  .quick-add__button .add-to-cart-icon,
+  .quick-add__button .add-to-cart-icon svg {
+    color: #212529 !important;
+  }
+
+  .quick-add__button .add-to-cart-icon svg path,
+  .quick-add__button .add-to-cart-icon svg line {
+    stroke: #212529 !important;
+    fill: #212529 !important;
   }
 
   .quick-add__button .add-to-cart-text__content {

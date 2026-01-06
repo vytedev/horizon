@@ -82,6 +82,125 @@
       grid-column: 1 / -1;
     }
   }
+
+  /* Make footer main group block 100% width */
+  .footer-content > .group-block[data-testid="group-block"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-column: 1 / -1 !important;
+  }
+
+  .footer-content > .group-block .group-block[data-testid="group-block"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Hide divider lines in footer */
+  .footer-content .divider,
+  .footer-content .divider__line {
+    display: none !important;
+  }
+
+  /* Make social media and icon SVGs light in color in footer */
+  .footer-content .social-icons__icon-wrapper,
+  .footer-content .social-icons__icon-wrapper a,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg,
+  .footer-content .icon-block__media,
+  .footer-content .icon-block__media svg {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg *,
+  .footer-content .social-icons__icon-wrapper a svg,
+  .footer-content .social-icons__icon-wrapper a svg *,
+  .footer-content .icon-block__media svg,
+  .footer-content .icon-block__media svg * {
+    fill: rgba(255, 255, 255, 0.7) !important;
+    stroke: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg path,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg circle,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg rect,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg polygon,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg g,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg use,
+  .footer-content .social-icons__icon-wrapper a svg path,
+  .footer-content .social-icons__icon-wrapper a svg circle,
+  .footer-content .social-icons__icon-wrapper a svg rect,
+  .footer-content .social-icons__icon-wrapper a svg polygon,
+  .footer-content .social-icons__icon-wrapper a svg g,
+  .footer-content .social-icons__icon-wrapper a svg use,
+  .footer-content .icon-block__media svg path,
+  .footer-content .icon-block__media svg circle,
+  .footer-content .icon-block__media svg rect,
+  .footer-content .icon-block__media svg polygon,
+  .footer-content .icon-block__media svg g {
+    fill: rgba(255, 255, 255, 0.7) !important;
+    stroke: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  /* Additional rules for any nested elements */
+  .footer-content .social-icons__icon-wrapper *,
+  .footer-content .social-icons__icon-wrapper * svg,
+  .footer-content .social-icons__icon-wrapper * svg * {
+    color: rgba(255, 255, 255, 0.7) !important;
+    fill: rgba(255, 255, 255, 0.7) !important;
+    stroke: rgba(255, 255, 255, 0.7) !important;
+  }
+
+  /* Force light color using filter - apply to ALL social icon SVGs */
+  .footer-content .social-icons__wrapper svg,
+  .footer-content .social-icons__wrapper a svg,
+  .footer-content .social-icons__icon-wrapper svg,
+  .footer-content .social-icons__icon-wrapper a svg,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon,
+  .footer-content .social-icons__icon-wrapper .social-icons__icon svg {
+    filter: brightness(0) invert(1) opacity(0.7) !important;
+    -webkit-filter: brightness(0) invert(1) opacity(0.7) !important;
+  }
+  
+  /* Also target the wrapper class used in footer */
+  .footer-content .footer-utilities__icons svg,
+  .footer-content .footer-utilities__icons a svg {
+    filter: brightness(0) invert(1) opacity(0.7) !important;
+    -webkit-filter: brightness(0) invert(1) opacity(0.7) !important;
+  }
+  
+  /* Global footer social icons - target all social icons anywhere in footer */
+  footer .social-icons__wrapper svg,
+  footer .social-icons__wrapper a svg,
+  footer .social-icons__icon-wrapper svg,
+  footer .social-icons__icon-wrapper a svg,
+  footer .social-icons__icon-wrapper .social-icons__icon svg,
+  footer .footer-utilities__icons svg,
+  footer .footer-utilities__icons a svg,
+  .section-wrapper footer .social-icons__wrapper svg,
+  .section-wrapper footer .social-icons__icon-wrapper svg,
+  .section-wrapper footer .social-icons__icon-wrapper a svg,
+  footer svg.icon-default,
+  footer .icon-default svg,
+  footer .social-icons__icon.icon-default {
+    filter: brightness(0) invert(1) opacity(0.7) !important;
+    -webkit-filter: brightness(0) invert(1) opacity(0.7) !important;
+  }
+
+  /* Make payment logos under email input smaller */
+  .footer-content .email-signup-block + .group-block .image-block,
+  .footer-content .email-signup-block + .group-block .image-block__image {
+    max-width: 45px !important;
+    width: auto !important;
+    height: auto !important;
+  }
+
+  .footer-content .email-signup-block + .group-block .image-block img {
+    max-width: 45px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
 {% endstylesheet %}
 
 {% schema %}

@@ -322,9 +322,9 @@ export class ProductCard extends Component {
     this.resetVariant.cancel();
 
     if (this.#previousSlideIndex != null && this.#previousSlideIndex > 0) {
-      slideshow.select(this.#previousSlideIndex, undefined, { animate: false });
+      slideshow.select(this.#previousSlideIndex, undefined, { animate: true });
     } else {
-      slideshow.next(undefined, { animate: false });
+      slideshow.next(undefined, { animate: true });
       setTimeout(() => this.#preloadNextPreviewImage());
     }
   }

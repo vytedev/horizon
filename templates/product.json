@@ -26,9 +26,9 @@
             "thumbnail_position": "right",
             "thumbnail_width": 44,
             "aspect_ratio": "1/1.25",
+            "constrain_to_viewport": false,
             "media_radius": 0,
             "extend_media": true,
-            "constrain_to_viewport": false,
             "zoom": true,
             "video_loop": false,
             "hide_variants": true,
@@ -638,9 +638,6 @@
         "limit_details_width": true,
         "gap": 48,
         "color_scheme": "",
-        "countdown_timer_tag": "",
-        "countdown_timer_products": [],
-        "countdown_timer_collection": "",
         "padding-block-start": 0,
         "padding-block-end": 0
       }
