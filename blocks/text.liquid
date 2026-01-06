@@ -1,7 +1,7 @@
 {% # import schema from '../schemas/blocks/text' %}
 
-{% comment %} Hide "OUR COLLECTION" text on collections/all page {% endcomment %}
-{% if collection.handle == 'all' and block.settings.text contains 'OUR COLLECTION' %}
+{% comment %} Hide "OUR COLLECTION" text on all collection pages except all-inventories {% endcomment %}
+{% if collection.handle != 'all-inventories' and collection.handle != 'all-inventory' and block.settings.text contains 'OUR COLLECTION' %}
   {% style %}
     .text-block--{{ block.id }} {
       display: none !important;

@@ -13,6 +13,14 @@
 </div>
 
 {% stylesheet %}
+  /* Footer utilities background from scheme-1, layered above vertical lines */
+  .section.color-scheme-1,
+  .section.color-scheme-1 .section-background {
+    position: relative;
+    z-index: 1;
+    background-color: var(--color-background);
+  }
+
   .utilities {
     width: 100%;
     display: flex;
@@ -22,6 +30,8 @@
     text-wrap: nowrap;
     border-top: none;
     color: var(--color-foreground-muted);
+    position: relative;
+    z-index: 1;
 
     @media screen and (min-width: 750px) {
       display: grid;

@@ -303,12 +303,14 @@
                 <p style="font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); margin: 0; text-transform: uppercase;">
                   {{ ordinal_text }} collection
                 </p>
-                <div class="collection-group__section-number" style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 0;">
-                  <div style="position: relative; width: 80px; height: 1px; background-color: transparent; border-radius: 2px; overflow: hidden;">
-                    <div style="position: absolute; top: 0; left: 0; height: 100%; background-color: #b0b0b0; width: 100%; border-radius: 2px;"></div>
+                {% if coll.handle == 'all-inventories' or coll.handle == 'all-inventory' or coll.title == 'All Inventories' or coll.title == 'All Inventory' %}
+                  <div class="collection-group__section-number" style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 0;">
+                    <div style="position: relative; width: 80px; height: 1px; background-color: transparent; border-radius: 2px; overflow: hidden;">
+                      <div style="position: absolute; top: 0; left: 0; height: 100%; background-color: #b0b0b0; width: 100%; border-radius: 2px;"></div>
+                    </div>
+                    <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: #b0b0b0;">{{ collection_counter }}/{{ total_counter }}</span>
                   </div>
-                  <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: #b0b0b0;">{{ collection_counter }}/{{ total_counter }}</span>
-                </div>
+                {% endif %}
               </div>
               
               {% comment %} Collection title with h2 preset like product grid in index.json {% endcomment %}
@@ -386,12 +388,7 @@
                 <p style="font-family: var(--font-body--family); font-size: 1rem; line-height: normal; letter-spacing: normal; color: var(--color-foreground); margin: 0; text-transform: uppercase;">
                   OUR SELECTIONS
                 </p>
-                <div class="collection-group__section-number" style="display: flex; align-items: center; justify-content: center; gap: 16px; padding: 0;">
-                  <div style="position: relative; width: 80px; height: 1px; background-color: transparent; border-radius: 2px; overflow: hidden;">
-                    <div style="position: absolute; top: 0; left: 0; height: 100%; background-color: #b0b0b0; width: 100%; border-radius: 2px;"></div>
-                  </div>
-                  <span style="font-family: 'Instrument Sans', sans-serif; font-size: 12px; font-weight: 400; color: #b0b0b0;">{{ collection_counter }}/{{ total_counter }}</span>
-                </div>
+                {% comment %} Section number hidden for "OUR SELECTIONS" section {% endcomment %}
               </div>
               
               {% comment %} "Explore more" title instead of collection title {% endcomment %}
@@ -610,6 +607,14 @@
 </results-list>
 
 {% stylesheet %}
+  /* Hide section number blocks on all collection pages except all-inventories */
+  body[data-template="collection"]:not([data-collection-handle*="all-inventories"]) [class*="custom-navigator"],
+  body[data-template="collection"]:not([data-collection-handle*="all-inventories"]) collection-navigator,
+  body[data-template="collection"]:not([data-collection-handle*="all-inventories"]) [class*="section-number"],
+  body[data-template="collection"]:not([data-collection-handle*="all-inventories"]) [class*="section_number"] {
+    display: none !important;
+  }
+
   .collection-group {
     grid-column: var(--full-width);
     margin-top: 48px;
@@ -617,8 +622,98 @@
     padding-inline: calc(var(--page-margin) * 2);
     position: relative;
     z-index: 1;
+    background-color: transparent !important;
   }
   
+  /* Remove background from group blocks in collection pages */
+  body[data-template="collection"] .group-block,
+  body[data-template="collection"] .group-block-content,
+  body[data-template="collection"] .group-block[data-testid="group-block"] {
+    background-color: transparent !important;
+  }
+  
+  /* Remove background from section wrapper that contains group blocks */
+  body[data-template="collection"] .section:has(.group-block) {
+    background-color: transparent !important;
+  }
+  
+  body[data-template="collection"] .section:has(.group-block) .section-background {
+    background-color: transparent !important;
+  }
+  
+  /* Remove background from nested group blocks (header_row) */
+  body[data-template="collection"] .group-block .group-block,
+  body[data-template="collection"] .group-block .group-block-content {
+    background-color: transparent !important;
+  }
+  
+  /* Add background to individual element groups */
+  .collection-group__header {
+    background-color: #1e1e20;
+    padding: 12px 16px;
+    border-radius: 4px;
+  }
+  
+  .collection-group__section-number {
+    background-color: transparent;
+  }
+  
+  .collection-title-wrapper {
+    background-color: #1e1e20 !important;
+  }
+  
+  .collection-group__button {
+    background-color: #1e1e20 !important;
+  }
+  
+  /* Add background to text blocks within collection header groups */
+  body[data-template="collection"] .group-block .text-block {
+    background-color: #1e1e20 !important;
+    padding: 12px 16px;
+    border-radius: 4px;
+  }
+  
+  /* Add background to section number blocks */
+  body[data-template="collection"] .group-block [class*="custom-navigator"],
+  body[data-template="collection"] .group-block collection-navigator {
+    background-color: #1e1e20 !important;
+    padding: 12px 16px;
+    border-radius: 4px;
+  }
+  
+  /* Hide vertical lines from collection title, description, and section number */
+  .collection-group__header,
+  .collection-group__section-number,
+  .collection-title-wrapper,
+  body[data-template="collection"] .group-block .text-block {
+    position: relative;
+    z-index: 2;
+    background-color: #1e1e20 !important;
+  }
+
+  /* Remove vertical lines background from these elements */
+  .collection-group__header::before,
+  .collection-title-wrapper::before,
+  body[data-template="collection"] .group-block .text-block::before,
+  .collection-group__section-number::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .collection-group__header,
+  .collection-title-wrapper,
+  body[data-template="collection"] .group-block .text-block {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .collection-group__header > *,
+  .collection-title-wrapper > *,
+  body[data-template="collection"] .group-block .text-block > * {
+    position: relative;
+    z-index: 1;
+  }
+
   .collection-group:first-of-type {
     margin-top: 0;
   }

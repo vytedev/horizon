@@ -397,7 +397,7 @@
                     "width": "fill",
                     "custom_width": 100,
                     "inherit_color_scheme": true,
-                    "color_scheme": "scheme-1",
+                    "color_scheme": "scheme-4",
                     "border_style": "underline",
                     "border_width": 1,
                     "border_radius": 0,
@@ -552,7 +552,7 @@
       "settings": {
         "section_width": "page-width",
         "gap": 48,
-        "color_scheme": "scheme-6",
+        "color_scheme": "scheme-4",
         "padding-block-start": 0,
         "padding-block-end": 48
       }

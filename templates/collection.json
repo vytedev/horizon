@@ -89,61 +89,8 @@
                 "padding-inline-start": 0,
                 "padding-inline-end": 0
               },
-              "blocks": {
-                "header_text": {
-                  "type": "text",
-                  "name": "t:names.text",
-                  "settings": {
-                    "text": "<p>OUR COLLECTION</p>",
-                    "width": "fit-content",
-                    "max_width": "normal",
-                    "alignment": "center",
-                    "type_preset": "custom",
-                    "font": "var(--font-body--family)",
-                    "font_size": "1rem",
-                    "line_height": "normal",
-                    "letter_spacing": "normal",
-                    "case": "uppercase",
-                    "wrap": "pretty",
-                    "color": "var(--color-foreground)",
-                    "background": false,
-                    "background_color": "#00000026",
-                    "corner_radius": 0,
-                    "padding-block-start": 0,
-                    "padding-block-end": 0,
-                    "padding-inline-start": 0,
-                    "padding-inline-end": 0
-                  },
-                  "blocks": {}
-                },
-                "header_section_number": {
-                  "type": "section_number",
-                  "settings": {
-                    "number_font": "instrument_sans_n4",
-                    "number_size": 12,
-                    "number_weight": "400",
-                    "number_color": "#b0b0b0",
-                    "progress_width": 80,
-                    "counter_number_1": "01",
-                    "counter_number_2": "01",
-                    "counter_position": "right",
-                    "progress_height": 2,
-                    "progress_radius": 2,
-                    "progress_bg_color": "#555555",
-                    "progress_fill_color": "#e6e6e6",
-                    "arrow_size": 20,
-                    "arrow_left_color": "#e6e6e6",
-                    "arrow_right_color": "#b0b0b0",
-                    "spacing": 16,
-                    "padding": 20
-                  },
-                  "blocks": {}
-                }
-              },
-              "block_order": [
-                "header_text",
-                "header_section_number"
-              ]
+              "blocks": {},
+              "block_order": []
             }
           },
           "block_order": [

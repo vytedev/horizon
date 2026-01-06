@@ -34,6 +34,33 @@
   .icon-block__media {
     height: auto;
   }
+
+  /* Icons inherit current text color to stay visible on any scheme */
+  .group-block .icon-block__media,
+  .group-block-content .icon-block__media,
+  .group-block .icon-block__media svg,
+  .group-block-content .icon-block__media svg {
+    color: currentColor !important;
+  }
+
+  .group-block .icon-block__media svg path,
+  .group-block .icon-block__media svg circle,
+  .group-block .icon-block__media svg rect,
+  .group-block .icon-block__media svg polygon,
+  .group-block .icon-block__media svg g,
+  .group-block .icon-block__media svg use,
+  .group-block .icon-block__media svg *,
+  .group-block-content .icon-block__media svg path,
+  .group-block-content .icon-block__media svg circle,
+  .group-block-content .icon-block__media svg rect,
+  .group-block-content .icon-block__media svg polygon,
+  .group-block-content .icon-block__media svg g,
+  .group-block-content .icon-block__media svg use,
+  .group-block-content .icon-block__media svg * {
+    fill: currentColor !important;
+    stroke: currentColor !important;
+    color: currentColor !important;
+  }
 {% endstylesheet %}
 
 {% schema %}

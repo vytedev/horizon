@@ -4277,6 +4277,34 @@ slideshow-arrows .slideshow-control.slideshow-control--style-none {
   flex: 0 1 auto;
 }
 
+/* Default light color for icons in groups (icons with text pattern) */
+/* Add stroke color to SVG elements while preserving stroke-width */
+.group-block .icon-block__media svg,
+.group-block-content .icon-block__media svg {
+  color: #f5f5f5 !important;
+  stroke: #f5f5f5 !important;
+}
+
+.group-block .icon-block__media svg path,
+.group-block .icon-block__media svg circle,
+.group-block .icon-block__media svg rect,
+.group-block .icon-block__media svg polygon,
+.group-block .icon-block__media svg g,
+.group-block .icon-block__media svg use,
+.group-block .icon-block__media svg *,
+.group-block-content .icon-block__media svg path,
+.group-block-content .icon-block__media svg circle,
+.group-block-content .icon-block__media svg rect,
+.group-block-content .icon-block__media svg polygon,
+.group-block-content .icon-block__media svg g,
+.group-block-content .icon-block__media svg use,
+.group-block-content .icon-block__media svg * {
+  fill: #f5f5f5 !important;
+  stroke: #f5f5f5 !important;
+  color: #f5f5f5 !important;
+  /* Preserve existing stroke-width - don't override it */
+}
+
 .layout-panel-flex--column > .group-block--height-fill {
   flex: 1;
 }

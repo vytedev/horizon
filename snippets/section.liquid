@@ -93,4 +93,26 @@
   .custom-section-content {
     z-index: var(--layer-flat);
   }
+
+  /* FAQ sections (scheme-1) layered above vertical lines */
+  .shopify-section:has(.section.color-scheme-1) {
+    position: relative;
+    z-index: 1 !important;
+  }
+
+  .shopify-section:has(.section.color-scheme-1) .section-background {
+    z-index: 1 !important;
+    background-color: var(--color-background) !important;
+  }
+
+  .shopify-section:has(.section.color-scheme-1) .section {
+    position: relative;
+    z-index: 1 !important;
+    background-color: transparent;
+  }
+
+  .shopify-section:has(.section.color-scheme-1) .custom-section-content {
+    position: relative;
+    z-index: 1 !important;
+  }
 {% endstylesheet %}

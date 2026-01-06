@@ -47,8 +47,8 @@
   }
 {% endstyle %}
 
-{% comment %} Hide section number on collections/all page {% endcomment %}
-{% if collection.handle == 'all' %}
+{% comment %} Hide section number on all collection pages except all-inventories {% endcomment %}
+{% if collection.handle != 'all-inventories' and collection.handle != 'all-inventory' %}
   {% style %}
     .custom-navigator-{{ navigator_id }} {
       display: none !important;

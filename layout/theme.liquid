@@ -4,6 +4,7 @@
     class="shopify-design-mode"
   {% endif %}
   lang="{{ request.locale.iso_code }}"
+  data-template="{{ template.name }}"
 >
   <head>
     {%- if settings.favicon != blank -%}
@@ -30,15 +31,109 @@
     {%- render 'scripts' -%}
     {%- render 'theme-styles-variables' -%}
     {%- render 'color-schemes' -%}
+    
+    {% if template.name == 'index' or template.name == 'collection' or template.name == 'list-collections' or template.name == 'cart' or template.name == 'page' or template.name == 'search' or template.name == '404' %}
+      <style>
+        /* Vertical lines background for collection, collection list, cart, page, search, and 404 templates - equal spacing */
+        html[data-template="collection"]::before,
+        html[data-template="list-collections"]::before,
+        html[data-template="cart"]::before,
+        html[data-template="page"]::before,
+        html[data-template="search"]::before,
+        html[data-template="404"]::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100vh;
+          pointer-events: none;
+          z-index: -1 !important;
+          background-image: repeating-linear-gradient(
+            to right,
+            transparent 0,
+            transparent calc((100vw / 12) - 1px),
+            rgba(128, 128, 128, 0.2) calc((100vw / 12) - 1px),
+            rgba(128, 128, 128, 0.2) calc(100vw / 12)
+          );
+          background-size: calc(100vw / 12) 100%;
+          box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Vertical lines background only for collections section on index page */
+        html[data-template="index"] .shopify-section:has([data-testid="collection-list"])::before,
+        html[data-template="index"] .shopify-section:has(.section-resource-list)::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 0;
+          background-image: repeating-linear-gradient(
+            to right,
+            transparent 0,
+            transparent calc((100vw / 12) - 1px),
+            rgba(128, 128, 128, 0.2) calc((100vw / 12) - 1px),
+            rgba(128, 128, 128, 0.2) calc(100vw / 12)
+          );
+          background-size: calc(100vw / 12) 100%;
+          box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.08);
+        }
+
+        html[data-template="index"] .shopify-section:has([data-testid="collection-list"]),
+        html[data-template="index"] .shopify-section:has(.section-resource-list) {
+          position: relative;
+        }
+
+        /* Border top and bottom for collection section matching vertical lines style */
+        html[data-template="index"] .shopify-section:has([data-testid="collection-list"]) .section,
+        html[data-template="index"] .shopify-section:has(.section-resource-list) .section {
+          border-top: 1px solid rgba(128, 128, 128, 0.2);
+          border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+          box-shadow: 
+            0 -1px 0 rgba(0, 0, 0, 0.03),
+            0 1px 0 rgba(0, 0, 0, 0.03);
+        }
+        
+        html[data-template="collection"],
+        html[data-template="list-collections"],
+        html[data-template="cart"],
+        html[data-template="page"],
+        html[data-template="search"],
+        html[data-template="404"] {
+          position: relative;
+        }
+      </style>
+    {% endif %}
 
     {% if request.design_mode %}
       {%- render 'theme-editor' -%}
     {% endif %}
 
+    {% if template.name == 'collection' %}
+      <style>
+        /* Reduce gap between collection title and description in other brands page */
+        body[data-template="collection"] [class*="group_cVg6Fm"],
+        body[data-template="collection"] .group-block:has([data-block-id*="text_tqQTNE"]):has([data-block-id*="new_arrivals_description"]) {
+          gap: 0 !important;
+        }
+        body[data-template="collection"] [data-block-id*="text_tqQTNE"] {
+          margin-bottom: 0 !important;
+          padding-bottom: 0 !important;
+        }
+        body[data-template="collection"] [data-block-id*="new_arrivals_description"] {
+          margin-top: -8px !important;
+          padding-top: 0 !important;
+        }
+      </style>
+    {% endif %}
+
     {{ content_for_header }}
   </head>
 
-  <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}">
+  <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}" data-template="{{ template.name }}">
     {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
     <div id="header-group">
       {% sections 'header-group' %}
@@ -113,5 +208,50 @@
     {% if settings.quick_add or settings.mobile_quick_add %}
       {% render 'quick-add-modal' %}
     {% endif %}
+
+    <script>
+      // Add stroke color to SVG icons in groups while preserving existing stroke-width
+      (function addStrokeToGroupIcons() {
+        function applyStrokeToIcons() {
+          const groupBlocks = document.querySelectorAll('.group-block, .group-block-content');
+          
+          groupBlocks.forEach(group => {
+            const svgs = group.querySelectorAll('.icon-block__media svg');
+            
+            svgs.forEach(svg => {
+              // Add stroke color, preserve existing stroke-width if present
+              svg.setAttribute('stroke', '#f5f5f5');
+              // Don't modify stroke-width - keep whatever is already there
+              
+              // Also apply to all child elements (paths, circles, etc.)
+              const children = svg.querySelectorAll('path, circle, rect, polygon, line, polyline, ellipse, g, use');
+              children.forEach(child => {
+                // Store existing stroke-width before setting stroke
+                const existingStrokeWidth = child.getAttribute('stroke-width');
+                child.setAttribute('stroke', '#f5f5f5');
+                // Restore stroke-width if it existed
+                if (existingStrokeWidth) {
+                  child.setAttribute('stroke-width', existingStrokeWidth);
+                }
+              });
+            });
+          });
+        }
+
+        // Run on page load
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', applyStrokeToIcons);
+        } else {
+          applyStrokeToIcons();
+        }
+
+        // Also run when new content is added (for dynamic sections)
+        const observer = new MutationObserver(applyStrokeToIcons);
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      })();
+    </script>
   </body>
 </html>

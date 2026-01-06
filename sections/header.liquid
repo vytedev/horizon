@@ -14,15 +14,15 @@
     assign search_style = 'modal'
   endif
 
-  if section.settings.enable_transparent_header_home and template.name == 'index'
+  assign transparent = null
+  assign transparent_color_scheme = null
+  
+  if template.name == 'collection' or template.name == 'product' or template.name == 'page' or template.name == 'cart' or template.name == 'search' or template.name == '404' or template.name == 'list-collections'
+    assign transparent = null
+    assign transparent_color_scheme = null
+  elsif section.settings.enable_transparent_header_home and template.name == 'index'
     assign transparent = 'always'
     assign transparent_color_scheme = section.settings.home_color_scheme
-  elsif section.settings.enable_transparent_header_product and template.name == 'product'
-    assign transparent = 'always'
-    assign transparent_color_scheme = section.settings.product_color_scheme
-  elsif section.settings.enable_transparent_header_collection and template.name == 'collection'
-    assign transparent = 'always'
-    assign transparent_color_scheme = section.settings.collection_color_scheme
   endif
 
   if section.settings.enable_sticky_header == 'always'
@@ -388,7 +388,20 @@
     background-color: transparent;
     z-index: var(--layer-overlay);
 
-    &[transparent='not-sticky'][data-sticky-state='active'],
+    /* When scrolled (sticky active), show background for both 'always' and 'not-sticky' */
+    &[transparent='always'][data-sticky-state='active'],
+    &[transparent='not-sticky'][data-sticky-state='active'] {
+      /* should be opaque when scrolled, negate all transparent properties */
+      --header-logo-display: unset;
+      --header-logo-inverse-display: unset;
+      --header-bg-color: unset;
+      --color-foreground: inherit;
+      --color-background: inherit;
+      --color-border: inherit;
+      background-color: var(--color-background);
+    }
+
+    /* Keep transparent on hover/menu open even when at top */
     &:has(
         .header__row:hover,
         .mega-menu__list:is(:hover),
@@ -405,6 +418,7 @@
       --color-foreground: inherit;
       --color-background: inherit;
       --color-border: inherit;
+      background-color: var(--color-background);
     }
 
     .header__row {
@@ -414,25 +428,46 @@
     }
   }
 
-  :is(
-      .header[transparent]:not([data-sticky-state='active']),
-      .header[transparent='always'][data-sticky-state='active'],
-      .account-popover[open],
-      .localization-wrapper:not([hidden])
-    )
-    .header__row:not(:hover):not(
-      :has(
-          .header-menu[aria-expanded='true'],
-          .menu-list__link[data-animating],
-          .account-popover[open],
-          .localization-wrapper:not([hidden])
-        )
-    ) {
-    /* while transparent, header-row ignores its color-scheme settings, pull from the header-component */
+  /* Header row transparent when at top (not scrolled), background when scrolled */
+  .header[transparent]:not([data-sticky-state='active']) .header__row,
+  .header[transparent='always']:not([data-sticky-state='active']) .header__row,
+  body[data-template="index"] .header[transparent]:not([data-sticky-state='active']) .header__row,
+  body[data-template="index"] .header[transparent='always']:not([data-sticky-state='active']) .header__row {
+    /* while transparent (at top), header-row ignores its color-scheme settings, pull from the header-component */
     --color-foreground: inherit;
     --color-border: inherit;
     --color-primary-button-background: inherit;
     --color-primary-button-text: inherit;
+    background-color: transparent !important;
+    --header-bg-color: transparent !important;
+    --color-background: transparent !important;
+  }
+  
+  /* Override any color scheme backgrounds on transparent header rows */
+  .header[transparent]:not([data-sticky-state='active']) .header__row[class*="color-"],
+  .header[transparent='always']:not([data-sticky-state='active']) .header__row[class*="color-"],
+  body[data-template="index"] .header[transparent]:not([data-sticky-state='active']) .header__row[class*="color-"],
+  body[data-template="index"] .header[transparent='always']:not([data-sticky-state='active']) .header__row[class*="color-"] {
+    background-color: transparent !important;
+    --color-background: transparent !important;
+  }
+
+  /* Keep background on hover/menu open even when at top */
+  .header[transparent]:not([data-sticky-state='active']) .header__row:hover,
+  .header[transparent]:not([data-sticky-state='active']) .header__row:has(
+      .header-menu[aria-expanded='true'],
+      .menu-list__link[data-animating],
+      .account-popover[open],
+      .localization-wrapper:not([hidden])
+    ) {
+    background-color: var(--color-background) !important;
+    --header-bg-color: unset !important;
+  }
+
+  /* When scrolled (sticky active), show background for both 'always' and 'not-sticky' */
+  .header[transparent='always'][data-sticky-state='active'] .header__row,
+  .header[transparent='not-sticky'][data-sticky-state='active'] .header__row {
+    background-color: var(--color-background) !important;
   }
 
   .header--inherit-color-scheme-on-menu-open:has(
@@ -449,7 +484,41 @@
 
   .header-section {
     position: relative;
-    z-index: var(--layer-heightened);
+    z-index: 9999 !important;
+  }
+
+  /* Force header to have background on collection, product, page, cart, search, 404, and list-collections templates */
+  body[data-template="collection"] .header,
+  body[data-template="product"] .header,
+  body[data-template="page"] .header,
+  body[data-template="cart"] .header,
+  body[data-template="search"] .header,
+  body[data-template="404"] .header,
+  body[data-template="list-collections"] .header {
+    background-color: var(--color-background) !important;
+    --header-bg-color: unset !important;
+  }
+
+  body[data-template="collection"] .header__row,
+  body[data-template="product"] .header__row,
+  body[data-template="page"] .header__row,
+  body[data-template="cart"] .header__row,
+  body[data-template="search"] .header__row,
+  body[data-template="404"] .header__row,
+  body[data-template="list-collections"] .header__row {
+    background-color: var(--color-background) !important;
+  }
+
+  body[data-template="collection"] .header[transparent],
+  body[data-template="product"] .header[transparent],
+  body[data-template="page"] .header[transparent],
+  body[data-template="cart"] .header[transparent],
+  body[data-template="search"] .header[transparent],
+  body[data-template="404"] .header[transparent],
+  body[data-template="list-collections"] .header[transparent] {
+    background-color: var(--color-background) !important;
+    --header-bg-color: unset !important;
+    position: relative !important;
   }
 
   #header-group:has(#header-component[sticky]) {
@@ -461,7 +530,18 @@
     position: sticky;
     /* Use -1 instead of 0 so intersection observer can track sticky state */
     top: -1px;
-    z-index: var(--layer-sticky);
+    z-index: 9999 !important;
+  }
+
+  /* Ensure header-group and header-component also have highest z-index */
+  #header-group {
+    position: relative;
+    z-index: 9999 !important;
+  }
+
+  #header-component {
+    position: relative;
+    z-index: 9999 !important;
   }
 
   .header[data-sticky-state] {
@@ -482,6 +562,16 @@
     position: relative;
     /* will default to bg from its color scheme unless --header-bg-color is transparent */
     background-color: var(--header-bg-color, var(--color-background));
+  }
+
+  /* Ensure header row is transparent when header is transparent and not scrolled - must come after default rule */
+  .header[transparent]:not([data-sticky-state='active']) .header__row,
+  .header[transparent='always']:not([data-sticky-state='active']) .header__row,
+  .header[transparent]:not([data-sticky-state='active']) .header__row[class*="color-"],
+  .header[transparent='always']:not([data-sticky-state='active']) .header__row[class*="color-"] {
+    background-color: transparent !important;
+    --header-bg-color: transparent !important;
+    --color-background: transparent !important;
   }
 
   .header__row--top:not(.divider--page-width),

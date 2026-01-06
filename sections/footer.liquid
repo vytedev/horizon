@@ -1,6 +1,6 @@
 <div class="section-background color-{{ section.settings.color_scheme }}"></div>
 <div
-  class="section section--{{ section.settings.section_width }} color-{{ section.settings.color_scheme }}"
+  class="section section--full-width color-{{ section.settings.color_scheme }}"
 >
   {% liquid
     assign total_blocks = section.blocks.size
@@ -28,6 +28,7 @@
   <div
     class="
       footer-content
+      footer-content--{{ section.settings.section_width }}
       spacing-style
       {% if has_isolated_grid_item_desktop %}footer-content--isolated-grid-item-desktop{% endif %}
       {% if has_isolated_grid_item_tablet %}footer-content--isolated-grid-item-tablet{% endif %}
@@ -45,12 +46,60 @@
 </div>
 
 {% stylesheet %}
+  /* Footer background from scheme-4 (darker than scheme-1), layered above vertical lines */
+  footer.section-wrapper,
+  footer.section-wrapper .section,
+  footer.section-wrapper .section-background,
+  .section-wrapper footer,
+  .section-wrapper footer .section,
+  .section-wrapper footer .section-background {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Footer darker background (darker gray like index #1e1e20 but darker, no blue hue) */
+  footer.section-wrapper .section.color-scheme-4,
+  footer.section-wrapper .section.color-scheme-4 .section-background,
+  .section-wrapper footer .section.color-scheme-4,
+  .section-wrapper footer .section.color-scheme-4 .section-background,
+  footer.section-wrapper:has(.section.color-scheme-4) .section-background.color-scheme-4,
+  .section-wrapper footer:has(.section.color-scheme-4) .section-background.color-scheme-4 {
+    background-color: #151517 !important;
+  }
+
+  /* Footer always full width, content container respects page-width setting */
+  footer.section-wrapper .section {
+    width: 100%;
+  }
+
+  /* Footer padding block (top and bottom) */
+  footer.section-wrapper .section,
+  .section-wrapper footer .section {
+    padding-top: 80px;
+    padding-bottom: 40px;
+  }
+
   .footer-content {
     contain: content;
     content-visibility: auto;
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--footer-gap);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Content container respects page-width setting */
+  .footer-content--page-width {
+    max-width: var(--page-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: var(--page-margin);
+    padding-right: var(--page-margin);
+  }
+
+  .footer-content--full-width {
+    width: 100%;
   }
 
   @media screen and (min-width: 750px) and (max-width: 989px) {
@@ -201,6 +250,28 @@
     height: auto !important;
     object-fit: contain !important;
   }
+
+  /* Remove background from email signup and text blocks in footer */
+  .footer-content .email-signup-block,
+  .footer-content .email-signup,
+  .footer-content .text-block,
+  .footer-content .text-block--background,
+  footer .email-signup-block,
+  footer .email-signup,
+  footer .text-block,
+  footer .text-block--background {
+    background-color: transparent !important;
+    background: transparent !important;
+  }
+
+  /* Remove background from group blocks containing email or text in footer */
+  .footer-content .group-block:has(.email-signup),
+  .footer-content .group-block:has(.text-block),
+  footer .group-block:has(.email-signup),
+  footer .group-block:has(.text-block) {
+    background-color: transparent !important;
+    background: transparent !important;
+  }
 {% endstylesheet %}
 
 {% schema %}
@@ -286,7 +357,7 @@
       "type": "color_scheme",
       "id": "color_scheme",
       "label": "t:settings.color_scheme",
-      "default": "scheme-1"
+      "default": "scheme-4"
     },
     {
       "type": "header",
