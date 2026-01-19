@@ -127,6 +127,22 @@
           margin-top: -8px !important;
           padding-top: 0 !important;
         }
+        
+        /* Add padding bottom to collection title and description container */
+        body[data-template="collection"] [class*="group_cVg6Fm"],
+        body[data-template="collection"] [class*="group_cVg6Fm"] .group-block-content,
+        body[data-template="collection"] .section-content-wrapper > .group-block:nth-child(2),
+        body[data-template="collection"] .section-content-wrapper > .group-block:nth-child(2) .group-block-content,
+        body[data-template="collection"] .group-block:has(h2),
+        body[data-template="collection"] .group-block:has(.text-block h2) {
+          padding-bottom: 24px !important;
+          margin-bottom: 24px !important;
+        }
+        
+        /* Add border top to results-list element */
+        body[data-template="collection"] results-list {
+          border-top: 1px solid rgba(128, 128, 128, 0.2) !important;
+        }
       </style>
     {% endif %}
 
@@ -250,6 +266,139 @@
         observer.observe(document.body, {
           childList: true,
           subtree: true
+        });
+      })();
+
+      // Product description show more functionality
+      (function productDescriptionShowMore() {
+        function initProductDescription() {
+          // Find product details section
+          const productDetails = document.querySelector('.product-details');
+          if (!productDetails) return;
+          
+          // Find the rte text block in product details (this should be the description)
+          let productDescription = productDetails.querySelector('.text-block.rte') || 
+                                   productDetails.querySelector('rte-formatter.text-block.rte');
+          
+          // If not found, try finding by position - it should be after the title
+          if (!productDescription) {
+            const allTextBlocks = productDetails.querySelectorAll('.text-block, rte-formatter');
+            // Find the rte block (description comes after title, before price)
+            allTextBlocks.forEach(block => {
+              if (block.classList.contains('rte') && !block.classList.contains('text-block--text_vendor')) {
+                productDescription = block;
+              }
+            });
+          }
+          
+          if (!productDescription) {
+            return;
+          }
+          
+          // Only apply on desktop (750px and above)
+          if (window.innerWidth < 750) {
+            productDescription.classList.add('expanded');
+            return;
+          }
+          
+          // Temporarily remove max-height to measure full height
+          const originalMaxHeight = productDescription.style.maxHeight;
+          const originalClassList = productDescription.classList.contains('expanded');
+          productDescription.style.maxHeight = 'none';
+          productDescription.classList.add('expanded');
+          const originalHeight = productDescription.scrollHeight;
+          productDescription.style.maxHeight = originalMaxHeight;
+          if (!originalClassList) {
+            productDescription.classList.remove('expanded');
+          }
+          
+          const maxHeight = 200;
+          
+          if (originalHeight <= maxHeight) {
+            productDescription.classList.add('expanded');
+            return;
+          }
+          
+          // Check if button already exists
+          const existingButton = productDescription.parentNode.querySelector('.product-description-show-more');
+          if (existingButton) {
+            return;
+          }
+          
+          // Create show more button with text and chevron icon
+          const showMoreButton = document.createElement('button');
+          showMoreButton.className = 'product-description-show-more';
+          showMoreButton.setAttribute('type', 'button');
+          showMoreButton.setAttribute('aria-expanded', 'false');
+          showMoreButton.setAttribute('aria-label', 'Show more description');
+          
+          // Add "Show More" text (capitalized, not uppercase)
+          const textSpan = document.createElement('span');
+          textSpan.textContent = 'Show More';
+          textSpan.className = 'show-more-text';
+          showMoreButton.appendChild(textSpan);
+          
+          // Add chevron down SVG icon
+          const chevronSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+          chevronSvg.setAttribute('width', '16');
+          chevronSvg.setAttribute('height', '16');
+          chevronSvg.setAttribute('viewBox', '0 0 20 20');
+          chevronSvg.setAttribute('fill', 'none');
+          chevronSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+          
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', 'M5 7.5L10 12.5L15 7.5');
+          path.setAttribute('stroke', 'currentColor');
+          path.setAttribute('stroke-width', '2');
+          path.setAttribute('stroke-linecap', 'round');
+          path.setAttribute('stroke-linejoin', 'round');
+          
+          chevronSvg.appendChild(path);
+          showMoreButton.appendChild(chevronSvg);
+          
+          // Add button after the description
+          productDescription.parentNode.insertBefore(showMoreButton, productDescription.nextSibling);
+          
+          // Toggle functionality
+          showMoreButton.addEventListener('click', function() {
+            const isExpanded = productDescription.classList.toggle('expanded');
+            showMoreButton.classList.toggle('expanded', isExpanded);
+            textSpan.textContent = isExpanded ? 'Show Less' : 'Show More';
+            showMoreButton.setAttribute('aria-expanded', isExpanded);
+            showMoreButton.setAttribute('aria-label', isExpanded ? 'Show less description' : 'Show more description');
+          });
+        }
+        
+        // Run on page load with a delay to ensure DOM is ready
+        function runInit() {
+          setTimeout(initProductDescription, 300);
+        }
+        
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', runInit);
+        } else {
+          runInit();
+        }
+        
+        // Also run when window is resized
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(function() {
+            const productDetails = document.querySelector('.product-details');
+            if (productDetails) {
+              const productDescription = productDetails.querySelector('.text-block.rte') || 
+                                         productDetails.querySelector('rte-formatter.text-block.rte');
+              if (productDescription) {
+                const showMoreButton = productDescription.parentNode.querySelector('.product-description-show-more');
+                if (showMoreButton) {
+                  showMoreButton.remove();
+                }
+                productDescription.classList.remove('expanded');
+                initProductDescription();
+              }
+            }
+          }, 250);
         });
       })();
     </script>

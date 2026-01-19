@@ -20,9 +20,13 @@
   if template.name == 'collection' or template.name == 'product' or template.name == 'page' or template.name == 'cart' or template.name == 'search' or template.name == '404' or template.name == 'list-collections'
     assign transparent = null
     assign transparent_color_scheme = null
-  elsif section.settings.enable_transparent_header_home and template.name == 'index'
+  elsif template.name == 'index'
     assign transparent = 'always'
-    assign transparent_color_scheme = section.settings.home_color_scheme
+    if section.settings.enable_transparent_header_home
+      assign transparent_color_scheme = section.settings.home_color_scheme
+    else
+      assign transparent_color_scheme = 'default'
+    endif
   endif
 
   if section.settings.enable_sticky_header == 'always'
@@ -452,6 +456,14 @@
     --color-background: transparent !important;
   }
 
+  /* Force transparency on index page - override all color scheme rules when not scrolled */
+  body[data-template="index"] .header[transparent] .header__row:not([data-sticky-state='active']),
+  body[data-template="index"] .header[transparent='always'] .header__row:not([data-sticky-state='active']) {
+    background-color: transparent !important;
+    --header-bg-color: transparent !important;
+    --color-background: transparent !important;
+  }
+
   /* Keep background on hover/menu open even when at top */
   .header[transparent]:not([data-sticky-state='active']) .header__row:hover,
   .header[transparent]:not([data-sticky-state='active']) .header__row:has(
@@ -485,6 +497,11 @@
   .header-section {
     position: relative;
     z-index: 9999 !important;
+  }
+
+  /* Ensure header-section is transparent on index page when header is transparent */
+  body[data-template="index"] .header-section:has(.header[transparent]) {
+    background-color: transparent !important;
   }
 
   /* Force header to have background on collection, product, page, cart, search, 404, and list-collections templates */
@@ -544,6 +561,17 @@
     z-index: 9999 !important;
   }
 
+  /* Override position for transparent header on index page */
+  body[data-template="index"] #header-component.header[transparent],
+  body[data-template="index"] #header-component.header[transparent='always'],
+  body[data-template="index"] #header-component.header[transparent='not-sticky'] {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    background-color: transparent !important;
+  }
+
   .header[data-sticky-state] {
     transition: opacity var(--animation-speed) var(--animation-easing);
     opacity: 1;
@@ -572,6 +600,30 @@
     background-color: transparent !important;
     --header-bg-color: transparent !important;
     --color-background: transparent !important;
+  }
+
+  /* Force transparency on index page - default state (before scroll) - handle all transparent values */
+  body[data-template="index"] .header[transparent] .header__row,
+  body[data-template="index"] .header[transparent='always'] .header__row,
+  body[data-template="index"] .header[transparent='not-sticky'] .header__row,
+  body[data-template="index"] .header[transparent] .header__row[class*="color-"],
+  body[data-template="index"] .header[transparent='always'] .header__row[class*="color-"],
+  body[data-template="index"] .header[transparent='not-sticky'] .header__row[class*="color-"] {
+    background-color: transparent !important;
+    --header-bg-color: transparent !important;
+    --color-background: transparent !important;
+  }
+
+  /* When scrolled on index page, show background - override the above rule */
+  body[data-template="index"] .header[transparent][data-sticky-state='active'] .header__row,
+  body[data-template="index"] .header[transparent='always'][data-sticky-state='active'] .header__row,
+  body[data-template="index"] .header[transparent='not-sticky'][data-sticky-state='active'] .header__row,
+  body[data-template="index"] .header[transparent][data-sticky-state='active'] .header__row[class*="color-"],
+  body[data-template="index"] .header[transparent='always'][data-sticky-state='active'] .header__row[class*="color-"],
+  body[data-template="index"] .header[transparent='not-sticky'][data-sticky-state='active'] .header__row[class*="color-"] {
+    background-color: var(--color-background) !important;
+    --header-bg-color: unset !important;
+    --color-background: inherit !important;
   }
 
   .header__row--top:not(.divider--page-width),

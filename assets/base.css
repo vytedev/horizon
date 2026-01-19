@@ -17,7 +17,7 @@ h1, h2, h3, .heading,
   font-family: 'Sacramento', cursive !important;
   font-weight: 400 !important;
   font-style: normal !important;
-  font-size: 2.5rem !important;
+  font-size: 3rem !important;
   color: #dec55d !important;
   text-transform: lowercase !important;
 }
@@ -27,9 +27,143 @@ h1, h2, h3, .heading,
   font-family: 'Sacramento', cursive !important;
   font-weight: 400 !important;
   font-style: normal !important;
-  font-size: 2.5rem !important;
+  font-size: 3rem !important;
   color: #dec55d !important;
   text-transform: lowercase !important;
+}
+
+/* Target vendor text block by block ID pattern */
+.text-block--text_vendor h4,
+[class*="text_vendor"] h4 {
+  font-size: 3rem !important;
+}
+
+/* More general selector for vendor h4 in product details - first h4 in header group */
+.product-details .group-block:first-child .text-block h4 {
+  font-size: 3rem !important;
+}
+
+/* General selector for vendor h4 in product details - target by color and font */
+.product-details .text-block h4[style*="dec55d"],
+.product-details .text-block.custom-typography h4 {
+  font-size: 3rem !important;
+}
+
+/* Divider line under vendor title with sparkle on the right */
+.text-block--text_vendor,
+.product-details .group-block:first-child .text-block:first-child {
+  position: relative;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+}
+
+.text-block--text_vendor::after,
+.product-details .group-block:first-child .text-block:first-child::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #808080;
+  opacity: 0.3;
+}
+
+/* Sparkle icon on the right side of the divider line */
+.text-block--text_vendor::before,
+.product-details .group-block:first-child .text-block:first-child::before {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  background-image: url("data:image/svg+xml,%3Csvg width='14' height='14' viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M8 0L9.5 5.5L15 7L9.5 8.5L8 14L6.5 8.5L1 7L6.5 5.5L8 0Z' fill='%23808080'/%3E%3Cpath d='M8 3L8.75 6.25L12 7L8.75 7.75L8 11L7.25 7.75L4 7L7.25 6.25L8 3Z' fill='%23808080'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 1;
+}
+
+/* Product description with fixed height and show more button */
+@media screen and (min-width: 750px) {
+  /* Target product description by position - it's the rte text block after the title in product details */
+  .product-details .group-block .text-block.rte,
+  .product-details .group-block rte-formatter.text-block.rte,
+  .product-details .text-block.rte,
+  .product-details rte-formatter.text-block.rte {
+    position: relative;
+    max-height: 200px;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
+    display: block;
+  }
+
+  .product-details .group-block .text-block.rte.expanded,
+  .product-details .group-block rte-formatter.text-block.rte.expanded,
+  .product-details .text-block.rte.expanded,
+  .product-details rte-formatter.text-block.rte.expanded {
+    max-height: 2000px;
+    transition: max-height 0.5s ease-in-out;
+  }
+
+  /* Gradient fade effect when collapsed */
+  .product-details .group-block .text-block.rte:not(.expanded)::after,
+  .product-details .group-block rte-formatter.text-block.rte:not(.expanded)::after,
+  .product-details .text-block.rte:not(.expanded)::after,
+  .product-details rte-formatter.text-block.rte:not(.expanded)::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--color-background, #ffffff));
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* Show more button - simple text with chevron */
+  .product-description-show-more {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    margin: 12px 0 0 auto;
+    padding: 0;
+    background: transparent;
+    border: none;
+    color: var(--color-foreground, #000000);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    font-size: 0.875rem;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    outline: none;
+  }
+
+  .product-description-show-more svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.5s ease-in-out;
+  }
+
+  .product-description-show-more.expanded svg {
+    transform: rotate(180deg);
+  }
+
+  .product-description-show-more:hover {
+    opacity: 0.7;
+  }
+
+  .product-description-show-more:focus,
+  .product-description-show-more:active,
+  .product-description-show-more:focus-visible {
+    outline: none;
+    border: none;
+    box-shadow: none;
+  }
 }
 
 p {
