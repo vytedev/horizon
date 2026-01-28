@@ -2,8 +2,162 @@
 
 {% liquid
   assign max_items = section.settings.max_products
+  assign section_products = ''
+  assign use_random_brands = false
+  assign random_product_handles = ''
 
-  if section.settings.collection != blank and shop.products_count != 0
+  # Check if this is the favorites section (collection is louis-vuitton in index.json)
+  if section.settings.collection != blank
+    assign collection_handle = section.settings.collection.handle
+    # Use random brands logic for favorites section
+    if collection_handle == 'louis-vuitton' or collection_handle == 'gucci' or collection_handle == 'chanel' or collection_handle == 'dior'
+      assign use_random_brands = true
+    endif
+  endif
+
+  if use_random_brands
+    # Get one random product from each brand: Gucci, Louis Vuitton, Chanel, Dior
+    # If a brand has no available products, other brands can contribute multiple products
+    assign brand_handles = 'gucci,louis-vuitton,chanel,dior' | split: ','
+    assign product_count = 0
+    assign selected_handles = ''
+    assign used_handles = ''
+    
+    # Step 1: Collect all available products from each brand
+    assign brand_available_products = ''
+    for brand_handle in brand_handles
+      assign brand_collection = collections[brand_handle]
+      if brand_collection != blank
+        assign brand_available = ''
+        for product in brand_collection.products
+          # Check if product has at least one available variant
+          assign has_available_variant = false
+          for variant in product.variants
+            if variant.available
+              assign has_available_variant = true
+              break
+            endif
+          endfor
+          
+          # Store available products for this brand
+          if has_available_variant
+            if brand_available == blank
+              assign brand_available = product.handle
+            else
+              assign brand_available = brand_available | append: ',' | append: product.handle
+            endif
+          endif
+        endfor
+        
+        # Store brand's available products with brand identifier
+        if brand_available != blank
+          if brand_available_products == blank
+            assign brand_available_products = brand_handle | append: ':' | append: brand_available
+          else
+            assign brand_available_products = brand_available_products | append: '|' | append: brand_handle | append: ':' | append: brand_available
+          endif
+        endif
+      endif
+    endfor
+
+    # Step 2: First pass - try to get one product from each brand
+    if brand_available_products != blank
+      assign brands_data = brand_available_products | split: '|'
+      for brand_data in brands_data
+        assign brand_parts = brand_data | split: ':'
+        assign brand_handle = brand_parts[0]
+        assign brand_products = brand_parts[1]
+        
+        if brand_products != blank
+          assign products_array = brand_products | split: ','
+          assign products_count = products_array.size
+          if products_count > 0
+            # Generate a random index
+            assign random_seed = 'now' | date: '%s' | plus: forloop.index | modulo: products_count
+            assign random_index = random_seed
+            assign selected_handle = products_array[random_index]
+            
+            # Add to selected products if not already used
+            if selected_handles == blank
+              assign selected_handles = selected_handle
+              assign used_handles = selected_handle
+            else
+              assign selected_handles = selected_handles | append: ',' | append: selected_handle
+              assign used_handles = used_handles | append: ',' | append: selected_handle
+            endif
+            assign product_count = product_count | plus: 1
+          endif
+        endif
+      endfor
+    endif
+
+    # Step 3: If we don't have 4 products yet, fill remaining slots from any brand with available products
+    if product_count < 4 and brand_available_products != blank
+      assign brands_data = brand_available_products | split: '|'
+      
+      # Try multiple passes through all brands to fill remaining slots
+      for pass in (1..5)
+        if product_count >= 4
+          break
+        endif
+        
+        for brand_data in brands_data
+          if product_count >= 4
+            break
+          endif
+          
+          assign brand_parts = brand_data | split: ':'
+          assign brand_products = brand_parts[1]
+          
+          if brand_products != blank
+            assign products_array = brand_products | split: ','
+            assign products_count = products_array.size
+            
+            # Try multiple random attempts to find an unused product
+            for attempt in (1..products_count)
+              if product_count >= 4
+                break
+              endif
+              
+              # Generate a random index
+              assign random_seed = 'now' | date: '%s' | plus: pass | plus: attempt | plus: forloop.index | modulo: products_count
+              assign random_index = random_seed
+              assign candidate_handle = products_array[random_index]
+              
+              # Check if this handle is already used
+              assign is_used = false
+              if used_handles != blank
+                assign used_array = used_handles | split: ','
+                for used_handle in used_array
+                  if used_handle == candidate_handle
+                    assign is_used = true
+                    break
+                  endif
+                endfor
+              endif
+              
+              # If not used, add it
+              if is_used == false
+                if selected_handles == blank
+                  assign selected_handles = candidate_handle
+                  assign used_handles = candidate_handle
+                else
+                  assign selected_handles = selected_handles | append: ',' | append: candidate_handle
+                  assign used_handles = used_handles | append: ',' | append: candidate_handle
+                endif
+                assign product_count = product_count | plus: 1
+                break
+              endif
+            endfor
+          endif
+        endfor
+      endfor
+    endif
+
+    # Set the final product handles list
+    assign random_product_handles = selected_handles
+    assign max_items = 4
+  elsif section.settings.collection != blank and shop.products_count != 0
     assign section_products = section.settings.collection.products
     assign max_items = section_products.size | at_most: section.settings.max_products
   endif
@@ -82,24 +236,42 @@
   </div>
 
   {% capture list_items %}
-    {% for i in (1..max_items) %}
-      {% if section_products.size > 0 %}
-        {% assign index = forloop.index0 %}
-        {% assign product = section_products[index] %}
-      {% else %}
-        {% assign product = null %}
-      {% endif %}
-      <div
-        class="resource-list__item"
-      >
-        {% content_for 'block', type: '_product-card', id: 'static-product-card', closest.product: product %}
-      </div>
+    {% if use_random_brands and random_product_handles != blank %}
+      {% assign product_handles_array = random_product_handles | split: ',' %}
+      {% for product_handle in product_handles_array %}
+        {% assign product = all_products[product_handle] %}
+        {% if product != blank %}
+          <div
+            class="resource-list__item"
+          >
+            {% content_for 'block', type: '_product-card', id: 'static-product-card', closest.product: product %}
+          </div>
 
-      {% unless forloop.last %}
-        <!--@list/split-->
-      {% endunless %}
+          {% unless forloop.last %}
+            <!--@list/split-->
+          {% endunless %}
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      {% for i in (1..max_items) %}
+        {% if section_products.size > 0 %}
+          {% assign index = forloop.index0 %}
+          {% assign product = section_products[index] %}
+        {% else %}
+          {% assign product = null %}
+        {% endif %}
+        <div
+          class="resource-list__item"
+        >
+          {% content_for 'block', type: '_product-card', id: 'static-product-card', closest.product: product %}
+        </div>
 
-    {% endfor %}
+        {% unless forloop.last %}
+          <!--@list/split-->
+        {% endunless %}
+
+      {% endfor %}
+    {% endif %}
   {% endcapture %}
 
   {% liquid
@@ -139,7 +311,7 @@
   </div>
 
   {% comment %} View more button - only show if collection has more products than max_products {% endcomment %}
-  {% if section.settings.collection != blank and section.settings.collection.products.size > section.settings.max_products %}
+  {% if use_random_brands == false and section.settings.collection != blank and section.settings.collection.products.size > section.settings.max_products %}
     <div class="collection-group__button" style="display: flex; justify-content: center; margin-top: 12px; position: relative; z-index: 10; background-color: #1e1e20; padding-block: 12px;">
       {% liquid
         assign button_id = 'view-more-' | append: section.id

@@ -669,6 +669,42 @@
     font-size: var(--font-size--sm);
     font-weight: normal;
   }
+
+  /* Remove black overlay from shipping text block */
+  .group-block[data-shopify-block-id*="group_shipping"] .text-block,
+  .group-block[data-shopify-block-id*="group_shipping"] .text-block--background,
+  .group-block:has([data-shopify-block-id*="text_shipping"]) .text-block,
+  .group-block:has([data-shopify-block-id*="text_shipping"]) .text-block--background {
+    background-color: transparent !important;
+    --text-background-color: transparent !important;
+  }
+
+  /* Remove background from shipping group block itself */
+  .group-block[data-shopify-block-id*="group_shipping"],
+  .group-block:has([data-shopify-block-id*="text_shipping"]) {
+    background-color: transparent !important;
+  }
+
+  /* Remove overlay from shipping group */
+  .group-block[data-shopify-block-id*="group_shipping"] .group-block__media-wrapper::after,
+  .group-block:has([data-shopify-block-id*="text_shipping"]) .group-block__media-wrapper::after {
+    display: none !important;
+  }
+
+  @media screen and (min-width: 750px) {
+    .group-block[data-shopify-block-id*="group_shipping"] .text-block,
+    .group-block[data-shopify-block-id*="group_shipping"] .text-block--background,
+    .group-block:has([data-shopify-block-id*="text_shipping"]) .text-block,
+    .group-block:has([data-shopify-block-id*="text_shipping"]) .text-block--background {
+      background-color: transparent !important;
+      --text-background-color: transparent !important;
+    }
+
+    .group-block[data-shopify-block-id*="group_shipping"],
+    .group-block:has([data-shopify-block-id*="text_shipping"]) {
+      background-color: transparent !important;
+    }
+  }
 {% endstylesheet %}
 
 {% schema %}

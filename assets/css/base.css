@@ -85,47 +85,109 @@ h1, h2, h3, .heading,
   z-index: 1;
 }
 
-/* Product description with fixed height and show more button */
-@media screen and (min-width: 750px) {
-  /* Target product description by position - it's the rte text block after the title in product details */
-  .product-details .group-block .text-block.rte,
-  .product-details .group-block rte-formatter.text-block.rte,
-  .product-details .text-block.rte,
-  .product-details rte-formatter.text-block.rte {
-    position: relative;
-    max-height: 200px;
-    overflow: hidden;
-    transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out;
-    display: block;
+  /* Product description (ONLY) with fixed height + fade */
+  @media screen and (min-width: 750px) {
+    /*
+      IMPORTANT:
+      - Don't rely on data-shopify-block-id (often editor-only).
+      - The text snippet always outputs a stable class: .text-block--{{ block.id }}
+      - In `templates/product.json`, description block id is `text_aEtTtq`.
+    */
+
+    /* Collapsed state - max-height and overflow - multiple selectors for compatibility */
+    .product-details .text-block--text_aEtTtq.text-block.rte,
+    .product-details .text-block--text_aEtTtq.rte,
+    .product-details rte-formatter.text-block--text_aEtTtq.text-block.rte,
+    .product-details rte-formatter.text-block--text_aEtTtq.rte,
+    /* Fallback: target first rte block in product-details that's not shipping */
+    .product-details .group-block:not(:has([data-shopify-block-id*="group_shipping"])):not(:has([data-shopify-block-id*="text_shipping"])) .text-block.rte:not(.text-block--text_vendor):not([data-shopify-block-id*="text_shipping"]),
+    .product-details .group-block:not(:has([data-shopify-block-id*="group_shipping"])):not(:has([data-shopify-block-id*="text_shipping"])) rte-formatter.text-block.rte:not(.text-block--text_vendor):not([data-shopify-block-id*="text_shipping"]) {
+      position: relative !important;
+      max-height: 200px !important;
+      overflow: hidden !important;
+      transition: max-height 0.5s ease-in-out !important;
+      display: block !important;
+    }
+
+    /* Expanded state - allow full content height with smooth transition */
+    .product-details .text-block--text_aEtTtq.text-block.rte.expanded,
+    .product-details .text-block--text_aEtTtq.rte.expanded,
+    .product-details rte-formatter.text-block--text_aEtTtq.text-block.rte.expanded,
+    .product-details rte-formatter.text-block--text_aEtTtq.rte.expanded,
+    /* Fallback for expanded state */
+    .product-details .group-block:not(:has([data-shopify-block-id*="group_shipping"])):not(:has([data-shopify-block-id*="text_shipping"])) .text-block.rte.expanded:not(.text-block--text_vendor):not([data-shopify-block-id*="text_shipping"]),
+    .product-details .group-block:not(:has([data-shopify-block-id*="group_shipping"])):not(:has([data-shopify-block-id*="text_shipping"])) rte-formatter.text-block.rte.expanded:not(.text-block--text_vendor):not([data-shopify-block-id*="text_shipping"]) {
+      max-height: 5000px !important;
+      overflow: visible !important;
+    }
+
+    /* FIRST: Remove fade from ALL shipping text blocks - must come first to prevent conflicts */
+    .product-details [class*="text_shipping"]::after,
+    .product-details [class*="text_shipping"].text-block::after,
+    .product-details [class*="text_shipping"].rte::after,
+    .product-details [class*="text_shipping"].text-block.rte::after,
+    .product-details rte-formatter[class*="text_shipping"]::after,
+    .product-details rte-formatter[class*="text_shipping"].text-block::after,
+    .product-details rte-formatter[class*="text_shipping"].rte::after,
+    .product-details rte-formatter[class*="text_shipping"].text-block.rte::after,
+    .product-details .text-block--text_shipping::after,
+    .product-details rte-formatter.text-block--text_shipping::after {
+      content: none !important;
+      display: none !important;
+      opacity: 0 !important;
+      height: 0 !important;
+      background: none !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+    }
+
+    /* THEN: Apply fade overlay ONLY to description block (text_aEtTtq) - always present but with opacity transition */
+    .product-details [class*="text_aEtTtq"]:not([class*="text_shipping"]).text-block.rte::after,
+    .product-details [class*="text_aEtTtq"]:not([class*="text_shipping"]).rte::after,
+    .product-details rte-formatter[class*="text_aEtTtq"]:not([class*="text_shipping"]).text-block.rte::after,
+    .product-details rte-formatter[class*="text_aEtTtq"]:not([class*="text_shipping"]).rte::after {
+      content: '' !important;
+      display: block !important;
+      position: absolute !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      height: 80px !important;
+      background: linear-gradient(
+        to bottom,
+        rgba(30, 30, 32, 0) 0%,
+        rgba(30, 30, 32, 0.35) 35%,
+        rgba(30, 30, 32, 0.75) 75%,
+        rgba(30, 30, 32, 1) 100%
+      ) !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
+      opacity: 1 !important;
+      transition: opacity 0.3s ease-in-out 0.2s !important; /* Delay fade appearance by 0.2s */
+    }
+
+    /* Hide fade when expanded - fade out immediately - ONLY for description */
+    .product-details [class*="text_aEtTtq"]:not([class*="text_shipping"]).text-block.rte.expanded::after,
+    .product-details [class*="text_aEtTtq"]:not([class*="text_shipping"]).rte.expanded::after,
+    .product-details rte-formatter[class*="text_aEtTtq"]:not([class*="text_shipping"]).text-block.rte.expanded::after,
+    .product-details rte-formatter[class*="text_aEtTtq"]:not([class*="text_shipping"]).rte.expanded::after {
+      opacity: 0 !important;
+      transition: opacity 0.1s ease-in-out 0s !important; /* Hide immediately when expanding */
+    }
   }
 
-  .product-details .group-block .text-block.rte.expanded,
-  .product-details .group-block rte-formatter.text-block.rte.expanded,
-  .product-details .text-block.rte.expanded,
-  .product-details rte-formatter.text-block.rte.expanded {
-    max-height: 2000px;
-    transition: max-height 0.5s ease-in-out;
-  }
-
-  /* Gradient fade effect when collapsed */
-  .product-details .group-block .text-block.rte:not(.expanded)::after,
-  .product-details .group-block rte-formatter.text-block.rte:not(.expanded)::after,
-  .product-details .text-block.rte:not(.expanded)::after,
-  .product-details rte-formatter.text-block.rte:not(.expanded)::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 60px;
-    background: linear-gradient(to bottom, rgba(255, 255, 255, 0), var(--color-background, #ffffff));
-    pointer-events: none;
-    z-index: 1;
+  @media (prefers-reduced-motion: reduce) {
+    .product-details .text-block--text_aEtTtq.text-block.rte,
+    .product-details .text-block--text_aEtTtq.rte,
+    .product-details rte-formatter.text-block--text_aEtTtq.text-block.rte,
+    .product-details rte-formatter.text-block--text_aEtTtq.rte {
+      transition: none !important;
+    }
   }
 
   /* Show more button - simple text with chevron */
   .product-description-show-more {
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: flex-end;
     gap: 6px;
@@ -141,6 +203,7 @@ h1, h2, h3, .heading,
     text-transform: none;
     letter-spacing: 0.5px;
     outline: none;
+    width: 100%;
   }
 
   .product-description-show-more svg {
@@ -164,7 +227,6 @@ h1, h2, h3, .heading,
     border: none;
     box-shadow: none;
   }
-}
 
 p {
   font-weight: 200 !important;
@@ -211,6 +273,22 @@ svg {
 img {
   width: 100%;
   height: auto;
+}
+
+/* Top loading bar for collection navigation */
+#page-loading-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background-color: #caa055;
+  transform-origin: left center;
+  transform: scaleX(0);
+  opacity: 0;
+  transition: transform 0.25s ease-out, opacity 0.25s ease-out;
+  z-index: 99999;
+  pointer-events: none;
 }
 
 input,

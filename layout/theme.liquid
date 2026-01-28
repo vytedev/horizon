@@ -151,6 +151,7 @@
 
   <body class="page-width-{{ settings.page_width }} card-hover-effect-{{ settings.card_hover_effect }}" data-template="{{ template.name }}">
     {% render 'skip-to-content-link', href: '#MainContent', text: 'accessibility.skip_to_text' %}
+    <div id="page-loading-bar" aria-hidden="true"></div>
     <div id="header-group">
       {% sections 'header-group' %}
     </div>
@@ -276,11 +277,19 @@
           const productDetails = document.querySelector('.product-details');
           if (!productDetails) return;
           
-          // Find the rte text block in product details (this should be the description)
-          let productDescription = productDetails.querySelector('.text-block.rte') || 
-                                   productDetails.querySelector('rte-formatter.text-block.rte');
+          // Find the description block by its specific class (text_aEtTtq is the block id in product.json)
+          let productDescription = productDetails.querySelector('.text-block--text_aEtTtq.text-block.rte') || 
+                                   productDetails.querySelector('rte-formatter.text-block--text_aEtTtq.text-block.rte') ||
+                                   productDetails.querySelector('.text-block--text_aEtTtq.rte') ||
+                                   productDetails.querySelector('rte-formatter.text-block--text_aEtTtq.rte');
           
-          // If not found, try finding by position - it should be after the title
+          // Fallback: Find the rte text block in product details (this should be the description)
+          if (!productDescription) {
+            productDescription = productDetails.querySelector('.text-block.rte') || 
+                                 productDetails.querySelector('rte-formatter.text-block.rte');
+          }
+          
+          // If still not found, try finding by position - it should be after the title
           if (!productDescription) {
             const allTextBlocks = productDetails.querySelectorAll('.text-block, rte-formatter');
             // Find the rte block (description comes after title, before price)
@@ -292,8 +301,12 @@
           }
           
           if (!productDescription) {
+            console.warn('Product description element not found');
             return;
           }
+          
+          // Debug: log the found element
+          console.log('Found product description:', productDescription, 'Classes:', productDescription.className);
           
           // Only apply on desktop (750px and above)
           if (window.innerWidth < 750) {
@@ -306,7 +319,7 @@
           const originalClassList = productDescription.classList.contains('expanded');
           productDescription.style.maxHeight = 'none';
           productDescription.classList.add('expanded');
-          const originalHeight = productDescription.scrollHeight;
+          const fullHeight = productDescription.scrollHeight;
           productDescription.style.maxHeight = originalMaxHeight;
           if (!originalClassList) {
             productDescription.classList.remove('expanded');
@@ -314,10 +327,13 @@
           
           const maxHeight = 200;
           
-          if (originalHeight <= maxHeight) {
+          if (fullHeight <= maxHeight) {
             productDescription.classList.add('expanded');
             return;
           }
+          
+          // Store the full height for smooth expansion
+          productDescription.setAttribute('data-full-height', fullHeight);
           
           // Check if button already exists
           const existingButton = productDescription.parentNode.querySelector('.product-description-show-more');
@@ -359,13 +375,35 @@
           // Add button after the description
           productDescription.parentNode.insertBefore(showMoreButton, productDescription.nextSibling);
           
-          // Toggle functionality
+          // Toggle functionality with smooth height transition
           showMoreButton.addEventListener('click', function() {
-            const isExpanded = productDescription.classList.toggle('expanded');
-            showMoreButton.classList.toggle('expanded', isExpanded);
-            textSpan.textContent = isExpanded ? 'Show Less' : 'Show More';
-            showMoreButton.setAttribute('aria-expanded', isExpanded);
-            showMoreButton.setAttribute('aria-label', isExpanded ? 'Show less description' : 'Show more description');
+            const isExpanded = productDescription.classList.contains('expanded');
+            const fullHeight = parseInt(productDescription.getAttribute('data-full-height')) || productDescription.scrollHeight;
+            
+            if (isExpanded) {
+              // Collapse: animate to 200px first, fade will appear during collapse
+              productDescription.classList.remove('expanded');
+              productDescription.style.maxHeight = '200px';
+              showMoreButton.classList.remove('expanded');
+              textSpan.textContent = 'Show More';
+              showMoreButton.setAttribute('aria-expanded', 'false');
+              showMoreButton.setAttribute('aria-label', 'Show more description');
+            } else {
+              // Expand: hide fade immediately, then expand
+              productDescription.classList.add('expanded');
+              productDescription.style.maxHeight = fullHeight + 'px';
+              showMoreButton.classList.add('expanded');
+              textSpan.textContent = 'Show Less';
+              showMoreButton.setAttribute('aria-expanded', 'true');
+              showMoreButton.setAttribute('aria-label', 'Show less description');
+              
+              // After transition, set to auto for true fit-content
+              setTimeout(() => {
+                if (productDescription.classList.contains('expanded')) {
+                  productDescription.style.maxHeight = 'none';
+                }
+              }, 500); // Match transition duration
+            }
           });
         }
         
@@ -387,8 +425,13 @@
           resizeTimer = setTimeout(function() {
             const productDetails = document.querySelector('.product-details');
             if (productDetails) {
-              const productDescription = productDetails.querySelector('.text-block.rte') || 
-                                         productDetails.querySelector('rte-formatter.text-block.rte');
+              // Find description by specific class first, then fallback
+              let productDescription = productDetails.querySelector('.text-block--text_aEtTtq.text-block.rte') || 
+                                       productDetails.querySelector('rte-formatter.text-block--text_aEtTtq.text-block.rte') ||
+                                       productDetails.querySelector('.text-block--text_aEtTtq.rte') ||
+                                       productDetails.querySelector('rte-formatter.text-block--text_aEtTtq.rte') ||
+                                       productDetails.querySelector('.text-block.rte') || 
+                                       productDetails.querySelector('rte-formatter.text-block.rte');
               if (productDescription) {
                 const showMoreButton = productDescription.parentNode.querySelector('.product-description-show-more');
                 if (showMoreButton) {

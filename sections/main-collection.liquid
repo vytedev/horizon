@@ -444,15 +444,33 @@
           if section.settings.custom_product_card_product != blank
             assign custom_product = all_products[section.settings.custom_product_card_product]
           endif
+          
           assign total_products = collection.products.size
           assign initial_insert = 4
           assign repeat_interval = 12
         %}
         {% capture children %}
+          {% comment %} First pass: Display available products {% endcomment %}
+          {% assign display_index = 0 %}
           {% for product in collection.products %}
+            {% liquid
+              assign has_available_variant = false
+              if product.available == true
+                assign has_available_variant = true
+              else
+                for variant in product.variants
+                  if variant.available
+                    assign has_available_variant = true
+                    break
+                  endif
+                endfor
+              endif
+            %}
+            {% if has_available_variant %}
+              {% assign display_index = display_index | plus: 1 %}
           <li
             id="{{ section.id }}-{{ product.id }}"
-            class="product-grid__item product-grid__item--{{ forloop.index0 }}"
+            class="product-grid__item product-grid__item--{{ display_index | minus: 1 }}"
             data-page="{{ paginate.current_page }}"
             data-product-id="{{ product.id }}"
             data-product-handle="{{ product.handle }}"
@@ -464,33 +482,27 @@
             {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
             {% # theme-check-enable %}
           </li>
-          {% comment %} Insert custom product card at position 4, then every 12 products after that (4, 16, 28, 40...) {% endcomment %}
-          {% comment %} Skip custom product card for leather care collection {% endcomment %}
-          {% liquid
-            assign should_insert = false
-            assign is_leather_care = false
-            if collection.handle == 'leather-care'
-              assign is_leather_care = true
-            endif
-            
-            if custom_product != blank and custom_product.id != blank and is_leather_care == false
-              # Show at position 4 initially
-              if forloop.index == initial_insert
-                assign should_insert = true
-              # Then show every 12 products after position 4 (16, 28, 40, 52...)
-              elsif forloop.index > initial_insert
-                assign position_after_initial = forloop.index | minus: initial_insert
-                assign remainder = position_after_initial | modulo: repeat_interval
-                if remainder == 0
-                  assign should_insert = true
+              {% comment %} Custom product insertion for available products {% endcomment %}
+              {% liquid
+                assign should_insert = false
+                assign is_leather_care = false
+                if collection.handle == 'leather-care'
+                  assign is_leather_care = true
                 endif
-              # For collections with fewer than 4 products, show after last product
-              elsif total_products < initial_insert and forloop.index == total_products
-                assign should_insert = true
-              endif
-            endif
-          %}
-          {% if should_insert %}
+                
+                if custom_product != blank and custom_product.id != blank and is_leather_care == false
+                  if display_index == initial_insert
+                    assign should_insert = true
+                  elsif display_index > initial_insert
+                    assign position_after_initial = display_index | minus: initial_insert
+                    assign remainder = position_after_initial | modulo: repeat_interval
+                    if remainder == 0
+                      assign should_insert = true
+                    endif
+                  endif
+                endif
+              %}
+              {% if should_insert %}
             <li
               id="{{ section.id }}-custom-{{ custom_product.id }}"
               class="product-grid__item product-grid__item--custom product-grid__item--with-overlay"
@@ -505,7 +517,7 @@
               <div class="custom-product-card__container">
                 <div class="custom-product-card__product-card">
                   {{ product_card_content }}
-                  {% comment %} Always render quick-add manually to ensure it's visible and accessible {% endcomment %}
+                  {% comment %} Quick-add component for kit product {% endcomment %}
                   {% if settings.quick_add or settings.mobile_quick_add %}
                     {% if custom_product != blank and custom_product.available %}
                       {% comment %} Create a unique block ID for the quick-add form {% endcomment %}
@@ -544,13 +556,13 @@
                                     class: 'button quick-add__button quick-add__button--add',
                                     can_add_to_cart: can_add_to_cart,
                                     icon_only_on_mobile: true,
+                                    icon_type: 'plus',
                                     product: custom_product
                                   %}
-                                {%- endif -%}
-                                {%- if custom_product.variants.size > 1 -%}
+                                {%- else -%}
                                   <button type="button" class="button quick-add__button quick-add__button--choose" name="add" on:click="quick-add-component/handleClick">
                                     <span class="add-to-cart-text">
-                                      <span class="svg-wrapper add-to-cart-icon">
+                                      <span class="svg-wrapper add-to-cart-icon quick-add__button-icon">
                                         {{- 'icon-plus.svg' | inline_asset_content -}}
                                       </span>
                                       <span class="add-to-cart-text__content is-visually-hidden-mobile">
@@ -592,8 +604,43 @@
               </div>
               {% # theme-check-enable %}
             </li>
-          {% endif %}
-        {% endfor %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          
+          {% comment %} Second pass: Display sold-out products {% endcomment %}
+          {% for product in collection.products %}
+            {% liquid
+              assign has_available_variant = false
+              if product.available == true
+                assign has_available_variant = true
+              else
+                for variant in product.variants
+                  if variant.available
+                    assign has_available_variant = true
+                    break
+                  endif
+                endfor
+              endif
+            %}
+            {% unless has_available_variant %}
+              {% assign display_index = display_index | plus: 1 %}
+          <li
+            id="{{ section.id }}-{{ product.id }}"
+            class="product-grid__item product-grid__item--{{ display_index | minus: 1 }}"
+            data-page="{{ paginate.current_page }}"
+            data-product-id="{{ product.id }}"
+            data-product-handle="{{ product.handle }}"
+            data-collection-id="{{ collection.id }}"
+            data-collection-handle="{{ collection.handle }}"
+            ref="cards[]"
+          >
+            {% # theme-check-disable %}
+            {% content_for 'block', type: '_product-card', id: 'product-card', closest.product: product %}
+            {% # theme-check-enable %}
+          </li>
+            {% endunless %}
+          {% endfor %}
         {% endcapture %}
         {% render 'product-grid',
           section: section,
@@ -875,13 +922,24 @@
 
   /* Ensure quick-add container is accessible on hover */
   .custom-product-card__container:hover .custom-quick-add-container {
-    z-index: 11;
-    pointer-events: none;
+    z-index: 15 !important;
+    pointer-events: auto;
   }
 
   .custom-product-card__container:hover .custom-quick-add-container > div {
     pointer-events: auto;
-    z-index: 12;
+    z-index: 16;
+  }
+  
+  /* Keep hover state when hovering over quick-add container itself */
+  .custom-quick-add-container:hover {
+    z-index: 15 !important;
+    pointer-events: auto;
+  }
+  
+  .custom-quick-add-container:hover .custom-quick-add-wrapper {
+    z-index: 16 !important;
+    pointer-events: auto;
   }
 
   /* Ensure product card content is interactive */
@@ -925,8 +983,11 @@
     .custom-product-card__container:hover .custom-quick-add-wrapper .quick-add__button,
     .product-grid__item--with-overlay:hover .custom-quick-add-container .quick-add__button,
     .product-grid__item--with-overlay:hover .custom-quick-add-container quick-add-component .quick-add__button,
-    .product-grid__item--with-overlay:hover .custom-quick-add-wrapper .quick-add__button {
+    .product-grid__item--with-overlay:hover .custom-quick-add-wrapper .quick-add__button,
+    .custom-quick-add-container:hover .quick-add__button,
+    .custom-quick-add-wrapper:hover .quick-add__button {
       display: grid !important;
+      opacity: 1 !important;
       will-change: margin, opacity;
       animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
     }
@@ -954,12 +1015,34 @@
     top: 0;
     left: 0;
     width: 100%;
+    height: 100%;
     /* Use aspect-ratio to match card-gallery's image area height only */
     aspect-ratio: var(--gallery-aspect-ratio, 1);
     pointer-events: none;
     z-index: 10;
     /* Ensure it doesn't extend beyond the image area */
     max-height: fit-content;
+  }
+  
+  /* When hovered, ensure container maintains hover state */
+  .custom-product-card__container:hover .custom-quick-add-container,
+  .custom-quick-add-container:hover {
+    pointer-events: auto;
+  }
+  
+  /* Prevent button from fading out - override any opacity transitions */
+  .custom-product-card__container:hover .quick-add__button,
+  .custom-quick-add-container:hover .quick-add__button,
+  .custom-quick-add-wrapper:hover .quick-add__button,
+  .quick-add__button:hover {
+    transition: opacity 0s !important;
+    opacity: 1 !important;
+  }
+  
+  /* Enable pointer events on hover to maintain hover state */
+  .custom-product-card__container:hover .custom-quick-add-container,
+  .custom-quick-add-container:hover {
+    pointer-events: auto;
   }
   
   /* Ensure the container matches card-gallery dimensions exactly */
@@ -974,10 +1057,17 @@
   
   .custom-quick-add-wrapper {
     position: absolute;
-    bottom: calc(var(--quick-add-offset, var(--padding-sm)) * 9.5);
+    bottom: calc(var(--quick-add-offset, var(--padding-sm)) * 15.9);
     right: var(--quick-add-offset, var(--padding-sm));
     pointer-events: auto;
     z-index: 11;
+  }
+  
+  /* Ensure wrapper and button maintain pointer events */
+  .custom-quick-add-wrapper,
+  .custom-quick-add-wrapper *,
+  .custom-quick-add-wrapper .quick-add__button {
+    pointer-events: auto !important;
   }
   
   /* Ensure quick-add component itself is visible */
@@ -987,12 +1077,33 @@
   }
   
   /* On hover, ensure quick-add container stays on top */
-  .custom-product-card__container:hover .custom-quick-add-container {
+  .custom-product-card__container:hover .custom-quick-add-container,
+  .custom-quick-add-container:hover {
     z-index: 15 !important;
+    pointer-events: auto !important;
   }
   
-  .custom-product-card__container:hover .custom-quick-add-wrapper {
+  .custom-product-card__container:hover .custom-quick-add-wrapper,
+  .custom-quick-add-container:hover .custom-quick-add-wrapper {
     z-index: 16 !important;
+    pointer-events: auto !important;
+  }
+  
+  /* Keep button visible when hovering over it */
+  .custom-quick-add-wrapper:hover .quick-add__button,
+  .quick-add__button:hover,
+  .custom-quick-add-container:hover .quick-add__button {
+    display: grid !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+  }
+  
+  /* Ensure button stays visible when container maintains hover */
+  .custom-product-card__container:hover .custom-quick-add-container,
+  .custom-product-card__container:hover .custom-quick-add-wrapper,
+  .custom-product-card__container:hover .quick-add__button {
+    pointer-events: auto !important;
   }
 
   /* Show quick add button on hover - override default hiding on desktop */
@@ -1006,8 +1117,11 @@
     .custom-product-card__container:hover .quick-add .quick-add__button,
     .custom-product-card__container:hover .custom-product-card__product-card .quick-add__button,
     .custom-product-card__container:hover .custom-product-card__product-card .card-gallery .quick-add__button,
-    .custom-product-card__container:hover .custom-product-card__product-card product-card .quick-add__button {
+    .custom-product-card__container:hover .custom-product-card__product-card product-card .quick-add__button,
+    .custom-quick-add-container:hover .quick-add__button {
       display: grid !important;
+      opacity: 1 !important;
+      visibility: visible !important;
       will-change: margin, opacity;
       animation: elementSlideInTop var(--animation-speed) var(--animation-easing);
     }

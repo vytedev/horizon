@@ -1,3 +1,5 @@
-{{ 'base.css' | asset_url | preload_tag: as: 'style' }}
-{{ 'overflow-list.css' | asset_url | preload_tag: as: 'style' }}
-{{ 'base.css' | asset_url | stylesheet_tag }}
+{{ 'css/base.css' | asset_url | preload_tag: as: 'style' }}
+{{ 'css/overflow-list.css' | asset_url | preload_tag: as: 'style' }}
+{{ 'css/footer.css' | asset_url | preload_tag: as: 'style' }}
+{{ 'css/base.css' | asset_url | stylesheet_tag }}
+{{ 'css/footer.css' | asset_url | stylesheet_tag }}
